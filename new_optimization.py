@@ -48,9 +48,9 @@ def optimization():
                     gain_bs[j, i, k, m] = f.gain_bs(j, i, k, m)
                     gain_user[i, j, m, k] = f.gain_user(i, j, m, k)
             path_loss[i,j] = f.path_loss(i,j)
-            power[i,j] = fading[i, j] * gain_bs[j, i, i, j] * gain_user[i, j, j, i] * path_loss[i,j]
+            power[i,j] = gain_bs[j, i, i, j] * gain_user[i, j, j, i] * path_loss[i,j] * fading[i, j]
 
-
+    print(gain_bs)
     # ------------------------ Start of optimization program ------------------------------------
     try:
         m = gp.Model("Model 1")
@@ -58,45 +58,58 @@ def optimization():
         # m.Params.LogToConsole = 0
 
         # -------------- VARIABLES -----------------------------------
-        channel_capacity = m.addMVar(shape=(number_of_users, number_of_bs), vtype=GRB.CONTINUOUS, name = 'C')
+        alpha = {}
+        SINR = {}
+        C = {}
+        C_user = {}
+        I = {}
+        I_inv = {}
+        sigma_I = {}
 
-        channel_capacity_per_user = m.addMVar(shape=(number_of_users,), vtype=GRB.CONTINUOUS, name = 'C_user')
 
-        alpha = m.addMVar(shape=(number_of_users, number_of_bs, number_of_timeslots), vtype=GRB.BINARY, name = 'alpha' )
 
-        SINR = m.addMVar(shape=(number_of_users, number_of_bs, number_of_timeslots), vtype = GRB.CONTINUOUS, name = 'SINR')
-        interference = m.addMVar(shape=(number_of_users, number_of_bs, number_of_timeslots), vtype = GRB.CONTINUOUS, name = 'I')
-        inverse_interference = m.addMVar(shape=(number_of_users, number_of_bs, number_of_timeslots), vtype = GRB.CONTINUOUS, name = 'I-1')
-        sigma_interference = m.addMVar(shape=(number_of_users, number_of_bs, number_of_timeslots), vtype = GRB.CONTINUOUS, name = 'I-1')
+        for i in users:
+            for j in base_stations:
+                for t in time_slots:
+                    alpha[i,j,t] = m.addVar(vtype = GRB.BINARY, name = f'alpha#{i}#{j}#{t}')
+                    SINR[i,j,t] = m.addVar(vtype = GRB.CONTINUOUS, name = f'SINR#{i}#{j}#{t}')
+                    I[i,j,t] = m.addVar(vtype = GRB.CONTINUOUS, name = f'I#{i}#{j}#{t}')
+                    sigma_I[i,j,t] = m.addVar(vtype = GRB.CONTINUOUS, name = f'sigma_I#{i}#{j}#{t}')
+                    I_inv[i,j,t] = m.addVar(vtype = GRB.CONTINUOUS, name = f'I_inv#{i}#{j}#{t}')
+                C[i,j] = m.addVar(vtype = GRB.CONTINUOUS, name = f'C#{i}#{j}')
+            C_user[i] = m.addVar(vtype= GRB.CONTINUOUS, name = f'C_user#{i}')
+
+
+        m.update()
 
         # ----------------- OBJECTIVE ----------------------------------
-        m.setObjective(sum(channel_capacity_per_user), GRB.MAXIMIZE)
+        m.setObjective(quicksum(quicksum(quicksum(alpha[i,j,t] * SINR[i,j,t] for t in time_slots) for j in base_stations) for i in users), GRB.MAXIMIZE)
 
         # --------------- CONSTRAINTS -----------------------------
         # Define SINR and interference
         for i in users:
             for j in base_stations:
                 for t in time_slots:
-                    m.addConstr(sigma_interference[i,j,t] == sigma**2 + interference[i,j,t], name = 'sigma_interference')
-                    m.addConstr(sigma_interference[i,j,t] @ inverse_interference[i, j, t] == 1, name='helper_constraint'+str(i) + '_' + str(j) + '_' + str(t))
-                    m.addConstr(SINR[i,j,t] == power[i, j] * inverse_interference[i,j,t], name='find_SINR'+str(i) + '_' + str(j) + '_' + str(t))
-                    m.addConstr(interference[i, j, t] == sum(sum(alpha[m, k,t] * fading[m, k] * gain_bs[k, m, i, j] * gain_user[i, j, k, m] * path_loss[i, k] for m in users) for k in base_stations) - power[i,j], name='Interference'+str(i) + '_' + str(j) + '_' + str(t))
+                    m.addConstr(I[i, j, t] == quicksum(quicksum(alpha[m, k, t] * fading[m, k] * gain_bs[k, m, i, j] * gain_user[i, j, k, m] * path_loss[i, k] for m in users) for k in base_stations) - power[i,j] * alpha[i,j,t], name=f'Interference#{i}#{j}#{t}')
+                    m.addConstr(sigma_I[i,j,t] == sigma**2 + I[i,j,t], name = f'sigma_interference#{i}#{j}#{t}')
+                    m.addConstr(sigma_I[i,j,t] * I_inv[i, j, t] == 1, name=f'helper_constraint#{i}#{j}#{t}')
+                    m.addConstr(SINR[i,j,t] == power[i, j] * I_inv[i,j,t], name=f'find_SINR#{i}#{j}#{t}')
 
         # Minimum SNR
         for i in users:
             for j in base_stations:
                 for t in time_slots:
-                    m.addConstr(SINR[i,j,t] >= alpha[i, j, t] * SINR_min, name = 'minimum_SNR_user'+ str(i) + '_BS' + str(j) + '_t=' + str(t))
+                    m.addConstr(SINR[i,j,t] >= alpha[i, j, t] * SINR_min, name = f'minimum_SNR#{i}#{j}#{t}')
 
         # Connections per BS
         for j in base_stations:
             for t in time_slots:
-                m.addConstr(sum(alpha[i, j, t] for i in users) <= N_bs, name= 'connections_BS_BS' + str(j) + '_t=' + str(t))
+                m.addConstr(quicksum(alpha[i, j, t] for i in users) <= N_bs, name= f'connections_BS#{j}#{t}')
 
         # Connections per user
         for i in users:
             for t in time_slots:
-                m.addConstr(sum(alpha[i,j,t] for j in base_stations) <= N_user, name='connections_user'+str(i) + '_'  + str(t))
+                m.addConstr(quicksum(alpha[i,j,t] for j in base_stations) <= N_user, name=f'connections_user#{i}#{t}')
 
         # Rate requirement
         # for i in users:
@@ -104,18 +117,24 @@ def optimization():
 
         # at least 1 connection:
         for i in users:
-            m.addConstr(sum(sum(alpha[i,j,t] for j in base_stations) for t in time_slots) >= 1, name='1_con_user' + str(i))
+            m.addConstr(quicksum(quicksum(alpha[i,j,t] for j in base_stations) for t in time_slots) >= 1, name=f'1_con_user#{i}')
 
-        for i in users:
-            for j in base_stations:
-                m.addConstr(channel_capacity[i, j] == sum(alpha[i,j,t] @ SINR[i,j,t]  for t in time_slots) , name = 'channel_cap')
-            m.addConstr(channel_capacity_per_user[i] == sum(channel_capacity[i,j] for j in base_stations) , name='channel_cap_user')
+        # find capacity
+        # for i in users:
+        #     for j in base_stations:
+        #         m.addConstr(C[i, j] == quicksum(alpha[i,j,t] * SINR[i,j, t] for t in time_slots) , name = f'channel_cap#{i}#{j}')
+        #     m.addConstr(C_user[i] ==  , name=f'channel_cap_user#{i}')
 
         # --------------------- OPTIMIZE MODEL -------------------------
+        # m.computeIIS()
+        # m.write("IISmodel.lp")
+
         m.optimize()
         m.write("model.lp")
         m.getObjective()
         print('Objective value: %g' % m.objVal)
+
+
 
 
     except gp.GurobiError as e:
@@ -126,5 +145,14 @@ def optimization():
         print('Encountered an attribute error')
         # sys.exit()
 
-    return alpha.X, channel_capacity_per_user.X
+    a = np.zeros((number_of_users, number_of_bs, number_of_timeslots))
+    capacity = np.zeros((number_of_users))
+
+    for i in range(number_of_users):
+        for j in range(number_of_bs):
+            for t in range(number_of_timeslots):
+                a[i, j, t] = alpha[i, j, t].X
+        capacity[i] = C_user[i].X
+
+    return a, capacity
 

@@ -20,14 +20,37 @@ alpha, channel_capacity_per_user = new_optimization.optimization()
 
 print(alpha)
 
-print(channel_capacity_per_user)
-
 for t in range(number_of_timeslots):
-    G, colorlist, nodesize, edgesize, labels = f.make_graph(x_bs, y_bs, x_user, y_user, alpha[:,:,t], number_of_users)
-    f.draw_graph(G, colorlist, nodesize, edgesize, labels)
+    delta = 200
+    grid_size = xmax/delta
+
+    x_grid = np.arange(xmin, xmax, grid_size)
+    y_grid = np.arange(ymin, ymax, grid_size)
+
+    x_mesh,y_mesh = np.meshgrid(x_grid,y_grid)
+
+    xc, yc = x_mesh + grid_size/2, y_mesh + grid_size/2
+
+    interference = np.zeros((delta, delta))
+
+    i = (x_user[0], y_user[0])
+    j = (x_bs[0], y_bs[0])
+    for x in range(delta):
+        for y in range(delta):
+            interference[y, x] = f.find_interference((xc[0, x], yc[y, 0]), j, alpha, t)
+
+    fig, ax = plt.subplots()
+
+
+    contour_z1 = plt.contourf(x_mesh, y_mesh, interference, cmap='turbo')
+    plt.colorbar(contour_z1)
+    plt.scatter(x_user, y_user)
+    plt.scatter(x_bs, y_bs)
+    plt.xlim((xmin, xmax))
+    plt.ylim((ymin, ymax))
+
+    G, colorlist, nodesize, edgesize, labels = f.make_graph(x_bs, y_bs, x_user, y_user, alpha[:, :, t], number_of_users)
+    f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax)
+    plt.title('t = ' + str(t))
     plt.show()
 
-
-fig, ax = plt.subplots()
-plt.hist(channel_capacity_per_user, density=True)
-plt.show()
