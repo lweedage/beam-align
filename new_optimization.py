@@ -36,21 +36,20 @@ def optimization():
     base_stations = range(number_of_bs)
     time_slots = range(number_of_timeslots)
 
-    gain_bs = np.zeros((number_of_bs, number_of_users, number_of_users, number_of_bs))
-    gain_user = np.zeros((number_of_users, number_of_bs, number_of_bs, number_of_users))
+    gain_bs = np.zeros((number_of_users, number_of_bs, number_of_users, number_of_bs))
+    gain_user = np.zeros((number_of_users, number_of_bs, number_of_bs))
     power = np.zeros((number_of_users, number_of_bs))
     path_loss = np.zeros((number_of_users, number_of_bs))
 
     for i in users:
         for j in base_stations:
-            for k in users:
-                for m in base_stations:
-                    gain_bs[j, i, k, m] = f.gain_bs(j, i, k, m)
-                    gain_user[i, j, m, k] = f.gain_user(i, j, m, k)
+            for m in base_stations:
+                gain_user[i, j, m] = f.gain_user(i, j, m)
+                for k in users:
+                    gain_bs[i, j, k, m] = f.gain_bs(i, j, k, m)
             path_loss[i,j] = f.path_loss(i,j)
-            power[i,j] = gain_bs[j, i, i, j] * gain_user[i, j, j, i] * path_loss[i,j] * fading[i, j]
+            power[i,j] = gain_bs[i, j, i, j] * gain_user[i, j, j] * path_loss[i,j] * fading[i, j]
 
-    print(gain_bs)
     # ------------------------ Start of optimization program ------------------------------------
     try:
         m = gp.Model("Model 1")
@@ -90,16 +89,16 @@ def optimization():
         for i in users:
             for j in base_stations:
                 for t in time_slots:
-                    m.addConstr(I[i, j, t] == quicksum(quicksum(alpha[m, k, t] * fading[m, k] * gain_bs[k, m, i, j] * gain_user[i, j, k, m] * path_loss[i, k] for m in users) for k in base_stations) - power[i,j] * alpha[i,j,t], name=f'Interference#{i}#{j}#{t}')
+                    m.addConstr(I[i, j, t] == quicksum(quicksum(alpha[k, m, t] * fading[i, m] * gain_bs[i, j, k, m] * gain_user[i,j,m] * path_loss[i, m] for k in users) for m in base_stations) - power[i,j] * alpha[i,j,t], name=f'Interference#{i}#{j}#{t}')
                     m.addConstr(sigma_I[i,j,t] == sigma**2 + I[i,j,t], name = f'sigma_interference#{i}#{j}#{t}')
                     m.addConstr(sigma_I[i,j,t] * I_inv[i, j, t] == 1, name=f'helper_constraint#{i}#{j}#{t}')
                     m.addConstr(SINR[i,j,t] == power[i, j] * I_inv[i,j,t], name=f'find_SINR#{i}#{j}#{t}')
 
         # Minimum SNR
-        for i in users:
-            for j in base_stations:
-                for t in time_slots:
-                    m.addConstr(SINR[i,j,t] >= alpha[i, j, t] * SINR_min, name = f'minimum_SNR#{i}#{j}#{t}')
+        # for i in users:
+        #     for j in base_stations:
+        #         for t in time_slots:
+        #             m.addConstr(SINR[i,j,t] >= alpha[i, j, t] * SINR_min, name = f'minimum_SNR#{i}#{j}#{t}')
 
         # Connections per BS
         for j in base_stations:
@@ -119,11 +118,6 @@ def optimization():
         for i in users:
             m.addConstr(quicksum(quicksum(alpha[i,j,t] for j in base_stations) for t in time_slots) >= 1, name=f'1_con_user#{i}')
 
-        # find capacity
-        # for i in users:
-        #     for j in base_stations:
-        #         m.addConstr(C[i, j] == quicksum(alpha[i,j,t] * SINR[i,j, t] for t in time_slots) , name = f'channel_cap#{i}#{j}')
-        #     m.addConstr(C_user[i] ==  , name=f'channel_cap_user#{i}')
 
         # --------------------- OPTIMIZE MODEL -------------------------
         # m.computeIIS()
@@ -146,13 +140,11 @@ def optimization():
         # sys.exit()
 
     a = np.zeros((number_of_users, number_of_bs, number_of_timeslots))
-    capacity = np.zeros((number_of_users))
 
     for i in range(number_of_users):
         for j in range(number_of_bs):
             for t in range(number_of_timeslots):
                 a[i, j, t] = alpha[i, j, t].X
-        capacity[i] = C_user[i].X
 
-    return a, capacity
+    return a
 

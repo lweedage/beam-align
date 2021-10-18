@@ -1,6 +1,8 @@
 import math
 import numpy as np
 
+pi = math.pi
+
 def initialise_graph_triangular(radius, xDelta, yDelta):
     xbs, ybs = list(), list()
     dy = math.sqrt(3/4) * radius
@@ -29,31 +31,32 @@ W = 10      # bandwidth
 epsilon = 0.1
 
 
-xmin, xmax = 0, 10
-ymin, ymax = 0, 10
+xmin, xmax = 0, 100
+ymin, ymax = 0, 100
 
-beamwidth_u = math.radians(30)
-beamwidth_b = math.radians(30)
+beamwidth_u = math.radians(10)
+beamwidth_b = math.radians(20)
 
 
 Hexagonal = False
-number_of_bs = 2
-number_of_timeslots = 1
-number_of_users = 2
+number_of_bs = 5
+number_of_timeslots = 3
+number_of_users = 20
 
 x_bs, y_bs, x_user, y_user = find_coordinates(seed)
 
 number_of_bs = len(x_bs)
 
-critical_distance = 100
+critical_distance = 10
+wavelength = 10e-6
 
-K_los = 1
-K_nlos = 1
-alpha_los = 1
-alpha_nlos = 1
+K_los = 4 * pi / wavelength
+K_nlos = 4 * pi / wavelength
+alpha_los = 2
+alpha_nlos = 4
 
-# fading = np.random.gamma(0.1, 1, (number_of_users, number_of_bs))
-fading = np.ones((number_of_users, number_of_bs))
+fading = np.random.gamma(0.1, 1, (number_of_users, number_of_bs))
+# fading = np.ones((number_of_users, number_of_bs))
 
 sigma = 1
 
@@ -61,6 +64,3 @@ SINR_min = 0.01
 
 N_bs = 5        # number of connections per BS
 N_user = 5      # number of connections per user
-
-print(x_bs, y_bs)
-print(x_user, y_user)

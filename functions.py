@@ -10,6 +10,11 @@ np.random.seed(seed)
 
 pi = math.pi
 
+def user_coords(i):
+    return (x_user[i], y_user[i])
+
+def bs_coords(j):
+    return (x_bs[j], y_bs[j])
 
 def bore_b(user, bs):
     return geo_b(user, bs)
@@ -33,47 +38,36 @@ def geo_u(user, bs):
         radians = radians + 2 * pi
     return radians
 
-def gain_bs(j, i, m, k):
-    bs = (x_bs[j], y_bs[j])
-    bs_2 = (x_bs[k], y_bs[k])
-    user = (x_user[i], y_user[i])
-    user_2 = (x_user[m], y_user[m])
-    if beamwidth_b/2 < abs(bore_b(user, bs) - geo_b(user_2, bs_2)) < 2 * pi - beamwidth_b/2:
+def gain_bs(i, j, k, m):
+    bs = bs_coords(j)
+    user = user_coords(i)
+    user_i = user_coords(k)
+    bs_i = bs_coords(m)
+    if beamwidth_b/2 < abs(bore_b(user_i, bs) - geo_b(user, bs_i)) < 2 * pi - beamwidth_b/2:
         return epsilon
     else:
         return (2 * pi - (2 * pi - beamwidth_b)*epsilon)/beamwidth_b
 
-def gain_bs_coords(bs, user, user_2, bs_2):
-    # bs = (x_bs[j], y_bs[j])
-    # bs_2 = (x_bs[k], y_bs[k])
-    # user = (x_user[i], y_user[i])
-    # user_2 = (x_user[m], y_user[m])
-    if beamwidth_b/2 < abs(bore_b(user_2, bs_2) - geo_b(user, bs_2)) < 2 * pi - beamwidth_b/2:
+def gain_bs_coords(user, bs, user_i, bs_i):
+    if beamwidth_b/2 < abs(bore_b(user_i, bs) - geo_b(user, bs_i)) < 2 * pi - beamwidth_b/2:
         return epsilon
     else:
         return (2 * pi - (2 * pi - beamwidth_b)*epsilon)/beamwidth_b
 
-
-def gain_user(i, j, k, m):
-    bs = (x_bs[j], y_bs[j])
-    bs_2 = (x_bs[k], y_bs[k])
-    user = (x_user[i], y_user[i])
-    user_2 = (x_user[m], y_user[m])
-    if beamwidth_u/2 < abs(bore_u(user, bs) - geo_u(user_2, bs_2)) < 2 * pi - beamwidth_u/2:
+def gain_user(i, j, m):
+    bs = bs_coords(j)
+    user = user_coords(i)
+    bs_i = bs_coords(m)
+    if beamwidth_u/2 < abs(bore_u(user, bs_i) - geo_u(user, bs)) < 2 * pi - beamwidth_u/2:
         return epsilon
     else:
         return (2 * pi - (2 * pi - beamwidth_u)*epsilon)/beamwidth_u
 
-def gain_user_coords(user, bs, bs_2, user_2):
-    # bs = (x_bs[j], y_bs[j])
-    # bs_2 = (x_bs[k], y_bs[k])
-    # user = (x_user[i], y_user[i])
-    # user_2 = (x_user[m], y_user[m])
-    if beamwidth_u/2 < abs(bore_u(user, bs) - geo_u(user, bs_2)) < 2 * pi - beamwidth_u/2:
+def gain_user_coords(user, bs, bs_i):
+    if beamwidth_u/2 < abs(bore_u(user, bs_i) - geo_u(user, bs)) < 2 * pi - beamwidth_u/2:
         return epsilon
     else:
         return (2 * pi - (2 * pi - beamwidth_u)*epsilon)/beamwidth_u
-
 
 def path_loss(i, j):
     user = (x_user[i], y_user[i])
@@ -89,8 +83,6 @@ def path_loss(i, j):
     return p_los * l_los + p_nlos * l_nlos
 
 def path_loss_coords(user, bs):
-    # user = (x_user[i], y_user[i])
-    # bs = (x_bs[j], y_bs[j])
     r = find_distance(user, bs)
     if r <= critical_distance:
         p_los = 1
@@ -101,15 +93,27 @@ def path_loss_coords(user, bs):
     l_nlos = K_nlos * max(1,r)**(-alpha_nlos)
     return p_los * l_los + p_nlos * l_nlos
 
-def find_interference(user, bs, alpha, t):
+def find_interference(i, j, alpha, t):
     interference = 0
-    for k in range(number_of_users):
-        for m in range(number_of_bs):
-            if alpha[k, m, t] == 1:
-                bs_i = (x_bs[m], y_bs[m])
-                user_i = (x_user[k], y_user[k])
-                interference += fading[k, m] * gain_bs_coords(bs, user, user_i, bs_i) * gain_user_coords(user, bs, bs_i, user_i) * path_loss_coords(user, bs_i)
+    for k in range(number_of_bs):
+        if k != j:
+            for m in range(number_of_users):
+                if alpha[k, m, t] == 1:
+                    interference += fading[i, m] * gain_bs(i, j, k, m) * gain_user(i, j, m) * path_loss(i, m)
     return interference
+
+def find_interference_coords(user, bs, alpha, t):
+    interference = 0
+    for m in range(number_of_bs):
+        bs_i = bs_coords(m)
+        if bs_i != bs or 2 == 2:
+            for k in range(number_of_users):
+                user_i = user_coords(k)
+                interference += alpha[k, m, t] * find_fading(user, bs_i) * gain_bs_coords(user, bs, user_i, bs_i) * gain_user_coords(user, bs, bs_i) * path_loss_coords(user, bs_i)
+    return interference
+
+def find_fading(user, bs):
+    return np.random.gamma(0.1, 1)
 
 def find_distance(user, bs):
     return math.sqrt((user[0] - bs[0])**2 + (user[1] - bs[1])**2)
@@ -120,10 +124,7 @@ def find_SINR(i, j, alpha, t):
 def find_power(i, j):
     user = (x_user[i], y_user[i])
     bs = (x_bs[j], y_bs[j])
-    return fading[i, j] * gain_bs(bs, user, user, bs) * gain_user(user, bs, bs, user) * path_loss(user, bs)
-
-def channel_capacity(i, j):
-    return W * math.log2(1 + find_SINR(i, j))
+    return fading[i, j] * gain_bs(user, bs, user, bs) * gain_user(user, bs, bs) * path_loss(user, bs)
 
 def make_graph(xbs, ybs, xu, yu, alpha, number_of_users):
     G = nx.Graph()

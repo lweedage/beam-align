@@ -16,9 +16,7 @@ import functions as f
 
 np.random.seed(seed)
 
-alpha, channel_capacity_per_user = new_optimization.optimization()
-
-print(alpha)
+alpha = new_optimization.optimization()
 
 for t in range(number_of_timeslots):
     delta = 200
@@ -33,17 +31,19 @@ for t in range(number_of_timeslots):
 
     interference = np.zeros((delta, delta))
 
+    blub = 1
+
     i = (x_user[0], y_user[0])
-    j = (x_bs[0], y_bs[0])
-    for x in range(delta):
-        for y in range(delta):
-            interference[y, x] = f.find_interference((xc[0, x], yc[y, 0]), j, alpha, t)
+    j = (x_bs[blub], y_bs[blub])
+    # for x in range(delta):
+    #     for y in range(delta):
+    #         interference[y, x] = f.find_interference_coords((xc[0, x], yc[y, 0]), j, alpha, t)
 
     fig, ax = plt.subplots()
 
 
-    contour_z1 = plt.contourf(x_mesh, y_mesh, interference, cmap='turbo')
-    plt.colorbar(contour_z1)
+    # contour_z1 = plt.contourf(x_mesh, y_mesh, interference, cmap='turbo')
+    # plt.colorbar(contour_z1)
     plt.scatter(x_user, y_user)
     plt.scatter(x_bs, y_bs)
     plt.xlim((xmin, xmax))
