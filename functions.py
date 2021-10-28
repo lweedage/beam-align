@@ -174,7 +174,7 @@ def draw_graph(G, colorlist, nodesize, edgesize, labels, ax):
     nx.draw_networkx_nodes(G, pos, nodelist=G.nodes(), node_size=nodesize,
                            node_color=colorlist, ax=ax)
     nx.draw_networkx_edges(G, pos, edge_color='black', alpha=0.5, width=edgesize)
-    ax.set_xlim([xmin, xmax]), ax.set_ylim([ymin, ymax])
+    # ax.set_xlim([xmin, xmax]), ax.set_ylim([ymin, ymax])
     nx.draw_networkx_labels(G, pos, labels, font_size=10)
 
 if __name__ == "__main__":

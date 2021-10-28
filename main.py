@@ -17,6 +17,7 @@ import functions as f
 np.random.seed(seed)
 
 x = new_optimization.optimization()
+print(x)
 
 for t in range(number_of_timeslots):
     delta = 200
@@ -46,8 +47,8 @@ for t in range(number_of_timeslots):
     # plt.colorbar(contour_z1)
     plt.scatter(x_user, y_user)
     plt.scatter(x_bs, y_bs)
-    plt.xlim((xmin, xmax))
-    plt.ylim((ymin, ymax))
+    plt.xlim((xmin - 10, xmax + 10))
+    plt.ylim((ymin - 10, ymax + 10))
 
     G, colorlist, nodesize, edgesize, labels = f.make_graph(x_bs, y_bs, x_user, y_user, x[:, :, t], number_of_users)
     f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax)

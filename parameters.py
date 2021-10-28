@@ -3,13 +3,13 @@ import numpy as np
 
 pi = math.pi
 
-Fading = False
+Fading = True
 Beamforming = False
-Hexagonal = False
+Hexagonal = True
 
 number_of_bs = 5
 number_of_timeslots = 1
-number_of_users = 1
+number_of_users = 2
 
 alpha = 1
 
@@ -34,7 +34,7 @@ def find_coordinates(seed):
 seed = 1
 np.random.seed(seed)
 
-radius = 10  # for triangular grid
+radius = 60  # for triangular grid
 
 W = 10      # bandwidth
 
@@ -63,7 +63,7 @@ alpha_los = 2
 alpha_nlos = 4
 
 if Fading:
-    fading = np.random.gamma(0.1, 1, (number_of_users, number_of_bs))
+    fading = np.random.gamma(1, 1, (number_of_users, number_of_bs))
 else:
     fading = np.ones((number_of_users, number_of_bs))
 

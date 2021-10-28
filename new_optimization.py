@@ -91,16 +91,19 @@ def optimization():
         else:
             m.setObjective(quicksum(1/(1-alpha) * (quicksum(quicksum(SINR[i,j,t] for t in time_slots) for j in base_stations))**(1-alpha) for i in users), GRB.MAXIMIZE)
 
+        # m.setObjective(quicksum(quicksum(quicksum(SINR[i,j,t] * x[i,j,t] for t in time_slots) for j in base_stations) for i in users), GRB.MAXIMIZE)
 
         # --------------- CONSTRAINTS -----------------------------
         # Define SINR and interference
         for i in users:
             for j in base_stations:
                 for t in time_slots:
-                    m.addConstr(I[i, j, t] == quicksum(quicksum(x[k, m, t] * fading[i, m] * gain_bs[i, j, k, m] * gain_user[i,j,m] * path_loss[i, m] for k in users) for m in base_stations) - power[i,j] * x[i,j,t], name=f'Interference#{i}#{j}#{t}')
+                    m.addConstr(I[i, j, t] == quicksum(quicksum(x[k, m, t] * fading[i, m] * gain_bs[i, j, k, m] * gain_user[i,j,m] * path_loss[i, m] for k in users if k != i) for m in base_stations) , name=f'Interference#{i}#{j}#{t}')
                     m.addConstr(sigma_I[i,j,t] == sigma**2 + I[i,j,t], name = f'sigma_interference#{i}#{j}#{t}')
                     m.addConstr(sigma_I[i,j,t] * I_inv[i, j, t] == 1, name=f'helper_constraint#{i}#{j}#{t}')
                     m.addConstr(SINR[i,j,t] == power[i, j] * I_inv[i,j,t], name=f'find_SINR#{i}#{j}#{t}')
+                m.addConstr(C[i,j] == W * quicksum(x[i,j,t] * SINR[i,j,t] for t in time_slots), name = f'find_C#{i}#{j}')
+            m.addConstr(C_user[i] == quicksum(C[i,j] for j in base_stations), name = f'find_C_user#{i}')
 
         # Minimum SNR
         # for i in users:
@@ -129,7 +132,7 @@ def optimization():
 
         if alpha == 1:
             for i in users:
-                m.addGenConstrLog(quicksum(quicksum(SINR[i, j, t] * x[i,j,t] for t in time_slots) for j in base_stations), log_obj[i], name='log_constraint')
+                m.addGenConstrLog(C_user[i], log_obj[i], name=f'log_constraint#{i}')
 
 
         # --------------------- OPTIMIZE MODEL -------------------------
@@ -148,9 +151,6 @@ def optimization():
         print('Error code ' + str(e.errno) + ': ' + str(e))
         # sys.exit()
 
-    except AttributeError:
-        print('Encountered an attribute error')
-        # sys.exit()
 
     a = np.zeros((number_of_users, number_of_bs, number_of_timeslots))
 
