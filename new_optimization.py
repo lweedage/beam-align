@@ -57,7 +57,7 @@ def optimization():
         # m.Params.LogToConsole = 0
 
         # -------------- VARIABLES -----------------------------------
-        alpha = {}
+        x = {}
         SINR = {}
         C = {}
         C_user = {}
@@ -65,31 +65,39 @@ def optimization():
         I_inv = {}
         sigma_I = {}
 
+        log_obj = {}
+
 
 
         for i in users:
             for j in base_stations:
                 for t in time_slots:
-                    alpha[i,j,t] = m.addVar(vtype = GRB.BINARY, name = f'alpha#{i}#{j}#{t}')
+                    x[i,j,t] = m.addVar(vtype = GRB.BINARY, name = f'alpha#{i}#{j}#{t}')
                     SINR[i,j,t] = m.addVar(vtype = GRB.CONTINUOUS, name = f'SINR#{i}#{j}#{t}')
                     I[i,j,t] = m.addVar(vtype = GRB.CONTINUOUS, name = f'I#{i}#{j}#{t}')
                     sigma_I[i,j,t] = m.addVar(vtype = GRB.CONTINUOUS, name = f'sigma_I#{i}#{j}#{t}')
                     I_inv[i,j,t] = m.addVar(vtype = GRB.CONTINUOUS, name = f'I_inv#{i}#{j}#{t}')
                 C[i,j] = m.addVar(vtype = GRB.CONTINUOUS, name = f'C#{i}#{j}')
             C_user[i] = m.addVar(vtype= GRB.CONTINUOUS, name = f'C_user#{i}')
+            if alpha == 1:
+                log_obj[i] = m.addVar(vtype = GRB.CONTINUOUS, name = f'log_C_user#{i}')
 
 
         m.update()
 
         # ----------------- OBJECTIVE ----------------------------------
-        m.setObjective(quicksum(quicksum(quicksum(alpha[i,j,t] * SINR[i,j,t] for t in time_slots) for j in base_stations) for i in users), GRB.MAXIMIZE)
+        if alpha == 1:
+            m.setObjective(quicksum(log_obj[i] for i in users), GRB.MAXIMIZE)
+        else:
+            m.setObjective(quicksum(1/(1-alpha) * (quicksum(quicksum(SINR[i,j,t] for t in time_slots) for j in base_stations))**(1-alpha) for i in users), GRB.MAXIMIZE)
+
 
         # --------------- CONSTRAINTS -----------------------------
         # Define SINR and interference
         for i in users:
             for j in base_stations:
                 for t in time_slots:
-                    m.addConstr(I[i, j, t] == quicksum(quicksum(alpha[k, m, t] * fading[i, m] * gain_bs[i, j, k, m] * gain_user[i,j,m] * path_loss[i, m] for k in users) for m in base_stations) - power[i,j] * alpha[i,j,t], name=f'Interference#{i}#{j}#{t}')
+                    m.addConstr(I[i, j, t] == quicksum(quicksum(x[k, m, t] * fading[i, m] * gain_bs[i, j, k, m] * gain_user[i,j,m] * path_loss[i, m] for k in users) for m in base_stations) - power[i,j] * x[i,j,t], name=f'Interference#{i}#{j}#{t}')
                     m.addConstr(sigma_I[i,j,t] == sigma**2 + I[i,j,t], name = f'sigma_interference#{i}#{j}#{t}')
                     m.addConstr(sigma_I[i,j,t] * I_inv[i, j, t] == 1, name=f'helper_constraint#{i}#{j}#{t}')
                     m.addConstr(SINR[i,j,t] == power[i, j] * I_inv[i,j,t], name=f'find_SINR#{i}#{j}#{t}')
@@ -103,12 +111,12 @@ def optimization():
         # Connections per BS
         for j in base_stations:
             for t in time_slots:
-                m.addConstr(quicksum(alpha[i, j, t] for i in users) <= N_bs, name= f'connections_BS#{j}#{t}')
+                m.addConstr(quicksum(x[i, j, t] for i in users) <= N_bs, name= f'connections_BS#{j}#{t}')
 
         # Connections per user
         for i in users:
             for t in time_slots:
-                m.addConstr(quicksum(alpha[i,j,t] for j in base_stations) <= N_user, name=f'connections_user#{i}#{t}')
+                m.addConstr(quicksum(x[i,j,t] for j in base_stations) <= N_user, name=f'connections_user#{i}#{t}')
 
         # Rate requirement
         # for i in users:
@@ -116,7 +124,12 @@ def optimization():
 
         # at least 1 connection:
         for i in users:
-            m.addConstr(quicksum(quicksum(alpha[i,j,t] for j in base_stations) for t in time_slots) >= 1, name=f'1_con_user#{i}')
+            m.addConstr(quicksum(quicksum(x[i,j,t] for j in base_stations) for t in time_slots) >= 1, name=f'1_con_user#{i}')
+
+
+        if alpha == 1:
+            for i in users:
+                m.addGenConstrLog(quicksum(quicksum(SINR[i, j, t] * x[i,j,t] for t in time_slots) for j in base_stations), log_obj[i], name='log_constraint')
 
 
         # --------------------- OPTIMIZE MODEL -------------------------
@@ -144,7 +157,7 @@ def optimization():
     for i in range(number_of_users):
         for j in range(number_of_bs):
             for t in range(number_of_timeslots):
-                a[i, j, t] = alpha[i, j, t].X
+                a[i, j, t] = x[i, j, t].X
 
     return a
 

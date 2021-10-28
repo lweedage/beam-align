@@ -3,6 +3,16 @@ import numpy as np
 
 pi = math.pi
 
+Fading = False
+Beamforming = False
+Hexagonal = False
+
+number_of_bs = 5
+number_of_timeslots = 1
+number_of_users = 1
+
+alpha = 1
+
 def initialise_graph_triangular(radius, xDelta, yDelta):
     xbs, ybs = list(), list()
     dy = math.sqrt(3/4) * radius
@@ -21,7 +31,7 @@ def find_coordinates(seed):
     x_user, y_user = np.random.uniform(xmin, xmax, number_of_users), np.random.uniform(ymin, ymax, number_of_users)
     return x_bs, y_bs, x_user, y_user
 
-seed = 0
+seed = 1
 np.random.seed(seed)
 
 radius = 10  # for triangular grid
@@ -35,13 +45,10 @@ xmin, xmax = 0, 100
 ymin, ymax = 0, 100
 
 beamwidth_u = math.radians(10)
-beamwidth_b = math.radians(20)
+beamwidth_b = math.radians(10)
 
 
-Hexagonal = False
-number_of_bs = 5
-number_of_timeslots = 3
-number_of_users = 20
+
 
 x_bs, y_bs, x_user, y_user = find_coordinates(seed)
 
@@ -55,8 +62,10 @@ K_nlos = 4 * pi / wavelength
 alpha_los = 2
 alpha_nlos = 4
 
-fading = np.random.gamma(0.1, 1, (number_of_users, number_of_bs))
-# fading = np.ones((number_of_users, number_of_bs))
+if Fading:
+    fading = np.random.gamma(0.1, 1, (number_of_users, number_of_bs))
+else:
+    fading = np.ones((number_of_users, number_of_bs))
 
 sigma = 1
 

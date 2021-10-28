@@ -39,35 +39,47 @@ def geo_u(user, bs):
     return radians
 
 def gain_bs(i, j, k, m):
-    bs = bs_coords(j)
-    user = user_coords(i)
-    user_i = user_coords(k)
-    bs_i = bs_coords(m)
-    if beamwidth_b/2 < abs(bore_b(user_i, bs) - geo_b(user, bs_i)) < 2 * pi - beamwidth_b/2:
-        return epsilon
+    if Beamforming:
+        bs = bs_coords(j)
+        user = user_coords(i)
+        user_i = user_coords(k)
+        bs_i = bs_coords(m)
+        if beamwidth_b/2 < abs(bore_b(user_i, bs) - geo_b(user, bs_i)) < 2 * pi - beamwidth_b/2:
+            return epsilon
+        else:
+            return (2 * pi - (2 * pi - beamwidth_b)*epsilon)/beamwidth_b
     else:
-        return (2 * pi - (2 * pi - beamwidth_b)*epsilon)/beamwidth_b
+        return 1
 
 def gain_bs_coords(user, bs, user_i, bs_i):
-    if beamwidth_b/2 < abs(bore_b(user_i, bs) - geo_b(user, bs_i)) < 2 * pi - beamwidth_b/2:
-        return epsilon
+    if Beamforming:
+        if beamwidth_b/2 < abs(bore_b(user_i, bs) - geo_b(user, bs_i)) < 2 * pi - beamwidth_b/2:
+            return epsilon
+        else:
+            return (2 * pi - (2 * pi - beamwidth_b)*epsilon)/beamwidth_b
     else:
-        return (2 * pi - (2 * pi - beamwidth_b)*epsilon)/beamwidth_b
+        return 1
 
 def gain_user(i, j, m):
-    bs = bs_coords(j)
-    user = user_coords(i)
-    bs_i = bs_coords(m)
-    if beamwidth_u/2 < abs(bore_u(user, bs_i) - geo_u(user, bs)) < 2 * pi - beamwidth_u/2:
-        return epsilon
+    if Beamforming:
+        bs = bs_coords(j)
+        user = user_coords(i)
+        bs_i = bs_coords(m)
+        if beamwidth_u/2 < abs(bore_u(user, bs_i) - geo_u(user, bs)) < 2 * pi - beamwidth_u/2:
+            return epsilon
+        else:
+            return (2 * pi - (2 * pi - beamwidth_u)*epsilon)/beamwidth_u
     else:
-        return (2 * pi - (2 * pi - beamwidth_u)*epsilon)/beamwidth_u
+        return 1
 
 def gain_user_coords(user, bs, bs_i):
-    if beamwidth_u/2 < abs(bore_u(user, bs_i) - geo_u(user, bs)) < 2 * pi - beamwidth_u/2:
-        return epsilon
+    if Beamforming:
+        if beamwidth_u/2 < abs(bore_u(user, bs_i) - geo_u(user, bs)) < 2 * pi - beamwidth_u/2:
+            return epsilon
+        else:
+            return (2 * pi - (2 * pi - beamwidth_u)*epsilon)/beamwidth_u
     else:
-        return (2 * pi - (2 * pi - beamwidth_u)*epsilon)/beamwidth_u
+        return 1
 
 def path_loss(i, j):
     user = (x_user[i], y_user[i])

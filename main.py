@@ -16,7 +16,7 @@ import functions as f
 
 np.random.seed(seed)
 
-alpha = new_optimization.optimization()
+x = new_optimization.optimization()
 
 for t in range(number_of_timeslots):
     delta = 200
@@ -49,7 +49,7 @@ for t in range(number_of_timeslots):
     plt.xlim((xmin, xmax))
     plt.ylim((ymin, ymax))
 
-    G, colorlist, nodesize, edgesize, labels = f.make_graph(x_bs, y_bs, x_user, y_user, alpha[:, :, t], number_of_users)
+    G, colorlist, nodesize, edgesize, labels = f.make_graph(x_bs, y_bs, x_user, y_user, x[:, :, t], number_of_users)
     f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax)
     plt.title('t = ' + str(t))
     plt.show()
