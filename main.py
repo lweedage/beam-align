@@ -13,45 +13,50 @@ import new_optimization
 import os
 from parameters import *
 import functions as f
+from matplotlib.cm import ScalarMappable
 
 np.random.seed(seed)
 
-x = new_optimization.optimization()
-print(x)
+opt_x = new_optimization.optimization()
+print(opt_x)
 
-for t in range(number_of_timeslots):
-    delta = 200
-    grid_size = xmax/delta
+# opt_x = np.ones((number_of_users, number_of_bs))
 
-    x_grid = np.arange(xmin, xmax, grid_size)
-    y_grid = np.arange(ymin, ymax, grid_size)
+delta = 200
+bound = 10
+grid_size = (xmax + 2*bound)/delta
 
-    x_mesh,y_mesh = np.meshgrid(x_grid,y_grid)
+x_grid = np.arange(xmin - bound, xmax + bound, grid_size)
+y_grid = np.arange(ymin - bound, ymax + bound, grid_size)
 
-    xc, yc = x_mesh + grid_size/2, y_mesh + grid_size/2
+x_mesh,y_mesh = np.meshgrid(x_grid,y_grid)
 
-    interference = np.zeros((delta, delta))
+xc, yc = x_mesh + grid_size/2, y_mesh + grid_size/2
 
-    blub = 1
+interference = np.zeros((delta, delta))
 
-    i = (x_user[0], y_user[0])
-    j = (x_bs[blub], y_bs[blub])
-    # for x in range(delta):
-    #     for y in range(delta):
-    #         interference[y, x] = f.find_interference_coords((xc[0, x], yc[y, 0]), j, alpha, t)
+blub = 0
 
-    fig, ax = plt.subplots()
+j = (x_bs[0], y_bs[0])
 
+for x in range(delta):
+    for y in range(delta):
+        interference[y, x] = f.find_new_interference((xc[0, x], yc[y, 0]), j, opt_x)
 
-    # contour_z1 = plt.contourf(x_mesh, y_mesh, interference, cmap='turbo')
-    # plt.colorbar(contour_z1)
-    plt.scatter(x_user, y_user)
-    plt.scatter(x_bs, y_bs)
-    plt.xlim((xmin - 10, xmax + 10))
-    plt.ylim((ymin - 10, ymax + 10))
+print(interference)
 
-    G, colorlist, nodesize, edgesize, labels = f.make_graph(x_bs, y_bs, x_user, y_user, x[:, :, t], number_of_users)
-    f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax)
-    plt.title('t = ' + str(t))
-    plt.show()
+fig, ax = plt.subplots()
 
+vmin, vmax = 0, np.max(interference)/10
+
+contour_z1 = ax.pcolormesh(x_grid, y_grid, interference, vmin = vmin, vmax = vmax, cmap = 'turbo')
+fig.colorbar(ScalarMappable(norm=contour_z1.norm, cmap=contour_z1.cmap))
+
+plt.scatter(x_user, y_user)
+plt.scatter(x_bs, y_bs)
+plt.xlim((xmin - bound, xmax + bound))
+plt.ylim((ymin - bound, ymax + bound))
+
+G, colorlist, nodesize, edgesize, labels = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
+f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax)
+plt.show()
