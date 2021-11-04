@@ -5,12 +5,15 @@ pi = math.pi
 
 Fading = False
 Beamforming = True
+Sectorized_Antennnas = True
 Hexagonal = False
+Plot_Interference = False
+bs_of_interest = 1
 
-number_of_bs = 3
-number_of_users = 5
+number_of_bs = 2
+number_of_users = 3
 
-alpha = 0
+alpha = 1
 
 def initialise_graph_triangular(radius, xDelta, yDelta):
     xbs, ybs = list(), list()
@@ -35,42 +38,47 @@ np.random.seed(seed)
 
 radius = 60  # for triangular grid
 
-W = 10      # bandwidth
+xmin, xmax = 0, 100
+ymin, ymax = 0, 100
 
-epsilon = 0.1
+N_bs = 10        # number of connections per BS
+N_user = 10      # number of connections per user
 
-
-xmin, xmax = 0, 50
-ymin, ymax = 0, 50
-
-beamwidth_u = math.radians(10)
-beamwidth_b = math.radians(10)
-
+beamwidth_u = 2 * pi / N_user
+beamwidth_b = 2 * pi / N_bs
 
 x_bs, y_bs, x_user, y_user = find_coordinates(seed)
-
 number_of_bs = len(x_bs)
 
-critical_distance = 10
-wavelength = 10e-6
 
-transmission_power = 10*(4)
+critical_distance = 10000
+wavelength = 10e-5
 
-K_los =  1 #(wavelength / 4* pi)**2
-K_nlos =  K_los
+transmission_power = 10 ** 2.8  #28 dB
+noise = 10 ** 0.7  #7 db
+sigma = noise / transmission_power
 
+W = 73e9      # bandwidth (Either 28 GHz or 73 GHz)
 
-alpha_los = 1.5
-alpha_nlos = 1.5
+if W == 28e9:
+    alpha_los = 61.4    #in dB
+    beta_los = 2
+    alpha_nlos = 72     # in dB
+    beta_nlos = 2.92
+elif W == 73e9:
+    alpha_los = 69.8
+    beta_los = 2
+    alpha_nlos = 82.7
+    beta_nlos = 2.69
+
+k_los =  10**(alpha_los/(10 * beta_los))
+k_nlos = 10**(alpha_nlos/(10 * beta_nlos))
 
 if Fading:
     fading = np.random.gamma(1, 1, (number_of_users, number_of_bs))
 else:
     fading = np.ones((number_of_users, number_of_bs))
 
-sigma = 1
-
 SINR_min = 0
 
-N_bs = 10        # number of connections per BS
-N_user = 10      # number of connections per user
+

@@ -36,7 +36,7 @@ def optimization():
     base_stations = range(number_of_bs)
 
     gain_bs = np.zeros((number_of_users, number_of_users, number_of_bs))
-    gain_user = np.zeros((number_of_users, number_of_bs, number_of_users, number_of_bs))
+    gain_user = np.zeros((number_of_users, number_of_bs, number_of_bs))
     power = np.zeros((number_of_users, number_of_bs))
     path_loss = np.zeros((number_of_users, number_of_bs))
 
@@ -48,10 +48,10 @@ def optimization():
                 coords_m = f.bs_coords(m)
                 for k in users:
                     coords_k = f.user_coords(k)
-                    gain_bs[i, k, m] = f.new_gain(coords_m, coords_k, coords_m, coords_i, beamwidth_b)
-                    gain_user[i, j, k, m] =  f.new_gain(coords_i, coords_j, coords_i, coords_k, beamwidth_u)
-            path_loss[i,j] = f.path_loss(i,j)
-            power[i,j] = gain_bs[i, i, j] * gain_user[i, j, i, j] * path_loss[i,j] * fading[i, j]
+                    gain_bs[i, k, m] = f.find_gain(coords_m, coords_k, coords_m, coords_i, beamwidth_b)
+                    gain_user[i, j, m] = f.find_gain(coords_i, coords_j, coords_i, coords_m, beamwidth_u)
+            path_loss[i,j] = f.path_loss(coords_i,coords_j)
+            power[i,j] = gain_bs[i, i, j] * gain_user[i, j, j] * path_loss[i,j] * fading[i, j]
 
     # ------------------------ Start of optimization program ------------------------------------
     try:
@@ -87,7 +87,6 @@ def optimization():
             if alpha == 1:
                 log_obj[i] = m.addVar(vtype = GRB.CONTINUOUS, name = f'log_C_user#{i}')
 
-
         m.update()
 
         # ----------------- OBJECTIVE ----------------------------------
@@ -98,19 +97,18 @@ def optimization():
         else:
             m.setObjective(quicksum(1/(1-alpha) * (quicksum(SINR[i,j] for j in base_stations))**(1-alpha) for i in users), GRB.MAXIMIZE)
 
-        # m.setObjective(quicksum(quicksum(quicksum(SINR[i,j,t] * x[i,j,t] for t in time_slots) for j in base_stations) for i in users), GRB.MAXIMIZE)
 
         # --------------- CONSTRAINTS -----------------------------
         # Define SINR and interference
         for i in users:
             for j in base_stations:
-                m.addConstr(I[i, j] == quicksum(quicksum(x[k, m] * fading[i, m] * gain_bs[i, k, m] * gain_user[i,j, k,m] * path_loss[i, m] for k in users if k != i) for m in base_stations) , name=f'Interference#{i}#{j}')
-                m.addConstr(sigma_I[i,j] == sigma**2 + I[i,j], name = f'sigma_interference#{i}#{j}')
+                m.addConstr(I[i, j] == quicksum(quicksum(x[k, m] * fading[i, m] * gain_bs[i, k, m] * gain_user[i, j ,m] * path_loss[i, m] for k in users if not (k == i and m == j)) for m in base_stations) , name=f'Interference#{i}#{j}')
+                m.addConstr(sigma_I[i,j] == sigma + I[i,j], name = f'sigma_interference#{i}#{j}')
                 m.addConstr(sigma_I[i,j] * I_inv[i, j] == 1, name=f'helper_constraint#{i}#{j}')
                 m.addConstr(SINR[i,j] == power[i, j] * I_inv[i,j], name=f'find_SINR#{i}#{j}')
                 m.addConstr(C[i,j] == 1 + x[i,j] * SINR[i,j] , name = f'find_C#{i}#{j}')
                 m.addGenConstrLog(C[i,j], logC[i,j], name = f'log_C#{i}#{j}')
-            m.addConstr(C_user[i] == quicksum(logC[i,j] for j in base_stations), name = f'find_C_user#{i}')
+            m.addConstr(C_user[i] == quicksum(W * logC[i,j] for j in base_stations), name = f'find_C_user#{i}')
 
         # Minimum SNR
         # for i in users:
@@ -157,10 +155,17 @@ def optimization():
 
 
     a = np.zeros((number_of_users, number_of_bs))
+    c = np.zeros((number_of_users, number_of_bs))
+    s = np.zeros((number_of_users, number_of_bs))
+    int = np.zeros((number_of_users, number_of_bs))
 
     for i in range(number_of_users):
         for j in range(number_of_bs):
             a[i, j] = x[i, j].X
+            c[i,j] = W * logC[i,j].X
+            int[i,j] = I[i,j].X
 
+    print('Channel capacity:', c)
+    # print('Interference:', int)
     return a
 
