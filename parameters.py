@@ -1,19 +1,32 @@
 import math
 import numpy as np
 
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22',
+          '#17becf']
+
 pi = math.pi
 
-Fading = False
+OneConnection = True
+Closest = True
+
 Beamforming = True
-Sectorized_Antennnas = True
-Hexagonal = False
+Sectorized_Antennnas = False
+Hexagonal = True
+
 Plot_Interference = False
-bs_of_interest = 1
+bs_of_interest = 2
 
-number_of_bs = 2
-number_of_users = 3
+xmin, xmax = 0, 100
+ymin, ymax = 0, 100
 
-alpha = 1
+xDelta = xmax - xmin
+yDelta = ymax - ymin
+
+number_of_bs = 3
+number_of_users = 4
+print(number_of_users)
+
+alpha = 0   #alpha-fair utility - alpha = 0 is sum, alpha = 1 is log, alpha = 2 is fair
 
 def initialise_graph_triangular(radius, xDelta, yDelta):
     xbs, ybs = list(), list()
@@ -36,49 +49,30 @@ def find_coordinates(seed):
 seed = 3
 np.random.seed(seed)
 
-radius = 60  # for triangular grid
+radius = 75  # for triangular grid
 
-xmin, xmax = 0, 100
-ymin, ymax = 0, 100
-
-N_bs = 10        # number of connections per BS
-N_user = 10      # number of connections per user
+N_bs = 72        # number of connections per BS
+N_user = 72      # number of connections per user
 
 beamwidth_u = 2 * pi / N_user
 beamwidth_b = 2 * pi / N_bs
 
 x_bs, y_bs, x_user, y_user = find_coordinates(seed)
+x_bs, y_bs = [25, 75, 50], [25, 25, 25 + math.sqrt(1875)]
 number_of_bs = len(x_bs)
 
-
-critical_distance = 10000
-wavelength = 10e-5
+critical_distance = 100
 
 transmission_power = 10 ** 2.8  #28 dB
 noise = 10 ** 0.7  #7 db
 sigma = noise / transmission_power
 
-W = 73e9      # bandwidth (Either 28 GHz or 73 GHz)
+W = 1#28e9        # bandwidth (Either 28 GHz or 73 GHz)
 
-if W == 28e9:
-    alpha_los = 61.4    #in dB
-    beta_los = 2
-    alpha_nlos = 72     # in dB
-    beta_nlos = 2.92
-elif W == 73e9:
-    alpha_los = 69.8
-    beta_los = 2
-    alpha_nlos = 82.7
-    beta_nlos = 2.69
-
-k_los =  10**(alpha_los/(10 * beta_los))
-k_nlos = 10**(alpha_nlos/(10 * beta_nlos))
-
-if Fading:
-    fading = np.random.gamma(1, 1, (number_of_users, number_of_bs))
-else:
-    fading = np.ones((number_of_users, number_of_bs))
+d0 = 5
+wavelength = 10.71 * 10*(-3)
+k = (4 * pi * d0/ wavelength)**-2
+alpha_nlos = 5.7
+alpha_los = 2
 
 SINR_min = 0
-
-

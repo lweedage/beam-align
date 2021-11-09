@@ -51,7 +51,7 @@ def optimization():
                     gain_bs[i, k, m] = f.find_gain(coords_m, coords_k, coords_m, coords_i, beamwidth_b)
                     gain_user[i, j, m] = f.find_gain(coords_i, coords_j, coords_i, coords_m, beamwidth_u)
             path_loss[i,j] = f.path_loss(coords_i,coords_j)
-            power[i,j] = gain_bs[i, i, j] * gain_user[i, j, j] * path_loss[i,j] * fading[i, j]
+            power[i,j] = gain_bs[i, i, j] * gain_user[i, j, j] * path_loss[i,j]
 
     # ------------------------ Start of optimization program ------------------------------------
     try:
@@ -92,7 +92,7 @@ def optimization():
         # ----------------- OBJECTIVE ----------------------------------
         if alpha == 1:
             m.setObjective(quicksum(log_obj[i] for i in users), GRB.MAXIMIZE)
-        if alpha == 0:
+        elif alpha == 0:
             m.setObjective(quicksum(C_user[i] for i in users), GRB.MAXIMIZE)
         else:
             m.setObjective(quicksum(1/(1-alpha) * (quicksum(SINR[i,j] for j in base_stations))**(1-alpha) for i in users), GRB.MAXIMIZE)
@@ -102,7 +102,7 @@ def optimization():
         # Define SINR and interference
         for i in users:
             for j in base_stations:
-                m.addConstr(I[i, j] == quicksum(quicksum(x[k, m] * fading[i, m] * gain_bs[i, k, m] * gain_user[i, j ,m] * path_loss[i, m] for k in users if not (k == i and m == j)) for m in base_stations) , name=f'Interference#{i}#{j}')
+                m.addConstr(I[i, j] == quicksum(quicksum(x[k, m] * gain_bs[i, k, m] * gain_user[i, j, m] * path_loss[i, m] for k in users if not (k == i and m == j)) for m in base_stations) , name=f'Interference#{i}#{j}')
                 m.addConstr(sigma_I[i,j] == sigma + I[i,j], name = f'sigma_interference#{i}#{j}')
                 m.addConstr(sigma_I[i,j] * I_inv[i, j] == 1, name=f'helper_constraint#{i}#{j}')
                 m.addConstr(SINR[i,j] == power[i, j] * I_inv[i,j], name=f'find_SINR#{i}#{j}')
@@ -113,7 +113,7 @@ def optimization():
         # Minimum SNR
         # for i in users:
         #     for j in base_stations:
-    #             m.addConstr(SINR[i,j,t] >= x[i, j] * SINR_min, name = f'minimum_SNR#{i}#{j}#{t}')
+        #       m.addConstr(SINR[i,j,t] >= x[i, j] * SINR_min, name = f'minimum_SNR#{i}#{j}#{t}')
 
         # Connections per BS
         for j in base_stations:
@@ -130,6 +130,8 @@ def optimization():
         # at least 1 connection:
         for i in users:
             m.addConstr(quicksum(x[i,j] for j in base_stations) >= 1, name=f'1_con_user#{i}')
+            if OneConnection:
+                m.addConstr(quicksum(x[i,j] for j in base_stations) == 1, name=f'1con_user#{i}')
 
 
         if alpha == 1:
@@ -156,7 +158,7 @@ def optimization():
 
     a = np.zeros((number_of_users, number_of_bs))
     c = np.zeros((number_of_users, number_of_bs))
-    s = np.zeros((number_of_users, number_of_bs))
+    total_C = np.zeros(number_of_users)
     int = np.zeros((number_of_users, number_of_bs))
 
     for i in range(number_of_users):
@@ -164,8 +166,9 @@ def optimization():
             a[i, j] = x[i, j].X
             c[i,j] = W * logC[i,j].X
             int[i,j] = I[i,j].X
+            total_C[i] += W * logC[i,j].X
 
-    print('Channel capacity:', c)
-    # print('Interference:', int)
+    print('Channel capacity:', total_C)
+    print('Interference:', int)
     return a
 

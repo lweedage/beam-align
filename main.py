@@ -17,12 +17,22 @@ from matplotlib.cm import ScalarMappable
 
 np.random.seed(seed)
 
-opt_x = new_optimization.optimization()
+if Closest and OneConnection:
+    opt_x = np.zeros((number_of_users, number_of_bs))
+    C = np.zeros(number_of_users)
+    for i in range(number_of_users):
+        j = f.find_closest_bs(i)
+        opt_x[i,j] = 1
+    for i in range(number_of_users):
+        C[i] = f.find_C(i, opt_x)
+    print(C)
+else:
+    opt_x = new_optimization.optimization()
 print(opt_x)
 
 fig, ax = plt.subplots()
-G, colorlist, nodesize, edgesize, labels = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
-f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'black')
+G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
+f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'black', edgecolor = edgecolor)
 plt.show()
 
 
@@ -47,5 +57,5 @@ if Plot_Interference:
     fig.colorbar(ScalarMappable(norm=contour_z1.norm, cmap=contour_z1.cmap))
     plt.xlim((xmin - bound, xmax + bound))
     plt.ylim((ymin - bound, ymax + bound))
-    f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'white')
+    f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'white', edgecolor=edgecolor)
     plt.show()
