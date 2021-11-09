@@ -132,6 +132,8 @@ def optimization():
             m.addConstr(quicksum(x[i,j] for j in base_stations) >= 1, name=f'1_con_user#{i}')
             if OneConnection:
                 m.addConstr(quicksum(x[i,j] for j in base_stations) == 1, name=f'1con_user#{i}')
+            if Closest:
+                m.addConstr(x[i, f.find_closest_bs(i)] >= 1)
 
 
         if alpha == 1:

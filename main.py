@@ -11,29 +11,32 @@ from itertools import product
 import initialization
 import new_optimization
 import os
-from parameters import *
 import functions as f
 from matplotlib.cm import ScalarMappable
 
-np.random.seed(seed)
+for iteration in range(1):
+    np.random.seed(iteration)
+    from parameters import *
 
-if Closest and OneConnection:
-    opt_x = np.zeros((number_of_users, number_of_bs))
-    C = np.zeros(number_of_users)
-    for i in range(number_of_users):
-        j = f.find_closest_bs(i)
-        opt_x[i,j] = 1
-    for i in range(number_of_users):
-        C[i] = f.find_C(i, opt_x)
-    print(C)
-else:
-    opt_x = new_optimization.optimization()
-print(opt_x)
+    if Closest and OneConnection:
+        opt_x = np.zeros((number_of_users, number_of_bs))
+        C = np.zeros(number_of_users)
+        for i in range(number_of_users):
+            j = f.find_closest_bs(i)
+            opt_x[i,j] = 1
+        print(opt_x)
+        for i in range(number_of_users):
+            C[i] = f.find_C(i, opt_x)
+        print(C)
+    else:
+        opt_x = new_optimization.optimization()
+    print(opt_x)
+    print('Average number of connections:', np.sum(opt_x)/number_of_users)
 
-fig, ax = plt.subplots()
-G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
-f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'black', edgecolor = edgecolor)
-plt.show()
+    fig, ax = plt.subplots()
+    G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
+    f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'black', edgecolor = edgecolor)
+    plt.show()
 
 
 if Plot_Interference:
