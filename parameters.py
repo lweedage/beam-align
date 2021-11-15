@@ -60,17 +60,17 @@ x_bs, y_bs = [25, 75, 50], [25, 25, 25 + math.sqrt(1875)]
 
 number_of_bs = len(x_bs)
 
-critical_distance = 100
+critical_distance = 50
 
 transmission_power = 10 ** 2.8  #28 dB
 noise = 10 ** 0.7  #7 db
 sigma = noise / transmission_power
 
-W = 1000 #28e9        # bandwidth (Either 28 GHz or 73 GHz)
+W = 28e9        # bandwidth (Either 28 GHz or 73 GHz)
 
 d0 = 5
 wavelength = 10.71 * 10**(-3)
-k = (4 * pi * d0/ wavelength)**-2
+k = (4 * pi * d0/ wavelength)**2
 alpha_nlos = 5.7
 alpha_los = 2
 
