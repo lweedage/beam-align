@@ -6,8 +6,6 @@ import seaborn
 from parameters import *
 import networkx as nx
 
-np.random.seed(seed)
-
 pi = math.pi
 
 def user_coords(i):
@@ -81,7 +79,7 @@ def path_loss(user, bs):
     p_nlos = 1 - p_los
     if r > d0:
         l_los =  k * (r/d0) ** (alpha_los)
-        l_nlos = k * (r/d0)**(alpha_nlos)
+        l_nlos = k * (r/d0) ** (alpha_nlos)
     else:
         l_los = k
         l_nlos = k
@@ -96,8 +94,8 @@ def find_C(i, x):
             coords_i = user_coords(i)
             coords_j = bs_coords(j)
             power = find_gain(coords_i, coords_j, coords_j, coords_i, beamwidth_b) * find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u) / path_loss(coords_i, coords_j)
+
             interference = find_interference(coords_i, coords_j, x)
-            print(i, j, interference)
     return W * math.log(1 + power/(sigma + interference))
 
 def make_graph(xbs, ybs, xu, yu, x, number_of_users):

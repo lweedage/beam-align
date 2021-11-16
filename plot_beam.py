@@ -60,10 +60,12 @@ def path_loss(r):
     else:
         l_los = k
         l_nlos = k
-    return p_los * l_los + p_nlos * l_nlos
+    return 20 * math.log10(p_los * l_los + p_nlos * l_nlos)
 
 distances = np.arange(0, 100, 1)
 y = [path_loss(x) for x in distances]
 plt.plot(distances, y)
-plt.yscale('log')
+plt.xlabel('Distance $r_{ij}$')
+plt.ylabel('Path loss (dB)')
+# plt.yscale('log')
 plt.show()
