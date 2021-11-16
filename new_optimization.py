@@ -51,7 +51,7 @@ def optimization():
                     gain_bs[i, k, m] = f.find_gain(coords_m, coords_k, coords_m, coords_i, beamwidth_b)
                     gain_user[i, j, m] = f.find_gain(coords_i, coords_j, coords_i, coords_m, beamwidth_u)
             path_loss[i,j] = f.path_loss(coords_i,coords_j)
-            power[i,j] = gain_bs[i, i, j] * gain_user[i, j, j] * path_loss[i,j]
+            power[i,j] = gain_bs[i, i, j] * gain_user[i, j, j] / path_loss[i,j]
 
     # ------------------------ Start of optimization program ------------------------------------
     try:
@@ -102,7 +102,7 @@ def optimization():
         # Define SINR and interference
         for i in users:
             for j in base_stations:
-                m.addConstr(I[i, j] == quicksum(quicksum(x[k, m] * gain_bs[i, k, m] * gain_user[i, j, m] * path_loss[i, m] for k in users if not (k == i and m == j)) for m in base_stations) , name=f'Interference#{i}#{j}')
+                m.addConstr(I[i, j] == quicksum(quicksum(x[k, m] * gain_bs[i, k, m] * gain_user[i, j, m] / path_loss[i, m] for k in users if not (k == i and m == j)) for m in base_stations) , name=f'Interference#{i}#{j}')
                 m.addConstr(sigma_I[i,j] == sigma + I[i,j], name = f'sigma_interference#{i}#{j}')
                 m.addConstr(sigma_I[i,j] * I_inv[i, j] == 1, name=f'helper_constraint#{i}#{j}')
                 m.addConstr(SINR[i,j] == power[i, j] * I_inv[i,j], name=f'find_SINR#{i}#{j}')

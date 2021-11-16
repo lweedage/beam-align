@@ -26,7 +26,7 @@ number_of_bs = 3
 number_of_users = 4
 print(number_of_users)
 
-alpha = 0   #alpha-fair utility - alpha = 0 is sum, alpha = 1 is log, alpha = 2 is fair
+alpha = 1   #alpha-fair utility - alpha = 0 is sum, alpha = 1 is log, alpha = 2 is fair
 
 def initialise_graph_triangular(radius, xDelta, yDelta):
     xbs, ybs = list(), list()
@@ -67,11 +67,11 @@ transmission_power = 10 ** 2.8  #28 dB
 noise = 10 ** 0.7  #7 db
 sigma = noise / transmission_power
 
-W = 1#28e9        # bandwidth (Either 28 GHz or 73 GHz)
+W = 28e9        # bandwidth (Either 28 GHz or 73 GHz)
 
 d0 = 5
 wavelength = 10.71 * 10*(-3)
-k = (4 * pi * d0/ wavelength)**-2
+k = (4 * pi * d0/ wavelength)**2
 alpha_nlos = 5.7
 alpha_los = 2
 

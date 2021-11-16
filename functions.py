@@ -80,8 +80,8 @@ def path_loss(user, bs):
 
     p_nlos = 1 - p_los
     if r > d0:
-        l_los =  k * (r/d0) ** (-alpha_los)
-        l_nlos = k * (r/d0)**(-alpha_nlos)
+        l_los =  k * (r/d0) ** (alpha_los)
+        l_nlos = k * (r/d0)**(alpha_nlos)
     else:
         l_los = k
         l_nlos = k
@@ -95,7 +95,7 @@ def find_C(i, x):
         if x[i,j] == 1:
             coords_i = user_coords(i)
             coords_j = bs_coords(j)
-            power = find_gain(coords_i, coords_j, coords_j, coords_i, beamwidth_b) * find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u) * path_loss(coords_i, coords_j)
+            power = find_gain(coords_i, coords_j, coords_j, coords_i, beamwidth_b) * find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u) / path_loss(coords_i, coords_j)
             interference = find_interference(coords_i, coords_j, x)
             print(i, j, interference)
     return W * math.log(1 + power/(sigma + interference))
