@@ -1,3 +1,4 @@
 *.lp
 __pycache__
 .idea
+*.png
