@@ -94,7 +94,6 @@ def find_C(i, x):
             coords_i = user_coords(i)
             coords_j = bs_coords(j)
             power = find_gain(coords_i, coords_j, coords_j, coords_i, beamwidth_b) * find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u) / path_loss(coords_i, coords_j)
-
             interference = find_interference(coords_i, coords_j, x)
     return W * math.log(1 + power/(sigma + interference))
 
