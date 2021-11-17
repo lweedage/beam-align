@@ -13,8 +13,8 @@ Beamforming = True
 Sectorized_Antennnas = True
 Hexagonal = True
 
-Plot_Interference = False
-bs_of_interest = 4
+Plot_Interference = True
+bs_of_interest = 0
 
 xmin, xmax = 0, 49
 ymin, ymax = 0, 49
@@ -24,9 +24,9 @@ yDelta = ymax - ymin
 
 
 number_of_bs = 7
-number_of_users = 10
+number_of_users = 5
 
-alpha = 1   #alpha-fair utility - alpha = 0 is sum, alpha = 1 is log, alpha = 2 is fair
+alpha = 0   #alpha-fair utility - alpha = 0 is sum, alpha = 1 is log, alpha = 2 is fair
 
 def initialise_graph_triangular(radius, xDelta, yDelta):
     xbs, ybs = list(), list()
@@ -59,7 +59,6 @@ beamwidth_b = math.radians(10)
 x_bs, y_bs, x_user, y_user = find_coordinates()
 # x_bs, y_bs = [25, 75, 50], [25, 25, 25 + math.sqrt(1875)]
 # x_user, y_user = [10, 30], [10, 10]
-
 number_of_bs = len(x_bs)
 
 critical_distance = 100
@@ -80,6 +79,4 @@ alpha_los = 2.5
 SINR_min = 0
 
 directions_bs = range(int(2*pi/beamwidth_b))
-
-print(directions_bs)
 directions_u = range(int(2*pi/beamwidth_u))

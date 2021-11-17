@@ -147,12 +147,12 @@ def optimization():
         #     m.addConstr(quicksum(SINR[i,j] for j in base_stations) >= min_rate_SINR, name='rate_requirement')
 
         # at least 1 connection:
-        for i in users:
-            m.addConstr(quicksum(x[i,j] for j in base_stations) >= 1, name=f'1_con_user#{i}')
-            if OneConnection:
-                m.addConstr(quicksum(x[i,j] for j in base_stations) == 1, name=f'1con_user#{i}')
-            if Closest:
-                m.addConstr(x[i, f.find_closest_bs(i)] >= 1)
+        # for i in users:
+            # m.addConstr(quicksum(x[i,j] for j in base_stations) >= 1, name=f'1_con_user#{i}')
+            # if OneConnection:
+            #     m.addConstr(quicksum(x[i,j] for j in base_stations) == 1, name=f'1con_user#{i}')
+            # if Closest:
+            #     m.addConstr(x[i, f.find_closest_bs(i)] >= 1)
 
 
         if alpha == 1:
@@ -185,6 +185,7 @@ def optimization():
     total_C = np.zeros(number_of_users)
     int = np.zeros((number_of_users, number_of_bs))
     angles = np.zeros((number_of_users, len(directions_u)))
+    bs_angles = np.zeros((number_of_bs, len(directions_bs)))
 
     for i in range(number_of_users):
         for j in range(number_of_bs):
@@ -194,8 +195,13 @@ def optimization():
             total_C[i] += W * logC[i,j].X
         for d in directions_u:
             angles[i, d] = angles_u[i,d].X
-    print(angles)
-    print(a)
-    # print('Channel capacity:', total_C)
+    for j in range(number_of_bs):
+        for d in directions_bs:
+            bs_angles[j,d] = angles_bs[j,d].X
+    # print(angles)
+    # print(a)
+    print(bs_angles)
+    print('Interference', int)
+    print('Channel capacity:', total_C)
     return a, total_C
 

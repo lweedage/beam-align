@@ -87,8 +87,8 @@ def path_loss(user, bs):
 
     p_nlos = 1 - p_los
     if r > d0:
-        l_los =  k * (r/d0) ** (-alpha_los)
-        l_nlos = k * (r/d0) ** (-alpha_nlos)
+        l_los =  k * (r/d0) ** (alpha_los)
+        l_nlos = k * (r/d0) ** (alpha_nlos)
     else:
         l_los = k
         l_nlos = k
@@ -118,7 +118,7 @@ def make_graph(xbs, ybs, xu, yu, x, number_of_users):
         G.add_node(node, x = xbs[node], y = ybs[node])
         colorlist.append(colors[node])
         nodesize.append(30)
-        # labels[node] = f'BS{node}'
+        labels[node] = f'BS{node}'
     for node in range(len(xu)):
         G.add_node(node + number_of_bs, x =xu[node], y = yu[node])
         colorlist.append('w')
