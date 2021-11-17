@@ -71,7 +71,9 @@ def optimization():
         log_obj = {}
         logC = {}
 
-
+        maxmin_obj = {}
+        angles_u = {}
+        angles_bs = {}
 
         for i in users:
             for j in base_stations:
@@ -86,7 +88,14 @@ def optimization():
 
             if alpha == 1:
                 log_obj[i] = m.addVar(vtype = GRB.CONTINUOUS, name = f'log_C_user#{i}')
-
+            elif alpha == 2:
+                maxmin_obj[i] = m.addVar(vtype= GRB.CONTINUOUS, name = f'maxmin_C_user#{i}')
+        for j in base_stations:
+            for d in directions_bs:
+                angles_bs[j, d] = m.addVar(vtype= GRB.BINARY, name = f'angle_bs#{j}#{d}')
+        for i in users:
+            for d in directions_u:
+                angles_u[i, d] = m.addVar(vtype=GRB.BINARY, name = f'angle_u#{i}#{d}')
         m.update()
 
         # ----------------- OBJECTIVE ----------------------------------
@@ -95,7 +104,7 @@ def optimization():
         elif alpha == 0:
             m.setObjective(quicksum(C_user[i] for i in users), GRB.MAXIMIZE)
         else:
-            m.setObjective(quicksum(1/(1-alpha) * (quicksum(SINR[i,j] for j in base_stations))**(1-alpha) for i in users), GRB.MAXIMIZE)
+            m.setObjective(1/(1-alpha) * quicksum(maxmin_obj[i] for i in users), GRB.MAXIMIZE)
 
 
         # --------------- CONSTRAINTS -----------------------------
@@ -110,6 +119,16 @@ def optimization():
                 m.addGenConstrLog(C[i,j], logC[i,j], name = f'log_C#{i}#{j}')
             m.addConstr(C_user[i] == quicksum(W * logC[i,j] for j in base_stations), name = f'find_C_user#{i}')
 
+        for i in users:
+            for d in directions_u:
+                m.addConstr(angles_u[i, d] == quicksum(x[i,j] for j in base_stations if f.find_beam_number(f.find_bore(f.user_coords(i), f.bs_coords(j), beamwidth_u), beamwidth_u) == d), name = f'direction#{i}#{j}')
+                m.addConstr(angles_u[i, d] <= 1)
+
+
+        for j in base_stations:
+            for d in directions_bs:
+                m.addConstr(angles_bs[j, d] == quicksum(x[i,j] for i in users if f.find_beam_number(f.find_bore(f.bs_coords(j), f.user_coords(i), beamwidth_b), beamwidth_b) == d), name = f'direction#{i}#{j}')
+                m.addConstr(angles_bs[j, d] <= 1)
         # Minimum SNR
         # for i in users:
         #     for j in base_stations:
@@ -140,6 +159,9 @@ def optimization():
             for i in users:
                 m.addGenConstrLog(C_user[i], log_obj[i], name=f'log_constraint#{i}')
 
+        elif alpha >= 2:
+            for i in users:
+                m.addGenConstrPow(C_user[i], maxmin_obj[i], 1 - alpha, name = f'power_constraint#{i}')
 
         # --------------------- OPTIMIZE MODEL -------------------------
         # m.computeIIS()
@@ -162,6 +184,7 @@ def optimization():
     c = np.zeros((number_of_users, number_of_bs))
     total_C = np.zeros(number_of_users)
     int = np.zeros((number_of_users, number_of_bs))
+    angles = np.zeros((number_of_users, len(directions_u)))
 
     for i in range(number_of_users):
         for j in range(number_of_bs):
@@ -169,8 +192,10 @@ def optimization():
             c[i,j] = W * logC[i,j].X
             int[i,j] = I[i,j].X
             total_C[i] += W * logC[i,j].X
-
-    print('Channel capacity:', total_C)
-    print('Interference:', int)
-    return a
+        for d in directions_u:
+            angles[i, d] = angles_u[i,d].X
+    print(angles)
+    print(a)
+    # print('Channel capacity:', total_C)
+    return a, total_C
 

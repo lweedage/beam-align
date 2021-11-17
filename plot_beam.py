@@ -55,8 +55,8 @@ def path_loss(r):
 
     p_nlos = 1 - p_los
     if r > d0:
-        l_los =  k * (r/d0) ** (-alpha_los)
-        l_nlos = k * (r/d0)**(-alpha_nlos)
+        l_los =  k * (r/d0) **(alpha_los)
+        l_nlos = k * (r/d0)**(alpha_nlos)
     else:
         l_los = k
         l_nlos = k
