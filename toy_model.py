@@ -9,8 +9,8 @@ try:
     # m.setParam('NonConvex', 2)
     # m.Params.LogToConsole = 0
 
-    n = 5
-    k = 3
+    n = 1
+    k = 1
 
     # -------------- VARIABLES -----------------------------------
     x = {}
@@ -59,11 +59,8 @@ except gp.GurobiError as e:
     print('Error code ' + str(e.errno) + ': ' + str(e))
     # sys.exit()
 
-# except AttributeError:
-#     print('Encountered an attribute error')
-    # sys.exit()
 
-# print([x[i].X for i in range(n)])
+print([x[i].X for i in range(n)])
 
 
 

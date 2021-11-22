@@ -15,8 +15,8 @@ def bs_coords(j):
     return (x_bs[j], y_bs[j])
 
 def find_distance_list(user, xbs, ybs):
-    x = np.minimum((user[0] - np.array(xbs)) % xDelta, (np.array(xbs) - user[0]) % xDelta)
-    y = np.minimum((user[1] - np.array(ybs)) % yDelta, (np.array(ybs) - user[1]) % yDelta)
+    x = (user[0] - np.array(xbs))
+    y = (user[1] - np.array(ybs))
     return np.sqrt(x ** 2 + y ** 2)
 
 def find_closest_bs(i):
@@ -28,9 +28,9 @@ def find_gain(bore_1, bore_2, geo_1, geo_2, beamwidth):
     geo = find_geo(geo_1, geo_2)
     alpha = abs(bore - geo)
     if beamwidth/2 < alpha < 2*pi - beamwidth/2:
-        return 10**((-0.4111 * np.log(beamwidth/pi * 180) - 10.579)/10)
+        return 10**((-0.4111*math.log(beamwidth) - 10.579)/10)
     else:
-        return 10**((20 * math.log10(1.6162/(math.sin(beamwidth/2))) - (3.01 * (2*alpha/beamwidth)**2))/10)
+        return 10**((20 * math.log10(1.6162/(math.sin(beamwidth/2))) - 3.01*(2 * alpha / beamwidth)**2)/10)
 
 def find_beam(radians, beamwidth):
     angles = [beamwidth * i for i in range(int(-pi/beamwidth), int(pi/beamwidth))]
@@ -52,11 +52,9 @@ def find_beam_number(radians, beamwidth):
 
 def find_bore(coord_1, coord_2, beamwidth):
     radians = find_geo(coord_1, coord_2)
-    if Sectorized_Antennnas:
-        angle = find_beam(radians, beamwidth)
-        return angle
-    else:
-        return radians
+    angle = find_beam(radians, beamwidth)
+    return angle
+
 
 def find_geo(coord_1, coord_2):
     dy = coord_2[1] - coord_1[1]
@@ -75,8 +73,17 @@ def find_interference(coords_i, coords_j, x):
                     gain_bs = find_gain(coords_m, coords_k, coords_m, coords_i, beamwidth_b)
                     gain_user = find_gain(coords_i, coords_j, coords_i, coords_m, beamwidth_u)
                     path_los = path_loss(coords_i, coords_m)
-                    interference += x[k, m] * gain_bs * gain_user / path_los
+                    interference += (transmission_power * gain_bs * gain_user / path_los)
     return interference
+
+def find_initial_interference(i, j, k, m):
+    if not (k == i and m == j):
+        gain_bs = find_gain(m, k, m, i, beamwidth_b)
+        gain_user = find_gain(i, j, i, m, beamwidth_u)
+        path_los = path_loss(i, m)
+        return gain_bs * gain_user / path_los
+    else:
+        return 0
 
 def path_loss(user, bs):
     r = find_distance(user, bs)
@@ -97,13 +104,26 @@ def path_loss(user, bs):
 def find_distance(user, bs):
         return math.sqrt((user[0] - bs[0]) ** 2 + (user[1] - bs[1]) ** 2)
 
+def find_SINR(i, j, x):
+    coords_i = user_coords(i)
+    coords_j = bs_coords(j)
+    power = transmission_power * find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b) * find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u) / path_loss(coords_i, coords_j)
+    interference = find_interference(coords_i, coords_j, x)
+    return power/(sigma + interference)
+
 def find_C(i, x):
     for j in range(number_of_bs):
+        transmission_power = 1
+        sigma = 1
         if x[i,j] == 1:
             coords_i = user_coords(i)
             coords_j = bs_coords(j)
-            power = find_gain(coords_i, coords_j, coords_j, coords_i, beamwidth_b) * find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u) / path_loss(coords_i, coords_j)
+            power = transmission_power * find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b) * find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u) / path_loss(coords_i, coords_j)
             interference = find_interference(coords_i, coords_j, x)
+    print('power =', power)
+    print('sigma =', sigma)
+    print(1 + power/(sigma+interference))
+    print('log', math.log(1 + power/(sigma+interference)))
     return W * math.log(1 + power/(sigma + interference))
 
 def make_graph(xbs, ybs, xu, yu, x, number_of_users):
@@ -141,3 +161,6 @@ def draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color, edgecolor):
                            node_color=colorlist, ax=ax)
     nx.draw_networkx_edges(G, pos, edge_color=edgecolor, alpha=0.5, width=edgesize)
     nx.draw_networkx_labels(G, pos, labels, font_size=10, font_color = color)
+
+def fairness(x):
+    return (sum(x))**2 / (len(x)* sum([i**2 for i in x]))
