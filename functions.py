@@ -23,14 +23,21 @@ def find_closest_bs(i):
     indices = find_distance_list(user_coords(i), x_bs, y_bs).argsort()
     return indices[0]
 
-def find_gain(bore_1, bore_2, geo_1, geo_2, beamwidth):
-    bore = find_bore(bore_1, bore_2, beamwidth)
+def find_gain(bore_1, bore_2, geo_1, geo_2, beamwidth_ml):
+    bore = find_bore(bore_1, bore_2, beamwidth_ml)
     geo = find_geo(geo_1, geo_2)
-    alpha = abs(bore - geo)
-    if beamwidth/2 < alpha < 2*pi - beamwidth/2:
-        return 10**((-0.4111*math.log(beamwidth) - 10.579)/10)
+    alpha = math.degrees(abs(bore-geo))
+    if alpha > 180:
+        alpha = alpha - 360
+    beamwidth_ml = math.degrees(beamwidth_ml)
+    w = beamwidth_ml / 2.58
+    G0 = 20 * math.log10(1.62 / math.sin(math.radians(w / 2)))
+
+    if 0 <= abs(alpha) <= beamwidth_ml / 2:
+        return 10 ** ((G0 - 3.01 * (2 * alpha / w) ** 2)/10)
     else:
-        return 10**((20 * math.log10(1.6162/(math.sin(beamwidth/2))) - 3.01*(2 * alpha / beamwidth)**2)/10)
+        return 10**((-0.4111 * math.log(math.degrees(w)) - 10.579)/10)
+
 
 def find_beam(radians, beamwidth):
     angles = [beamwidth * i for i in range(int(-pi/beamwidth), int(pi/beamwidth))]
@@ -109,22 +116,24 @@ def find_SINR(i, j, x):
     coords_j = bs_coords(j)
     power = transmission_power * find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b) * find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u) / path_loss(coords_i, coords_j)
     interference = find_interference(coords_i, coords_j, x)
-    return power/(sigma + interference)
+    return 10 * math.log10(power/(sigma + interference))
+
+def find_SNR(i, j):
+    coords_i = user_coords(i)
+    coords_j = bs_coords(j)
+    power = transmission_power * find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b) * find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u) / path_loss(coords_i, coords_j)
+    return 10 * math.log10(power/(sigma))
 
 def find_C(i, x):
+    C = 0
     for j in range(number_of_bs):
-        transmission_power = 1
-        sigma = 1
         if x[i,j] == 1:
             coords_i = user_coords(i)
             coords_j = bs_coords(j)
             power = transmission_power * find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b) * find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u) / path_loss(coords_i, coords_j)
             interference = find_interference(coords_i, coords_j, x)
-    print('power =', power)
-    print('sigma =', sigma)
-    print(1 + power/(sigma+interference))
-    print('log', math.log(1 + power/(sigma+interference)))
-    return W * math.log(1 + power/(sigma + interference))
+            C +=  W * math.log(1 + power/(sigma + interference))
+    return C
 
 def make_graph(xbs, ybs, xu, yu, x, number_of_users):
     G = nx.Graph()

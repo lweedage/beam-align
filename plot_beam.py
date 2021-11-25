@@ -15,7 +15,7 @@ from parameters import *
 import functions as f
 
 
-x_bs, y_bs, x_user, y_user = [50], [10], [50], [90]
+x_bs, y_bs, x_user, y_user = [25], [10], [25], [50]
 opt_x = np.ones((1, 1))
 
 # delta = 500
@@ -32,18 +32,19 @@ opt_x = np.ones((1, 1))
 # for x in range(delta):
 #     for y in range(delta):
 #         coords_k = (xc[0,x], yc[y, 0])
-#         gain[y,x] = f.find_gain(coords_j, coords_k, coords_j, coords_i, beamwidth_b)
+#         gain[y,x] = 10 * math.log10(f.find_gain(coords_j, coords_k, coords_j, coords_i, beamwidth_b))
 #
 # fig, ax = plt.subplots()
 # vmin, vmax = 0, np.max(gain)
 # contour_z1 = ax.pcolormesh(x_grid, y_grid, gain, vmin = vmin, vmax = vmax, cmap = 'turbo')
 # fig.colorbar(ScalarMappable(norm=contour_z1.norm, cmap=contour_z1.cmap))
 #
-# G, colorlist, nodesize, edgesize, labels = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, 1)
-# f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'white')
+# G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, 1)
+# f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'white', edgecolor= 'white')
 # plt.xlim((xmin - bound, xmax + bound))
 # plt.ylim((ymin - bound, ymax + bound))
 # plt.plot(x_bs, y_bs)
+# contour_z1.set_label('gain (dB)')
 # plt.plot(x_user, y_user)
 # plt.show()
 
@@ -55,17 +56,27 @@ def path_loss(r):
 
     p_nlos = 1 - p_los
     if r > d0:
-        l_los =  k * (r/d0) **(alpha_los)
-        l_nlos = k * (r/d0)**(alpha_nlos)
+        l_los = k * (r / d0) ** (alpha_los)
+        l_nlos = k * (r / d0) ** (alpha_nlos)
     else:
         l_los = k
         l_nlos = k
-    return 20 * math.log10(p_los * l_los + p_nlos * l_nlos)
+    return p_los * l_los + p_nlos * l_nlos
+
+def find_gain(alpha, w):
+    beamwidth_ml = w * 2.58
+    G0 = 20 * math.log10(1.62 / math.sin(math.radians(w / 2)))
+    print(G0)
+    if 0 <= alpha <= beamwidth_ml / 2:
+        return G0 - 3.01*(2 * alpha / w)**2
+    else:
+        return -0.4111 * math.log(math.degrees(w)) - 10.579
+
 
 distances = np.arange(0, 100, 1)
-y = [path_loss(x) for x in distances]
+y = [-10*math.log10(path_loss(x)) for x in distances]
 plt.plot(distances, y)
-plt.xlabel('Distance $r_{ij}$')
+plt.xlabel('$R_{ij}$')
 plt.ylabel('Path loss (dB)')
 # plt.yscale('log')
 plt.show()

@@ -19,29 +19,44 @@ for iteration in range(1):
     np.random.seed(5)
     from parameters import *
 
-    if Closest and OneConnection:
-        opt_x = np.ones((number_of_users, number_of_bs))
-        opt_x[1, 0] = 0
+    opt_x = np.zeros((number_of_users, number_of_bs))
 
+    SINR = np.zeros((number_of_users, number_of_bs))
+    SNR = np.zeros((number_of_users, number_of_bs))
+
+    for i in range(number_of_users):
+        j = f.find_closest_bs(i)
+        opt_x[i,j] = 1
+    for i in range(number_of_users):
+        for j in range(number_of_bs):
+            if opt_x[i,j] > 0:
+                SINR[i, j] = f.find_SINR(i, j, opt_x)
+    print('closest:')
+    print(sum(np.transpose(SINR)))
+
+    print('Average number of connections:', np.sum(opt_x) / number_of_users)
+
+    for alpha in [0, 1, 2]:
+        opt_x, capacity = new_optimization.optimization(alpha)
         SINR = np.zeros((number_of_users, number_of_bs))
-        for i in range(number_of_users):
-            j = f.find_closest_bs(i)
-            opt_x[i,j] = 1
+
         for i in range(number_of_users):
             for j in range(number_of_bs):
-                if opt_x[i,j] > 0.5:
+                if opt_x[i, j] > 0:
                     SINR[i, j] = f.find_SINR(i, j, opt_x)
-        print(SINR)
-
         print(sum(np.transpose(SINR)))
-    else:
-        opt_x, capacity = new_optimization.optimization()
-    print('Average number of connections:', np.sum(opt_x)/number_of_users)
 
-    fig, ax = plt.subplots()
-    G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
-    f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'black', edgecolor = edgecolor)
-    plt.show()
+        print('Average number of connections:', np.sum(opt_x)/number_of_users)
+
+        fig, ax = plt.subplots()
+        G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
+        f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'black', edgecolor = edgecolor)
+        plt.show()
+        #
+        # C = np.zeros(number_of_users)
+        # for i in range(number_of_users):
+        #     C[i] = f.find_C(i, opt_x)
+        # print(C)
 
 
 if Plot_Interference:

@@ -20,8 +20,9 @@ ymin, ymax = 0, 25
 xDelta = xmax - xmin
 yDelta = ymax - ymin
 
-number_of_bs = 1
-number_of_users = 15
+
+number_of_users = 10
+
 
 def initialise_graph_triangular(radius, xDelta, yDelta):
     xbs, ybs = list(), list()
@@ -33,7 +34,7 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
     return xbs, ybs
 
 
-def find_coordinates(seed=5):
+def find_coordinates(seed=2):
     np.random.seed(seed)
     if Hexagonal:
         x_bs, y_bs = initialise_graph_triangular(radius, xmax, ymax)
@@ -56,22 +57,24 @@ x_bs, y_bs, x_user, y_user = find_coordinates()
 
 number_of_bs = len(x_bs)
 
-critical_distance = 100
+critical_distance = 50
 
-transmission_power = 1 #10 ** 2.8  # 28 dB
-noise = 10 ** 0.7  # 7 db
-sigma = 1 #noise
+transmission_power = 10 ** 3.5  # 35 dB
+noise = 10 #28e9 * 10**(-16.4)  # from Elshaer,2016
+print(noise)
+sigma = noise
 
-W = 28e9  # bandwidth (Either 28 GHz or 73 GHz)
+W = 28  # bandwidth (Either 28 GHz or 73 GHz)
 
-d0 = 5
+d0 = 1
 wavelength = 10.71 * 10 ** (-3)
 
 k = (4 * pi * d0 / wavelength) ** 2
+
 alpha_nlos = 4
 alpha_los = 2
 
-SINR_min = 0
+SINR_min = 10**(0.1)
 
 directions_bs = range(int(2 * pi / beamwidth_b))
 directions_u = range(int(2 * pi / beamwidth_u))
