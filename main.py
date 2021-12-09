@@ -16,48 +16,50 @@ import functions as f
 from matplotlib.cm import ScalarMappable
 
 for iteration in range(1):
-    np.random.seed(5)
+    np.random.seed(10)
     from parameters import *
 
-    opt_x = np.zeros((number_of_users, number_of_bs))
-
-    SINR = np.zeros((number_of_users, number_of_bs))
-    SNR = np.zeros((number_of_users, number_of_bs))
-
-    for i in range(number_of_users):
-        j = f.find_closest_bs(i)
-        opt_x[i,j] = 1
-    for i in range(number_of_users):
-        for j in range(number_of_bs):
-            if opt_x[i,j] > 0:
-                SINR[i, j] = f.find_SINR(i, j, opt_x)
-    print('closest:')
-    print(sum(np.transpose(SINR)))
-
-    print('Average number of connections:', np.sum(opt_x) / number_of_users)
+    # opt_x = np.zeros((number_of_users, number_of_bs))
+    #
+    # SINR = np.zeros((number_of_users, number_of_bs))
+    # SNR = np.zeros((number_of_users, number_of_bs))
+    #
+    # for i in range(number_of_users):
+    #     j = f.find_closest_bs(i)
+    #     opt_x[i,j] = 1
+    # for i in range(number_of_users):
+    #     for j in range(number_of_bs):
+    #         if opt_x[i,j] > 0:
+    #             SINR[i, j] = f.find_SINR(i, j, opt_x)
+    #             SNR[i,j] = f.find_SNR(i, j)
+    # print(sum(np.transpose(SINR)))
+    # f.plot_SINR(sum(np.transpose(SINR)), sum(np.transpose(SNR)),  'closest', colors[3])
 
     for alpha in [0, 1, 2]:
         opt_x, capacity = new_optimization.optimization(alpha)
         SINR = np.zeros((number_of_users, number_of_bs))
-
+        SNR = np.zeros((number_of_users, number_of_bs))
         for i in range(number_of_users):
             for j in range(number_of_bs):
                 if opt_x[i, j] > 0:
                     SINR[i, j] = f.find_SINR(i, j, opt_x)
+                    SNR[i, j] = f.find_SNR(i, j)
         print(sum(np.transpose(SINR)))
 
         print('Average number of connections:', np.sum(opt_x)/number_of_users)
 
-        fig, ax = plt.subplots()
-        G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
-        f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'black', edgecolor = edgecolor)
-        plt.show()
-        #
-        # C = np.zeros(number_of_users)
-        # for i in range(number_of_users):
-        #     C[i] = f.find_C(i, opt_x)
-        # print(C)
+        f.plot_SINR(sum(np.transpose(SINR)), str('$\\alpha = $' + str(alpha)), colors[alpha])
 
+        # fig, ax = plt.subplots()
+        # G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
+        # f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'black', edgecolor = edgecolor)
+        # bound = 0.1 * xDelta
+        # plt.xlim((xmin - bound, xmax + bound))
+        # plt.ylim((ymin - bound, ymax + bound))
+        # plt.title(str('$\\alpha = $' + str(alpha)))
+        # plt.show()
+    plt.legend()
+    plt.show()
 
 if Plot_Interference:
     delta = 200
@@ -83,6 +85,7 @@ if Plot_Interference:
         plt.ylim((ymin - bound, ymax + bound))
         f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'white', edgecolor=edgecolor)
         plt.show()
+
 
 degree_U, degree_BS, link_distances, link_distances_MC = analysis.find_metrics(opt_x)
 #

@@ -36,30 +36,7 @@ def number_of_connections(channel_capacity):
 def optimization(alpha):
     # alpha = input('Alpha = ')
     # alpha = int(alpha)
-    users = range(number_of_users)
-    base_stations = range(number_of_bs)
 
-    gain_bs = np.zeros((number_of_users, number_of_users, number_of_bs))
-    gain_user = np.zeros((number_of_users, number_of_bs, number_of_bs))
-    power = np.zeros((number_of_users, number_of_bs))
-    path_loss = np.zeros((number_of_users, number_of_bs))
-    interference = np.zeros((number_of_users, number_of_bs, number_of_users, number_of_bs))
-
-    for i in users:
-        coords_i = f.user_coords(i)
-        for j in base_stations:
-            coords_j = f.bs_coords(j)
-            for m in base_stations:
-                coords_m = f.bs_coords(m)
-                path_loss[i, m] = f.path_loss(coords_i, coords_m)
-                for k in users:
-                    coords_k = f.user_coords(k)
-                    gain_bs[i, k, m] = f.find_gain(coords_m, coords_k, coords_m, coords_i, beamwidth_b)
-                    gain_user[i, j, m] = f.find_gain(coords_i, coords_j, coords_i, coords_m, beamwidth_u)
-                    if not (i == k and j == m):
-                        interference[i, j, k, m] = transmission_power * gain_bs[i, k, m] * gain_user[i, j, m] / \
-                                                   path_loss[i, m]
-            power[i, j] = transmission_power * gain_bs[i, i, j] * gain_user[i, j, j] / path_loss[i, j]
     # ------------------------ Start of optimization program ------------------------------------
     try:
         m = gp.Model("Model 1")
@@ -72,7 +49,7 @@ def optimization(alpha):
         SINR_user = {}
         C = {}
         log_C = {}
-        C_user = {}
+        SE_user = {}
         I = {}
         I_inv = {}
         sigma_I = {}
@@ -94,11 +71,11 @@ def optimization(alpha):
                 log_C[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'logC#{i}#{j}')
 
             SINR_user[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'SINR_user#{i}')
-            C_user[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'C_user#{i}')
-            if alpha == 1:
-                log_obj[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'log_obj_user#{i}')
-            elif alpha >= 2:
-                maxmin_obj[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'maxmin_obj_user#{i}')
+            SE_user[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'SE_user#{i}')
+            # if alpha == 1:
+            log_obj[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'log_obj_user#{i}')
+            # elif alpha == 2:
+            maxmin_obj[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'maxmin_obj_user#{i}')
         for j in base_stations:
             for d in directions_bs:
                 angles_bs[j, d] = m.addVar(vtype=GRB.BINARY, name=f'angle_bs#{j}#{d}')
@@ -111,35 +88,40 @@ def optimization(alpha):
         if alpha == 1:
             m.setObjective(quicksum(log_obj[i] for i in users), GRB.MAXIMIZE)
         elif alpha == 0:
-            m.setObjective(quicksum(C_user[i] for i in users), GRB.MAXIMIZE)
+            m.setObjective(quicksum(SE_user[i] for i in users), GRB.MAXIMIZE)
         else:
             m.setObjective(1 / (1 - alpha) * quicksum(maxmin_obj[i] for i in users), GRB.MAXIMIZE)
 
         # --------------- CONSTRAINTS -----------------------------
         # Define SINR and interference
-        for i in users:
-            for j in base_stations:
-                m.addConstr(I[i, j] == quicksum(
-                    quicksum(x[k, m] * interference[i, j, k, m] for k in users if not (i == k and j == m)) for m in
-                    base_stations), name=f'Interference#{i}#{j}')
-                m.addConstr(sigma_I[i, j] == sigma + I[i, j], name=f'sigma_interference#{i}#{j}')
-                m.addConstr(sigma_I[i, j] * I_inv[i, j] == 1, name=f'helper_constraint#{i}#{j}')
-                m.addConstr(SINR[i, j] == x[i, j] * power[i, j] * I_inv[i, j], name=f'find_SINR#{i}#{j}')
+        if number_of_interferers > 0:
+            for i in users:
+                for j in base_stations:
+                    m.addConstr(I[i, j] == quicksum(
+                        quicksum(x[k, m] * interference[i, j, k, m] for k in users if not (i == k and j == m)) for m in
+                        f.closest_bs(i)), name=f'Interference#{i}#{j}')
+                    m.addConstr(sigma_I[i, j] == sigma + I[i, j], name=f'sigma_interference#{i}#{j}')
+                    m.addConstr(sigma_I[i, j] * I_inv[i, j] == 1, name=f'helper_constraint#{i}#{j}')
+                    m.addConstr(SINR[i, j] == x[i, j] * power[i, j] * I_inv[i, j], name=f'find_SINR#{i}#{j}')
+        else:
+            for i in users:
+                for j in base_stations:
+                    m.addConstr(SINR[i, j] == x[i, j] * power[i, j] / sigma, name=f'find_SINR#{i}#{j}')
 
         # Only 1 BS/User per angular direction
         for i in users:
             for d in directions_u:
                 m.addConstr(angles_u[i, d] == quicksum(x[i, j] for j in base_stations if f.find_beam_number(
                     f.find_bore(f.user_coords(i), f.bs_coords(j), beamwidth_u), beamwidth_u) == d),
-                            name=f'direction_user#{i}#{j}')
-                m.addConstr(angles_u[i, d] <= 1)
+                            name=f'direction_user#{i}#{d}')
+                m.addConstr(angles_u[i, d] <= 1, name = f'angle_u#{i}#{d}')
 
         for j in base_stations:
             for d in directions_bs:
                 m.addConstr(angles_bs[j, d] == quicksum(x[i, j] for i in users if f.find_beam_number(
                     f.find_bore(f.bs_coords(j), f.user_coords(i), beamwidth_b), beamwidth_b) == d),
-                            name=f'direction_bs#{i}#{j}')
-                m.addConstr(angles_bs[j, d] <= 1)
+                            name=f'direction_bs#{j}#{d}')
+                m.addConstr(angles_bs[j, d] <= 1, name=f'angle_bs#{j}#{d}')
 
         # Minimum SNR
         for i in users:
@@ -162,21 +144,21 @@ def optimization(alpha):
         for i in users:
             m.addConstr(quicksum(x[i, j] for j in base_stations) >= 1, name=f'1_con_user#{i}')
 
-        # find capacity
+        # find spectral efficiency
         for i in users:
             for j in base_stations:
                 m.addConstr(C[i, j] == (1 + SINR[i, j]), name=f'capacity#{i}#{j}')
                 m.addGenConstrLog(C[i, j], log_C[i, j], name=f'log_C#{i}#{j}',
                                   options="FuncPieces=-1 FuncPieceError=0.001")
-            m.addConstr(C_user[i] == quicksum([W * log_C[i, j] for j in base_stations]), name=f'C_user#{i}')
+            m.addConstr(SE_user[i] == quicksum([log_C[i, j] for j in base_stations]), name=f'SE_user#{i}')
 
-        if alpha == 1:
-            for i in users:
-                m.addGenConstrLog(C_user[i], log_obj[i], name=f'log_constraint#{i}')
+        # if alpha == 1:
+        for i in users:
+            m.addGenConstrLog(SE_user[i], log_obj[i], name=f'log_constraint#{i}', options="FuncPieces=-1 FuncPieceError=0.001")
 
-        elif alpha >= 2:
-            for i in users:
-                m.addGenConstrPow(C_user[i], maxmin_obj[i], 1 - alpha, name=f'power_constraint#{i}')
+        # elif alpha == 2:
+        for i in users:
+            m.addConstr(SE_user[i] * maxmin_obj[i] == 1, name=f'power_constraint#{i}')
 
         # --------------------- OPTIMIZE MODEL -------------------------
         # m.computeIIS()
@@ -204,19 +186,15 @@ def optimization(alpha):
     logC = np.zeros((number_of_users, number_of_bs))
 
     for i in range(number_of_users):
-        total_C[i] = C_user[i].X
+        total_C[i] = SE_user[i].X
 
-        for j in range(number_of_bs):
-            c[i, j] = C[i, j].X
-            a[i, j] = x[i, j].X
-            if SINR[i,j].X > 0:
-                interf[i, j] = 10 * math.log10(SINR[i, j].X)
-            logC[i, j] = log_C[i, j].X
-        # for d in directions_u:
-        #     angles[i, d] = angles_u[i,d].X
-    # for j in range(number_of_bs):
-    #     for d in directions_bs:
-    #         bs_angles[j,d] = angles_bs[j,d].X
+    print(total_C)
+    print(sum(total_C), sum([log_obj[i].X for i in users]), -1 * sum([maxmin_obj[i].X for i in users]))
+    print(sum([math.log(total_C[i]) for i in users]))
+    print(-sum([(total_C[i])**(-1) for i in users]))
+    for i in users:
+        for j in base_stations:
+            a[i,j] = x[i,j].X
 
     # print(find_distance_matrix(x_user, y_user, x_bs, y_bs))
     # print(path_loss)
