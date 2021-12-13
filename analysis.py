@@ -8,11 +8,10 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import sys
 from itertools import product
-import initialization
 from parameters import *
 import functions as f
 
-def find_metrics(x):
+def find_metrics(x, x_user, y_user):
     BS_degrees = [int(x) for x in sum(x)]
     user_degrees = [int(x) for x in sum(np.transpose(x))]
     distances = []
@@ -20,7 +19,7 @@ def find_metrics(x):
     for i in range(number_of_users):
         for j in range(number_of_bs):
             if int(x[i, j]) == 1:
-                dist = f.find_distance(f.user_coords(i), f.bs_coords(j))
+                dist = f.find_distance(f.user_coords(i, x_user, y_user), f.bs_coords(j))
                 distances.append(dist)
                 distances_MC[user_degrees[i]].append(dist)
     return user_degrees, BS_degrees, distances, distances_MC

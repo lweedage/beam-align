@@ -8,7 +8,7 @@ import networkx as nx
 
 pi = math.pi
 
-def user_coords(i):
+def user_coords(i, x_user, y_user):
     return (x_user[i], y_user[i])
 
 def bs_coords(j):
@@ -61,16 +61,83 @@ def find_SNR(i, j):
     power = transmission_power  * gain_bs[i, i, j] * gain_user[i, j, j]  / path_loss[i,j]
     return 10 * math.log10(power/(sigma))
 
-def find_C(i, x):
+def find_gain(bore_1, bore_2, geo_1, geo_2, beamwidth_ml):
+    bore = find_bore(bore_1, bore_2, beamwidth_ml)
+    geo = find_geo(geo_1, geo_2)
+    alpha = math.degrees(abs(bore-geo))
+    if alpha > 180:
+        alpha = alpha - 360
+    beamwidth_ml = math.degrees(beamwidth_ml)
+    w = beamwidth_ml / 2.58
+    G0 = 20 * math.log10(1.62 / math.sin(math.radians(w / 2)))
+
+    if 0 <= abs(alpha) <= beamwidth_ml / 2:
+        return 10 ** ((G0 - 3.01 * (2 * alpha / w) ** 2)/10)
+    else:
+        return 10**((-0.4111 * math.log(math.degrees(w)) - 10.579)/10)
+
+def find_bore(coord_1, coord_2, beamwidth):
+    radians = find_geo(coord_1, coord_2)
+    angle = find_beam(radians, beamwidth)
+    return angle
+
+def find_geo(coord_1, coord_2):
+    dy = coord_2[1] - coord_1[1]
+    dx = coord_2[0] - coord_1[0]
+    radians = math.atan2(dy, dx)
+    return radians
+
+def find_beam(radians, beamwidth):
+    angles = [beamwidth * i for i in range(int(-pi/beamwidth), int(pi/beamwidth) + 1)]
+    min = math.inf
+    for angle in angles:
+        if abs(radians - angle) <= min:
+            min = abs(radians - angle)      # NOTE THAT WE NOW JUST CHOOSE THE FIRST ONE IF TWO ARE EVEN CLOSE
+            preferred_angle = angle
+    return preferred_angle
+
+def find_path_loss(user, bs):
+    r = find_distance(user, bs)
+    if r <= critical_distance:
+        p_los = 1
+    else:
+        p_los = 0
+
+    p_nlos = 1 - p_los
+    if r > d0:
+        l_los =  k * (r/d0) ** (alpha_los)
+        l_nlos = k * (r/d0) ** (alpha_nlos)
+    else:
+        l_los = k
+        l_nlos = k
+    return p_los * l_los + p_nlos * l_nlos
+
+def find_distance(user, bs):
+    return math.sqrt((user[0] - bs[0]) ** 2 + (user[1] - bs[1]) ** 2)
+
+def find_C(i, j, x):
     C = 0
-    for j in range(number_of_bs):
-        if x[i,j] == 1:
-            coords_i = user_coords(i)
-            coords_j = bs_coords(j)
-            power = transmission_power * gain_bs[i, i, j] * gain_user[i, j, j]  / path_loss[i,j]
-            interference = find_interference(coords_i, coords_j, x)
-            C +=  W * math.log(1 + power/(sigma + interference))
+    if x[i,j] == 1:
+        coords_i = user_coords(i)
+        coords_j = bs_coords(j)
+        power = transmission_power * gain_bs[i, i, j] * gain_user[i, j, j]  / path_loss[i,j]
+        interference = find_interference(coords_i, coords_j, x)
+        C += 1e9 * math.log(1 + power/(sigma + interference))
     return C
+
+def initialise_graph_triangular(radius, xDelta, yDelta):
+    xbs, ybs = list(), list()
+    dy = math.sqrt(3 / 4) * radius
+    for i in range(0, int(xDelta / radius) + 1):
+        for j in range(0, int(yDelta / dy) + 1):
+            if i * radius + 0.5 * (j%2) * radius <= xmax and j * dy <= ymax:
+                xbs.append(i * radius + 0.5 * (j % 2) * radius)
+                ybs.append(j * dy)
+    return xbs, ybs
+
+def find_coordinates():
+    x_user, y_user = np.random.uniform(xmin, xmax, number_of_users), np.random.uniform(ymin, ymax, number_of_users)
+    return x_user, y_user
 
 def make_graph(xbs, ybs, xu, yu, x, number_of_users):
     G = nx.Graph()
@@ -128,7 +195,3 @@ def find_distance_allbs(user, xbs, ybs):
     yy = yu - ybs
     return np.sqrt(xx ** 2 + yy ** 2)
 
-def closest_bs(i):
-    user = user_coords(i)
-    indices = find_distance_allbs(user, x_bs, y_bs).argsort()
-    return indices[:number_of_interferers]
