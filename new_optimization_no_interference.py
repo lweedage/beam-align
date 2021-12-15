@@ -36,11 +36,10 @@ def optimization(x_user, y_user):
     users = range(number_of_users)
     base_stations = range(number_of_bs)
 
-    gain_bs = np.zeros((number_of_users, number_of_users, number_of_bs))
-    gain_user = np.zeros((number_of_users, number_of_bs, number_of_bs))
+    gain_bs = np.zeros((number_of_users, number_of_bs))
+    gain_user = np.zeros((number_of_users, number_of_bs))
     power = np.zeros((number_of_users, number_of_bs))
     path_loss = np.zeros((number_of_users, number_of_bs))
-    interference = np.zeros((number_of_users, number_of_bs, number_of_users, number_of_bs))
 
     # calculating the gain, path_loss and interference for every user-bs pair
     for i in users:
@@ -48,21 +47,9 @@ def optimization(x_user, y_user):
         for j in base_stations:
             coords_j = f.bs_coords(j)
             path_loss[i, j] = f.find_path_loss(coords_i, coords_j)
-
-    for i in users:
-        coords_i = f.user_coords(i, x_user, y_user)
-        for j in base_stations:
-            coords_j = f.bs_coords(j)
-            for m in base_stations:
-                coords_m = f.bs_coords(m)
-                for k in users:
-                    coords_k = f.user_coords(k, x_user, y_user)
-                    gain_bs[i, k, m] = f.find_gain(coords_m, coords_k, coords_m, coords_i, beamwidth_b)
-                    gain_user[i, j, m] = f.find_gain(coords_i, coords_j, coords_i, coords_m, beamwidth_u)
-                    if not (i == k and j == m):
-                        interference[i, j, k, m] = transmission_power * gain_bs[i, k, m] * gain_user[i, j, m] / \
-                                                   path_loss[i, m]
-            power[i, j] = transmission_power * gain_bs[i, i, j] * gain_user[i, j, j] / path_loss[i, j]
+            gain_bs[i, j] = f.find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
+            gain_user[i, j] = f.find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
+            power[i, j] = transmission_power * gain_bs[i, j] * gain_user[i, j] / path_loss[i, j]
 
     # ------------------------ Start of optimization program ------------------------------------
     try:
@@ -70,7 +57,7 @@ def optimization(x_user, y_user):
         m.setParam('NonConvex', 2)
         m.Params.LogToConsole = 0
         m.Params.OutputFlag = 0
-        m.Params.Threads = 10
+        m.Params.Threads = 5
 
         # -------------- VARIABLES -----------------------------------
         x = {}
@@ -79,9 +66,6 @@ def optimization(x_user, y_user):
         C = {}
         log_C = {}
         C_user = {}
-        I = {}
-        I_inv = {}
-        sigma_I = {}
 
         angles_u = {}
         angles_bs = {}
@@ -90,9 +74,6 @@ def optimization(x_user, y_user):
             for j in base_stations:
                 x[i, j] = m.addVar(vtype=GRB.BINARY, name=f'x#{i}#{j}')
                 SINR[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'SINR#{i}#{j}')
-                I[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'I#{i}#{j}')
-                sigma_I[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'sigma_I#{i}#{j}')
-                I_inv[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'I_inv#{i}#{j}')
                 C[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'C#{i}#{j}')
                 log_C[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'logC#{i}#{j}')
 
@@ -114,12 +95,7 @@ def optimization(x_user, y_user):
         # Define SINR and interference
         for i in users:
             for j in base_stations:
-                m.addConstr(I[i, j] == quicksum(
-                    quicksum(x[k, m] * interference[i, j, k, m] for k in users if not (i == k and j == m)) for m in
-                    base_stations), name=f'Interference#{i}#{j}')
-                m.addConstr(sigma_I[i, j] == sigma + I[i, j], name=f'sigma_interference#{i}#{j}')
-                m.addConstr(sigma_I[i, j] * I_inv[i, j] == 1, name=f'helper_constraint#{i}#{j}')
-                m.addConstr(SINR[i, j] == x[i, j] * power[i, j] * I_inv[i, j], name=f'find_SINR#{i}#{j}')
+                m.addConstr(SINR[i, j] == x[i, j] * power[i, j] / sigma, name=f'find_SINR#{i}#{j}')
 
         # Only 1 BS/User per angular direction
         for i in users:

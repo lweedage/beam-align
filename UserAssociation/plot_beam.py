@@ -16,7 +16,7 @@ ymax = 50
 
 number_of_users = 3
 
-delta = 500
+delta = 100
 bound = 2
 grid_size = (xmax + 2*bound)/delta
 x_grid = np.arange(xmin - bound, xmax + bound, grid_size)

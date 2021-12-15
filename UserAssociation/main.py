@@ -24,7 +24,7 @@ for iteration in range(1):
     #     j = f.find_closest_bs(i)
     #     opt_x[i,j] = 1
     x_user, y_user = f.find_coordinates()
-    x_user, y_user = [xmin + i*(xmax-xmin)/(number_of_users - 1) for i in range(number_of_users)], [y_bs[1]] * number_of_users
+    # x_user, y_user = [xmin + i*(xmax-xmin)/(number_of_users - 1) for i in range(number_of_users)], [5] * number_of_users
     if Interference:
         opt_x, capacity = new_optimization.optimization(x_user, y_user)
     else:

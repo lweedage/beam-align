@@ -15,7 +15,7 @@ ymin, ymax = 0, 50
 xDelta = xmax - xmin
 yDelta = ymax - ymin
 
-number_of_users = 10
+number_of_users = 50
 
 radius = 25  # for triangular grid
 
