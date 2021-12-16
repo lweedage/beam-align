@@ -9,7 +9,7 @@ import pickle
 delta = 5
 bs = 1
 
-iteration_min = 1000
+iteration_min = 0
 iteration_max = 2000
 
 start = time.time()
