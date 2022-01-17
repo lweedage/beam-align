@@ -8,26 +8,29 @@ pi = math.pi
 
 Plot_Interference = False
 bs_of_interest = 0
+radius = 25  # for triangular grid
 
-xmin, xmax = 0, 50
-ymin, ymax = 0, 50
+xmin, xmax = 0, 100
+ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 3
+
+# print(math.sqrt(3 / 4) * 2 * radius * 3)
 
 xDelta = xmax - xmin
 yDelta = ymax - ymin
 
-number_of_users = 50
+number_of_users = 250
+number_of_users = int(input('Number of users?'))
 
-radius = 25  # for triangular grid
 
 N_bs = 100  # number of connections per BS
-N_user = 10  # number of connections per user
+N_user = 100  # number of connections per user
 
 beamwidth_u = math.radians(5)
 beamwidth_b = math.radians(5)
 
 critical_distance = 50
 
-W = 28  # bandwidth (Either 28 GHz or 73 GHz)
+W = 1  # bandwidth (Either 28 GHz or 73 GHz)
 
 transmission_power = 10 ** 3.0  # 30 dB
 noise = 10 ** 0.7
@@ -43,7 +46,7 @@ alpha_los = 2
 
 SINR_min = 10**(-0.5)
 
-Interference = True
+Interference = False
 
 directions_bs = range(int(2 * pi / beamwidth_b))
 directions_u = range(int(2 * pi / beamwidth_u))
@@ -53,7 +56,7 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
     dy = math.sqrt(3 / 4) * radius
     for i in range(0, int(xDelta / radius) + 1):
         for j in range(0, int(yDelta / dy) + 1):
-            if i * radius + 0.5 * (j%2) * radius <= xmax and j * dy <= ymax:
+            if i * radius + 0.5 * (j%2) * radius < xmax and j * dy < ymax:
                 xbs.append(i * radius + 0.5 * (j % 2) * radius)
                 ybs.append(j * dy)
     return xbs, ybs

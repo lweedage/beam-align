@@ -19,10 +19,6 @@ def find_distance_list(user, xbs, ybs):
     y = (user[1] - np.array(ybs))
     return np.sqrt(x ** 2 + y ** 2)
 
-def find_closest_bs(i):
-    indices = find_distance_list(user_coords(i), x_bs, y_bs).argsort()
-    return indices[0]
-
 def find_beam_number(radians, beamwidth):
     angles = [beamwidth * i for i in range(int(-pi/beamwidth), int(pi/beamwidth))]
     min = math.inf
@@ -32,17 +28,6 @@ def find_beam_number(radians, beamwidth):
             preferred_angle = i
     return preferred_angle
 
-def find_interference(coords_i, coords_j, x):
-    interference = 0
-    for m in range(number_of_bs):
-        coords_m = bs_coords(m)
-        for k in range(number_of_users):
-            coords_k = user_coords(k)
-            if x[k, m] > 0.5:
-                if not (coords_k == coords_i and coords_m == coords_j):
-                    interference += (transmission_power * gain_bs[i,k, m] * gain_user[i,j,m] / path_loss[i, m])
-    return interference
-
 def find_initial_interference(i, j, k, m):
     if not (k == i and m == j):
         gain_bs = find_gain(m, k, m, i, beamwidth_b)
@@ -51,15 +36,6 @@ def find_initial_interference(i, j, k, m):
         return gain_bs * gain_user / path_los
     else:
         return 0
-
-def find_SINR(i, j, x):
-    power = transmission_power * gain_bs[i, i, j] * gain_user[i, j, j] / path_loss[i,j]
-    interference = find_interference(coords_i, coords_j, x)
-    return 10 * math.log10(power/(sigma + interference))
-
-def find_SNR(i, j):
-    power = transmission_power  * gain_bs[i, i, j] * gain_user[i, j, j]  / path_loss[i,j]
-    return 10 * math.log10(power/(sigma))
 
 def find_gain(bore_1, bore_2, geo_1, geo_2, beamwidth_ml):
     bore = find_bore(bore_1, bore_2, beamwidth_ml)
@@ -82,6 +58,27 @@ def find_bore(coord_1, coord_2, beamwidth):
     return angle
 
 def find_geo(coord_1, coord_2):
+    (x_1, y_1) = coord_1
+    (x_2, y_2) = coord_2
+
+    if (max(coord_2[0], coord_1[0]) - min(coord_2[0], coord_1[0])) > (
+            min(coord_2[0], coord_1[0]) - max(coord_2[0], coord_1[0])) % xDelta:
+        if coord_2[0] > coord_1[0]:
+            x_2 = coord_2[0] - xDelta
+        else:
+            x_1 = coord_1[0] - xDelta
+
+    if (max(coord_2[1], coord_1[1]) - min(coord_2[1], coord_1[1])) > (
+            min(coord_2[1], coord_1[1]) - max(coord_2[1], coord_1[1])) % yDelta:
+        if coord_2[1] > coord_1[1]:
+            y_2 = coord_2[1] - yDelta
+        else:
+            y_1 = coord_1[1] - yDelta
+
+    coord_2 = (x_2, y_2)
+    coord_1 = (x_1, y_1)
+    #until here is torus
+
     dy = coord_2[1] - coord_1[1]
     dx = coord_2[0] - coord_1[0]
     radians = math.atan2(dy, dx)
@@ -95,6 +92,9 @@ def find_beam(radians, beamwidth):
             min = abs(radians - angle)      # NOTE THAT WE NOW JUST CHOOSE THE FIRST ONE IF TWO ARE EVEN CLOSE
             preferred_angle = angle
     return preferred_angle
+
+def find_misalignment(coord_1, coord_2, beamwidth):
+    return find_geo(coord_1, coord_2) - find_bore(coord_1, coord_2, beamwidth)
 
 def find_path_loss(user, bs):
     r = find_distance(user, bs)
@@ -113,17 +113,10 @@ def find_path_loss(user, bs):
     return p_los * l_los + p_nlos * l_nlos
 
 def find_distance(user, bs):
-    return math.sqrt((user[0] - bs[0]) ** 2 + (user[1] - bs[1]) ** 2)
-
-def find_C(i, j, x):
-    C = 0
-    if x[i,j] == 1:
-        coords_i = user_coords(i)
-        coords_j = bs_coords(j)
-        power = transmission_power * gain_bs[i, i, j] * gain_user[i, j, j]  / path_loss[i,j]
-        interference = find_interference(coords_i, coords_j, x)
-        C += 1e9 * math.log(1 + power/(sigma + interference))
-    return C
+    # on a torus
+    x = np.minimum((bs[0] - user[0]) % xDelta, (user[0] - bs[0]) % xDelta)
+    y = np.minimum((bs[1] - user[1]) % yDelta, (user[1] - bs[1]) % yDelta)
+    return np.sqrt(x ** 2 + y ** 2)
 
 def initialise_graph_triangular(radius, xDelta, yDelta):
     xbs, ybs = list(), list()
@@ -178,16 +171,6 @@ def draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color, edgecolor):
 def fairness(x):
     return (sum(x))**2 / (len(x)* sum([i**2 for i in x]))
 
-def plot_SINR(SINR, label, color):
-    sorted_SINR = np.sort(SINR)
-    # sorted_SNR = np.sort(SNR)
-
-    plt.step(sorted_SINR[::-1], np.arange(sorted_SINR.size)/number_of_users, label = str(label), color = color)
-    # plt.step(sorted_SNR[::-1], np.arange(sorted_SNR.size)/number_of_users, '--', label = str(label + ' SNR'), color = color)
-
-    plt.xlabel('SINR threshold (dB)')
-    plt.ylabel('Percentage of connected users (ecdf)')
-    plt.legend()
 
 def find_distance_allbs(user, xbs, ybs):
     xu, yu = user[0], user[1]
@@ -195,3 +178,29 @@ def find_distance_allbs(user, xbs, ybs):
     yy = yu - ybs
     return np.sqrt(xx ** 2 + yy ** 2)
 
+def find_capacity(opt_x, x_user, y_user):
+    capacity = 0
+    for u in range(number_of_users):
+        for bs in range(number_of_bs):
+            if opt_x[u, bs] == 1:
+                coords_i = user_coords(u, x_user, y_user)
+                coords_j = bs_coords(bs)
+                gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
+                gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
+                path_loss = find_path_loss(coords_i, coords_j)
+                if Interference:
+                    interference = find_interference(coords_i, coords_j, opt_x, x_user, y_user)
+                else:
+                    interference = 0
+                capacity += W * math.log(1 + transmission_power * gain_bs * gain_user / (path_loss * (sigma + transmission_power * interference)))
+    return capacity
+
+def find_interference(user, bs, opt_x, x_user, y_user):
+    interference = 0
+    for u in range(number_of_users):
+        coords_k = user_coords(u, x_user, y_user)
+        for b in range(number_of_bs):
+            coords_m = bs_coords(b)
+            if opt_x[u, b] == 1:
+                interference += find_initial_interference(user, bs, coords_k, coords_m)
+    return interference

@@ -68,8 +68,8 @@ def optimization(x_user, y_user):
     try:
         m = gp.Model("Model 1")
         m.setParam('NonConvex', 2)
-        m.Params.LogToConsole = 0
-        m.Params.OutputFlag = 0
+        # m.Params.LogToConsole = 0
+        # m.Params.OutputFlag = 0
         m.Params.Threads = 10
 
         # -------------- VARIABLES -----------------------------------
@@ -172,7 +172,7 @@ def optimization(x_user, y_user):
         m.optimize()
         m.write("model.lp")
         m.getObjective()
-        # print('Objective value: %g' % m.objVal)
+        print('Objective value: %g' % m.objVal)
 
 
 

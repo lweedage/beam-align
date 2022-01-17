@@ -6,35 +6,28 @@ import functions as f
 import time
 import pickle
 
-delta = 5
+delta = 2
 bs = 1
 
 iteration_min = 0
-iteration_max = 2000
+iteration_max = 600
 
 start = time.time()
+
+
+print([f.bs_coords(j) for j in range(number_of_bs)])
+
 if Interference:
-    grid_1bs = pickle.load(open(str('Data/grid_1bs_total_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + '.p'),'rb'))
-    grid_2mc = pickle.load(open(str('Data/grid_2mc_total_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + '.p'),'rb'))
-    grid_3mc = pickle.load(open(str('Data/grid_3mc_total_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + '.p'),'rb'))
-    grid_4mc = pickle.load(open(str('Data/grid_4mc_total_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + '.p'),'rb'))
-    grid_5mc = pickle.load(open(str('Data/grid_5mc_total_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + '.p'),'rb'))
+    name = str('until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
 else:
-    grid_1bs = pickle.load(
-        open(str('Data/no_interference_grid_1bs_total_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + '.p'),
-             'rb'))
-    grid_2mc = pickle.load(
-        open(str('Data/no_interference_grid_2mc_total_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + '.p'),
-             'rb'))
-    grid_3mc = pickle.load(
-        open(str('Data/no_interference_grid_3mc_total_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + '.p'),
-             'rb'))
-    grid_4mc = pickle.load(
-        open(str('Data/no_interference_grid_4mc_total_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + '.p'),
-             'rb'))
-    grid_5mc = pickle.load(
-        open(str('Data/no_interference_grid_5mc_total_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + '.p'),
-             'rb'))
+    name = str('no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
+
+# grid_1bs = pickle.load(open(str('Data/grid_1bs_' + name + '.p'),'rb'))
+grid_2mc = pickle.load(open(str('Data/grid_2mc_' + name + '.p'),'rb'))
+grid_3mc = pickle.load(open(str('Data/grid_3mc_' + name + '.p'),'rb'))
+grid_4mc = pickle.load(open(str('Data/grid_4mc_' + name + '.p'),'rb'))
+grid_5mc = pickle.load(open(str('Data/grid_5mc_' + name + '.p'),'rb'))
+total_visits = pickle.load(open(str('Data/grid_total_visits_' + name + '.p'),'rb'))
 
 grid_mc1 = np.add(grid_5mc, grid_4mc)
 grid_mc2 = np.add( grid_3mc, grid_2mc)
@@ -45,6 +38,10 @@ grid_mc3plus = np.add(grid_mc1, grid_3mc)
 x_large = [x * delta for x in x_bs]
 y_large = [y * delta for y in y_bs]
 
+print(np.size(grid_2mc))
+
+xmax = int(np.ceil(xmax))
+ymax = int(np.ceil(ymax))
 
 values = range(0, xmax + 1, 10)
 real_value = range(0, xmax*delta + 1, 10 * delta)
@@ -52,18 +49,18 @@ real_value = range(0, xmax*delta + 1, 10 * delta)
 values_y = range(0, ymax + 1, 10)
 real_value_y = range(0, ymax*delta + 1, 10 * delta)
 
-fig, ax = plt.subplots()
-plt.imshow(grid_1bs)
-plt.colorbar()
-plt.scatter(x_large, y_large, color = 'white', marker = 'o')
-plt.plot(x_large[bs], y_large[bs], color = 'red', marker = 'o')
-plt.xticks(real_value, values)
-plt.yticks(real_value_y, values_y)
-plt.title("Where do users connect to the red BS")
-plt.savefig('number_of_users' + str(number_of_users) + 'bs0.png')
+# fig, ax = plt.subplots()
+# plt.imshow(grid_1bs)
+# plt.colorbar()
+# plt.scatter(x_large, y_large, color = 'white', marker = 'o')
+# plt.plot(x_large[bs], y_large[bs], color = 'red', marker = 'o')
+# plt.xticks(real_value, values)
+# plt.yticks(real_value_y, values_y)
+# plt.title("Where do users connect to the red BS")
+# plt.savefig('number_of_users' + str(number_of_users) + 'bs0.png')
 
 fig, ax = plt.subplots()
-plt.imshow(grid_2mc)
+plt.imshow(grid_2mc/total_visits)
 plt.colorbar()
 plt.scatter(x_large, y_large, color = 'white', marker = 'o')
 plt.xticks(real_value, values)
@@ -73,7 +70,7 @@ plt.title("Where do users have 2MC?")
 plt.savefig('number_of_users' + str(number_of_users) + '2mc.png')
 
 fig, ax = plt.subplots()
-plt.imshow(grid_3mc)
+plt.imshow(grid_3mc/total_visits)
 plt.colorbar()
 plt.scatter(x_large, y_large, color = 'white', marker = 'o')
 plt.xticks(real_value, values)
@@ -83,7 +80,7 @@ plt.title("Where do users have 3MC?")
 plt.savefig('number_of_users' + str(number_of_users) + '3mc.png')
 
 fig, ax = plt.subplots()
-plt.imshow(grid_4mc)
+plt.imshow(grid_4mc/total_visits)
 plt.colorbar()
 plt.scatter(x_large, y_large, color = 'white', marker = 'o')
 plt.xticks(real_value, values)
@@ -93,7 +90,7 @@ plt.title("Where do users have 4MC?")
 plt.savefig('number_of_users' + str(number_of_users) + '4mc.png')
 
 fig, ax = plt.subplots()
-plt.imshow(grid_5mc)
+plt.imshow(grid_5mc/total_visits)
 plt.colorbar()
 plt.scatter(x_large, y_large, color = 'white', marker = 'o')
 plt.xticks(real_value, values)
@@ -103,7 +100,7 @@ plt.title("Where do users have >4MC?")
 plt.savefig('number_of_users' + str(number_of_users) + '5mc.png')
 
 fig, ax = plt.subplots()
-plt.imshow(grid_mc)
+plt.imshow(grid_mc/total_visits)
 plt.colorbar()
 plt.scatter(x_large, y_large, color = 'white', marker = 'o')
 plt.xticks(real_value, values)
@@ -112,12 +109,15 @@ plt.title("Where do users have MC?")
 plt.savefig('number_of_users' + str(number_of_users) + 'general_mc.png')
 
 fig, ax = plt.subplots()
-plt.imshow(grid_mc3plus)
+plt.imshow(grid_mc3plus/total_visits)
 plt.colorbar()
 plt.scatter(x_large, y_large, color = 'white', marker = 'o')
 plt.xticks(real_value, values)
 plt.yticks(real_value_y, values_y)
+circle = plt.Circle((50 * delta, 43.3 * delta), 25 * delta, fill = False, color = 'r')
+ax.add_patch(circle)
 plt.title("Where do users have >2 MC?")
 plt.savefig('number_of_users' + str(number_of_users) + 'general_3_mc.png')
 
 plt.show()
+

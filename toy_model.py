@@ -2,95 +2,85 @@ import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import quicksum
 import numpy as np
+import scipy.sparse as sp
+import math
+import matplotlib.pyplot as plt
+import networkx as nx
+import sys
+from itertools import product
+import analysis
+import new_optimization_no_interference
+import new_optimization
+import os
+import functions as f
+from matplotlib.cm import ScalarMappable
+from parameters import *
 
-# ------------------------ Start of optimization program ------------------------------------
+np.random.seed(1)
+x_user, y_user = f.find_coordinates()
 
-try:
-    m = gp.Model("Model 1")
-    m.setParam('NonConvex', 2)
-    # m.Params.LogToConsole = 0
+opt_x = np.zeros((number_of_users, number_of_bs))
 
-    users = range(10)
-    base_stations = range(2)
+fig, ax = plt.subplots()
+G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
+f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'black', edgecolor = edgecolor)
+bound = 0.1 * xDelta
+plt.xlim((xmin - bound, xmax + bound))
+plt.ylim((ymin - bound, ymax + bound))
+ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+plt.show()
 
-    alpha = 2
-
-    # -------------- VARIABLES -----------------------------------
-    x = {}
-    x_sum = {}
-    log_obj = {}
-    maxmin_obj = {}
-    SINR = {}
-    sigma_I = {}
-    C = {}
-    log_C = {}
-    I_inv = {}
-
-    I = {}
-
-    for i in users:
-        for j in base_stations:
-            x[i, j] = m.addVar(vtype= GRB.BINARY, name = f'x{i}')
-            SINR[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'SINR#{i}#{j}')
-            I[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'I#{i}#{j}')
-            sigma_I[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'sigma_I#{i}#{j}')
-            I_inv[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'I_inv#{i}#{j}')
-            C[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'C#{i}#{j}')
-            log_C[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'logC#{i}#{j}')
-        log_obj[i] = m.addVar(vtype= GRB.CONTINUOUS, name = f'log_x{i}')
-        x_sum[i] = m.addVar(vtype = GRB.CONTINUOUS, name = f'x_sum{i}')
-        maxmin_obj[i] = m.addVar(vtype= GRB.CONTINUOUS, name = f'maxmin_x{i}')
+def find_sorted_users_torus(bs, x_user, y_user):
+    x = np.minimum((bs[0] - np.array(x_user)) % xDelta, (np.array(x_user) - bs[0]) % xDelta)
+    y = np.minimum((bs[1] - np.array(y_user)) % yDelta, (np.array(y_user) - bs[1]) % yDelta)
+    return np.argsort(np.sqrt(x ** 2 + y ** 2))
 
 
-    m.update()
+def find_closest(bs):
+    users = []
+    possible_directions = list(directions_bs)
+    bs_coords = f.bs_coords(bs)
+    sorted_users = find_sorted_users_torus(bs_coords, x_user, y_user)
+    for u in sorted_users:
+        user_coord = f.user_coords(u, x_user, y_user)
+        (bs_x, bs_y) = bs_coords
+        (user_x, user_y) = user_coord
+        if (max(bs_coords[0], user_coord[0]) - min(bs_coords[0], user_coord[0])) > (min(bs_coords[0], user_coord[0]) - max(bs_coords[0], user_coord[0])) % xDelta:
+            if bs_coords[0] > user_coord[0]:
+                bs_x = bs_coords[0] - xDelta
+            else:
+                user_x = user_coord[0] - xDelta
 
-    # ----------------- OBJECTIVE ----------------------------------
-    if alpha == 1:
-        m.setObjective(quicksum(log_obj[i] for i in base_stations), GRB.MAXIMIZE)
-    elif alpha == 0:
-        m.setObjective(quicksum(x_sum[i] for i in base_stations), GRB.MAXIMIZE)
-    else:
-        m.setObjective(1 / (1 - alpha) * quicksum(maxmin_obj[i] for i in base_stations), GRB.MAXIMIZE)
+        if (max(bs_coords[1], user_coord[1]) - min(bs_coords[1], user_coord[1])) > (min(bs_coords[1], user_coord[1]) - max(bs_coords[1], user_coord[1])) % yDelta:
+            if bs_coords[1] > user_coord[1]:
+                bs_y = bs_coords[1] - yDelta
+            else:
+                user_y = user_coord[1] - yDelta
 
-    # --------------- CONSTRAINTS -----------------------------
-    for i in users:
-        m.addConstr(x_sum[i] == quicksum(SINR[i,j] for j in base_stations))
-        m.addGenConstrLog(x_sum[i], log_obj[i])
-        for j in base_stations:
-            m.addConstr(SINR[i,j] <= SINR[i,j] * x[i,j])
+        new_bs = (bs_x, bs_y)
+        new_user = (user_x, user_y)
+        beam_number = f.find_beam_number(f.find_beam(f.find_geo(new_bs, new_user), beamwidth_b), beamwidth_b)
+        if beam_number in possible_directions:
+            possible_directions.remove(beam_number)
+            users.append(u)
+            print(u, bs, np.degrees(f.find_beam(f.find_geo(new_bs, new_user), beamwidth_b)))
 
-    for i in users:
-        m.addGenConstrPow(x_sum[i], maxmin_obj[i], 1 - alpha)
-
-    for i in users:
-        for j in base_stations:
-            m.addConstr(I[i, j] == quicksum(quicksum(x[k, m] * 0.05 for k in users if not (i == k and j == m)) for m in
-                base_stations), name=f'Interference#{i}#{j}')
-            m.addConstr(I[i, j] * I_inv[i, j] == 1, name=f'helper_constraint#{i}#{j}')
-            m.addConstr(SINR[i, j] == x[i, j] * I_inv[i, j], name=f'find_SINR#{i}#{j}')
-
-    # --------------------- OPTIMIZE MODEL -------------------------
-    # m.computeIIS()
-    # m.write("IIS_toy_model.lp")
-
-    m.optimize()
-    m.write("toy_model.lp")
-    m.getObjective()
-    print('Objective value: %g' % m.objVal)
+    return users
 
 
+for bs in range(number_of_bs):
+    u = find_closest(bs)
+    for user in u:
+        opt_x[user, bs] = 1
+
+print([(x_user[i], y_user[i]) for i in range(number_of_users)])
 
 
-except gp.GurobiError as e:
-    print('Error code ' + str(e.errno) + ': ' + str(e))
-    # sys.exit()
-
-
-print([sum([x[i,j].X for j in base_stations]) for i in users])
-print([[I[i,j].X for j in base_stations] for i in users])
-
-a = np.zeros((len(users), len(base_stations)))
-
-for i in users:
-    for j in base_stations:
-        a[i, j] = x[i, j].X
+fig, ax = plt.subplots()
+G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
+f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'black', edgecolor = edgecolor)
+bound = 0.1 * xDelta
+plt.xlim((xmin - bound, xmax + bound))
+plt.ylim((ymin - bound, ymax + bound))
+ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+plt.show()

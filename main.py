@@ -18,19 +18,18 @@ from parameters import *
 
 for iteration in range(1):
     np.random.seed(iteration)
-    #
-    # opt_x = np.zeros((number_of_users, number_of_bs))
-    # for i in range(number_of_users):
-    #     j = f.find_closest_bs(i)
-    #     opt_x[i,j] = 1
     x_user, y_user = f.find_coordinates()
-    x_user, y_user = [xmin + i*(xmax-xmin)/(number_of_users - 1) for i in range(number_of_users)], [10] * number_of_users
+
     if Interference:
         opt_x, capacity = new_optimization.optimization(x_user, y_user)
     else:
         opt_x, capacity = new_optimization_no_interference.optimization(x_user, y_user)
 
     print('Average connections per user: ', np.sum(opt_x)/number_of_users)
+    print('Capacity:', np.sum(capacity))
+
+    calculated_capacity = f.find_capacity(opt_x, x_user ,y_user)
+    print('Calculated capacity:', calculated_capacity)
 
     fig, ax = plt.subplots()
     G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
@@ -56,7 +55,7 @@ if Plot_Interference:
         j = (x_bs[bs], y_bs[bs])
         for x in range(delta):
             for y in range(delta):
-                interference[y, x] = f.find_interference((xc[0, x], xc[0, y]), j, opt_x)
+                interference[y, x] = f.find_interference((xc[0, x], xc[0, y]), j, opt_x, x_user, y_user)
 
         fig, ax = plt.subplots()
         vmin, vmax = 0, np.max(interference)/10

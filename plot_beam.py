@@ -11,8 +11,8 @@ import os
 from parameters import *
 import functions as f
 
-xmax = 50
-ymax = 50
+xmax = 100
+ymax = 100
 
 number_of_users = 3
 

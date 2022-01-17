@@ -57,7 +57,7 @@ def optimization(x_user, y_user):
         m.setParam('NonConvex', 2)
         m.Params.LogToConsole = 0
         m.Params.OutputFlag = 0
-        m.Params.Threads = 5
+        m.Params.Threads = 10
 
         # -------------- VARIABLES -----------------------------------
         x = {}
@@ -138,7 +138,7 @@ def optimization(x_user, y_user):
             for j in base_stations:
                 m.addConstr(C[i, j] == (1 + SINR[i, j]), name=f'capacity#{i}#{j}')
                 m.addGenConstrLog(C[i, j], log_C[i, j], name=f'log_C#{i}#{j}',
-                                  options="FuncPieces=-1 FuncPieceError=0.001")
+                                  options="FuncPieces=-1 FuncPieceError=0.01")
             m.addConstr(C_user[i] == quicksum([log_C[i, j] for j in base_stations]), name=f'C_user#{i}')
 
         # --------------------- OPTIMIZE MODEL -------------------------
@@ -148,7 +148,7 @@ def optimization(x_user, y_user):
         m.optimize()
         m.write("model.lp")
         m.getObjective()
-        # print('Objective value: %g' % m.objVal)
+        print('Objective value: %g' % m.objVal)
 
 
 
