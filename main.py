@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import sys
 from itertools import product
-import analysis
 import new_optimization_no_interference
 import new_optimization
 import os
@@ -41,37 +40,30 @@ for iteration in range(1):
     plt.show()
 
 
-if Plot_Interference:
-    delta = 200
-    bound = 10
-    grid_size = (xmax + 2*bound)/delta
-    x_grid = np.arange(xmin - bound, xmax + bound, grid_size)
-    y_grid = np.arange(ymin - bound, ymax + bound, grid_size)
-    x_mesh,y_mesh = np.meshgrid(x_grid,y_grid)
-    xc, yc = x_mesh + grid_size/2, y_mesh + grid_size/2
-    j = (x_bs[bs_of_interest], y_bs[bs_of_interest])
-    for bs in range(number_of_bs):
-        interference = np.zeros((delta, delta))
-        j = (x_bs[bs], y_bs[bs])
-        for x in range(delta):
-            for y in range(delta):
-                interference[y, x] = f.find_interference((xc[0, x], xc[0, y]), j, opt_x, x_user, y_user)
-
-        fig, ax = plt.subplots()
-        vmin, vmax = 0, np.max(interference)/10
-        contour_z1 = ax.pcolormesh(x_grid, x_grid.transpose(), interference, vmin = vmin, vmax = vmax, cmap = 'turbo')
-        fig.colorbar(ScalarMappable(norm=contour_z1.norm, cmap=contour_z1.cmap))
-        plt.xlim((xmin - bound, xmax + bound))
-        plt.ylim((ymin - bound, ymax + bound))
-        f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'white', edgecolor=edgecolor)
-        plt.show()
-
-
-degree_U, degree_BS, link_distances, link_distances_MC = analysis.find_metrics(opt_x, x_user, y_user)
+# if Plot_Interference:
+#     delta = 200
+#     bound = 10
+#     grid_size = (xmax + 2*bound)/delta
+#     x_grid = np.arange(xmin - bound, xmax + bound, grid_size)
+#     y_grid = np.arange(ymin - bound, ymax + bound, grid_size)
+#     x_mesh,y_mesh = np.meshgrid(x_grid,y_grid)
+#     xc, yc = x_mesh + grid_size/2, y_mesh + grid_size/2
+#     j = (x_bs[bs_of_interest], y_bs[bs_of_interest])
+#     for bs in range(number_of_bs):
+#         interference = np.zeros((delta, delta))
+#         j = (x_bs[bs], y_bs[bs])
+#         for x in range(delta):
+#             for y in range(delta):
+#                 interference[y, x] = f.find_interference((xc[0, x], xc[0, y]), j, opt_x, x_user, y_user)
 #
-# analysis.histogram_user_degree(degree_U)
-# analysis.histogram_BS_degree(degree_BS)
-# analysis.histogram_link_distance(link_distances)
-# analysis.histogram_link_distance_MC(link_distances_MC)
+#         fig, ax = plt.subplots()
+#         vmin, vmax = 0, np.max(interference)/10
+#         contour_z1 = ax.pcolormesh(x_grid, x_grid.transpose(), interference, vmin = vmin, vmax = vmax, cmap = 'turbo')
+#         fig.colorbar(ScalarMappable(norm=contour_z1.norm, cmap=contour_z1.cmap))
+#         plt.xlim((xmin - bound, xmax + bound))
+#         plt.ylim((ymin - bound, ymax + bound))
+#         f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'white', edgecolor=edgecolor)
+#         plt.show()
 #
-# analysis.histogram_channel_capacity(capacity)
+#
+# degree_U, degree_BS, link_distances, link_distances_MC = analysis.find_metrics(opt_x, x_user, y_user)

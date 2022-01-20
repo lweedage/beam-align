@@ -146,9 +146,9 @@ def optimization(x_user, y_user):
         # m.write("IISmodel.lp")
 
         m.optimize()
-        m.write("model.lp")
-        m.getObjective()
-        print('Objective value: %g' % m.objVal)
+        # m.write("model.lp")
+        # m.getObjective()
+        # print('Objective value: %g' % m.objVal)
 
 
 

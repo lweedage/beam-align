@@ -85,7 +85,7 @@ def find_geo(coord_1, coord_2):
     return radians
 
 def find_beam(radians, beamwidth):
-    angles = [beamwidth * i for i in range(int(-pi/beamwidth), int(pi/beamwidth) + 1)]
+    angles = [beamwidth * i for i in range(int(-pi/beamwidth), int(pi/beamwidth))]
     min = math.inf
     for angle in angles:
         if abs(radians - angle) <= min:
@@ -116,6 +116,12 @@ def find_distance(user, bs):
     # on a torus
     x = np.minimum((bs[0] - user[0]) % xDelta, (user[0] - bs[0]) % xDelta)
     y = np.minimum((bs[1] - user[1]) % yDelta, (user[1] - bs[1]) % yDelta)
+    return np.sqrt(x ** 2 + y ** 2)
+
+def find_distance_all_bs(user):
+    # on a torus
+    x = np.minimum((x_bs - user[0]) % xDelta, (user[0] - x_bs) % xDelta)
+    y = np.minimum((y_bs - user[1]) % yDelta, (user[1] - y_bs) % yDelta)
     return np.sqrt(x ** 2 + y ** 2)
 
 def initialise_graph_triangular(radius, xDelta, yDelta):
@@ -204,3 +210,15 @@ def find_interference(user, bs, opt_x, x_user, y_user):
             if opt_x[u, b] == 1:
                 interference += find_initial_interference(user, bs, coords_k, coords_m)
     return interference
+
+def find_sinr(user, bs, opt_x, x_user, y_user):
+    coords_i = user_coords(user, x_user, y_user)
+    coords_j = bs_coords(bs)
+    gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
+    gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
+    path_loss = find_path_loss(coords_i, coords_j)
+    if Interference:
+        interference = find_interference(coords_i, coords_j, opt_x, x_user, y_user)
+    else:
+        interference = 0
+    return (transmission_power * gain_user * gain_bs / path_loss ) / (sigma + transmission_power * interference)

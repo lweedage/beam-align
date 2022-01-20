@@ -14,6 +14,8 @@ else:
     name = str('users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
 
 delta = 2
+if Interference:
+    delta = 1
 
 Grid = True
 
@@ -45,24 +47,38 @@ distances_5mc = []
 
 total_links_per_user = np.array([])
 
-bs = 1
+bs = 0
 
 channel_capacity = []
 
 iteration_min = 0
-iteration_max = 600
+iteration_max = iterations[number_of_users]
 
-Heuristic = False
+Heuristic = True
+SCClosestHeuristic = False
+MCClosestHeuristic = False
+
+if MCClosestHeuristic:
+    k = int(input('k='))
 
 start = time.time()
 for iteration in range(iteration_min, iteration_max):
-    reduced_opt_x = np.zeros((number_of_users, number_of_bs))
     # print('Iteration ', iteration)
     np.random.seed(iteration)
     x_user, y_user = f.find_coordinates()
     if Heuristic:
         if os.path.exists(str('Data/opt_x_heuristics/iteration_' + str(iteration) + 'beamwidth_heuristic_' + name + '.p')):
             opt_x = pickle.load(open(str('Data/opt_x_heuristics/iteration_' + str(iteration) + 'beamwidth_heuristic_' + name + '.p'), 'rb'))
+        else:
+            print('iteration' , iteration, 'does not exist')
+    elif SCClosestHeuristic:
+        if os.path.exists(str('Data/opt_x_heuristics/iteration_' + str(iteration) + 'SC_closest_heuristic_' + name + '.p')):
+            opt_x = pickle.load(open(str('Data/opt_x_heuristics/iteration_' + str(iteration) + 'SC_closest_heuristic_' + name + '.p'), 'rb'))
+        else:
+            print('iteration' , iteration, 'does not exist')
+    elif MCClosestHeuristic:
+        if os.path.exists(str('Data/opt_x_heuristics/iteration_' + str(iteration) + 'MC_closest_heuristic_k=' + str(k) + name + '.p')):
+            opt_x = pickle.load(open(str('Data/opt_x_heuristics/iteration_' + str(iteration) + 'MC_closest_heuristic_k=' + str(k) + name + '.p'), 'rb'))
         else:
             print('iteration' , iteration, 'does not exist')
     else:
@@ -73,52 +89,50 @@ for iteration in range(iteration_min, iteration_max):
 
     links_per_user = sum(np.transpose(opt_x))
     total_links_per_user = np.append(total_links_per_user, links_per_user)
+
     for user in range(number_of_users):
         u = f.user_coords(user, x_user, y_user)
-        if Grid:
-            if opt_x[user, bs] == 1:
-                grid_1bs[int(u[1]*delta), int(u[0]*delta)] += 1
-            if links_per_user[user] == 2:
-                grid_2mc[int(u[1]*delta), int(u[0]*delta)] += 1
-            elif links_per_user[user] == 3:
-                grid_3mc[int(u[1]*delta), int(u[0]*delta)] += 1
-            elif links_per_user[user] == 4:
-                grid_4mc[int(u[1]*delta), int(u[0]*delta)] += 1
-            elif links_per_user[user] >= 5:
-                grid_5mc[int(u[1]*delta), int(u[0]*delta)] += 1
-            total_visits[int(u[1]*delta), int(u[0]*delta)] += 1
-        center_bs = (50, 43.3)
-        if f.find_distance(u, center_bs) <= 25:
-            for b in range(number_of_bs):
-                if opt_x[user, b] == 1:
-                    b_coords = f.bs_coords(b)
-                    misalignment_user.append(f.find_misalignment(u, b_coords, beamwidth_u))
-                    misalignment_bs.append(f.find_misalignment(b_coords, u, beamwidth_b))
-                    x = f.find_misalignment(u, b_coords, beamwidth_u)
-                    dist = f.find_distance(u, b_coords)
-                    distances.append(dist)
-                    if links_per_user[user] == 1:
-                        misalignment_sc.append(x)
-                        distances_sc.append(dist)
-                    elif links_per_user[user] > 1:
-                        misalignment_mc.append(x)
-                        distances_mc.append(dist)
-                    if links_per_user[user] == 2:
-                        misalignment_2mc.append(x)
-                        distances_2mc.append(dist)
-                    elif links_per_user[user] == 3:
-                        misalignment_3mc.append(x)
-                        distances_3mc.append(dist)
-                    elif links_per_user[user] == 4:
-                        misalignment_4mc.append(x)
-                        distances_4mc.append(dist)
-                    elif links_per_user[user] >= 5:
-                        misalignment_5mc.append(x)
-                        distances_5mc.append(dist)
+        if opt_x[user, bs] == 1:
+            grid_1bs[int(u[1]*delta), int(u[0]*delta)] += 1
+        if links_per_user[user] == 2:
+            grid_2mc[int(u[1]*delta), int(u[0]*delta)] += 1
+        elif links_per_user[user] == 3:
+            grid_3mc[int(u[1]*delta), int(u[0]*delta)] += 1
+        elif links_per_user[user] == 4:
+            grid_4mc[int(u[1]*delta), int(u[0]*delta)] += 1
+        elif links_per_user[user] >= 5:
+            grid_5mc[int(u[1]*delta), int(u[0]*delta)] += 1
+        total_visits[int(u[1]*delta), int(u[0]*delta)] += 1
 
-                    reduced_opt_x[user, b] = 1
+        for b in range(number_of_bs):
+            if opt_x[user, b] == 1:
+                b_coords = f.bs_coords(b)
+                misalignment_user.append(f.find_misalignment(u, b_coords, beamwidth_u))
+                misalignment_bs.append(f.find_misalignment(b_coords, u, beamwidth_b))
+                x = f.find_misalignment(u, b_coords, beamwidth_u)
+                dist = f.find_distance(u, b_coords)
+                distances.append(dist)
+                if links_per_user[user] == 1:
+                    misalignment_sc.append(x)
+                    distances_sc.append(dist)
+                elif links_per_user[user] > 1:
+                    misalignment_mc.append(x)
+                    distances_mc.append(dist)
+                if links_per_user[user] == 2:
+                    misalignment_2mc.append(x)
+                    distances_2mc.append(dist)
+                elif links_per_user[user] == 3:
+                    misalignment_3mc.append(x)
+                    distances_3mc.append(dist)
+                elif links_per_user[user] == 4:
+                    misalignment_4mc.append(x)
+                    distances_4mc.append(dist)
+                elif links_per_user[user] >= 5:
+                    misalignment_5mc.append(x)
+                    distances_5mc.append(dist)
 
-    channel_capacity.append(f.find_capacity(reduced_opt_x, x_user, y_user))
+
+    channel_capacity.append(f.find_capacity(opt_x, x_user, y_user))
 
 
 if Heuristic:
@@ -126,6 +140,24 @@ if Heuristic:
         name = str('beamwidth_heuristic_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
     else:
         name = str('beamwidth_heuristic_no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
+elif SCClosestHeuristic:
+    if Interference:
+        name = str('SC_closest_heuristic_until_iteration_' + str(iteration_max) + 'users=' + str(
+            number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
+            np.degrees(beamwidth_b)) + 'delta=' + str(delta))
+    else:
+        name = str('SC_closest_heuristic_no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(
+            number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
+            np.degrees(beamwidth_b)) + 'delta=' + str(delta))
+elif MCClosestHeuristic:
+    if Interference:
+        name = str('MC_closest_heuristic_until_iteration_' + str(iteration_max) + 'k=' + str(k) + 'users=' + str(
+            number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
+            np.degrees(beamwidth_b)) + 'delta=' + str(delta))
+    else:
+        name = str('MC_closest_heuristic_no_interference_until_iteration_' + str(iteration_max) + 'k=' + str(k) + 'users=' + str(
+            number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
+            np.degrees(beamwidth_b)) + 'delta=' + str(delta))
 else:
     if Interference:
         name = str('until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))

@@ -8,7 +8,7 @@ import pickle
 import scipy.stats as stats
 
 iteration_min = 0
-iteration_max = 1000
+iteration_max = iterations[number_of_users]
 
 delta = 2
 
@@ -64,8 +64,9 @@ plt.show()
 fig, ax = plt.subplots()
 data1 = np.degrees(misalignment_sc)
 data2 = np.degrees(misalignment_mc)
-plt.hist(data1, density=True, bins = np.arange(min(data1), max(data1) + 0.1, 0.1), alpha = 0.3, label = 'single connections')
-plt.hist(data2, density=True, bins = np.arange(min(data2), max(data2) + 0.1, 0.1), alpha = 0.3, label = 'multiple connections')
+print(max(data1), max(data2))
+plt.hist(data1, density=True, bins = np.arange(-np.degrees(beamwidth_b/2), np.degrees(beamwidth_b/2) + 0.1, 0.1), alpha = 0.3, label = 'single connections')
+plt.hist(data2, density=True, bins = np.arange(-np.degrees(beamwidth_b/2), np.degrees(beamwidth_b/2) + 0.1, 0.1), alpha = 0.3, label = 'multiple connections')
 
 plt.xlabel('Misalignment in degrees')
 plt.legend()
@@ -85,9 +86,9 @@ data = distances
 step = 2
 # plt.hist(data, density=True, bins = np.arange(min(data), max(data) + step, step), alpha = 0.3, label = 'all distances')
 data = distances_sc
-plt.hist(data, density=True, bins = np.arange(min(data), max(data) + step, step), alpha = 0.3, label = 'single connections')
+plt.hist(data, density=True, bins = np.arange(min(data), 55 + step, step), alpha = 0.3, label = 'single connections')
 data = distances_mc
-plt.hist(data, density=True, bins = np.arange(min(data), max(data) + step, step), alpha = 0.3, label = 'multiple connections')
+plt.hist(data, density=True, bins = np.arange(min(data), 55 + step, step), alpha = 0.3, label = 'multiple connections')
 plt.legend()
 plt.xlabel('Link distance (m)')
 plt.show()
@@ -95,26 +96,17 @@ plt.show()
 fig, ax = plt.subplots()
 step = 2
 data = distances_2mc
-plt.hist(data, density=True, bins = np.arange(min(data), max(data) + step, step), alpha = 0.3, label = '2mc')
+plt.hist(data, density=True, bins = np.arange(min(data), 55 + step, step), alpha = 0.3, label = '2mc')
 data = distances_3mc
-plt.hist(data, density=True, bins = np.arange(min(data), max(data) + step, step), alpha = 0.3, label = '3mc')
+plt.hist(data, density=True, bins = np.arange(min(data), 55 + step, step), alpha = 0.3, label = '3mc')
 data = distances_4mc
-plt.hist(data, density=True, bins = np.arange(min(data), max(data) + step, step), alpha = 0.3, label = '4mc')
+plt.hist(data, density=True, bins = np.arange(min(data), 55 + step, step), alpha = 0.3, label = '4mc')
 data = distances_5mc
-plt.hist(data, density=True, bins = np.arange(min(data), max(data) + step, step), alpha = 0.3, label = '>5mc')
+plt.hist(data, density=True, bins = np.arange(min(data), 55 + step, step), alpha = 0.3, label = '>5mc')
 plt.xlabel('Link distance (m)')
 plt.legend()
 plt.show()
 
-fig, ax = plt.subplots()
-step = 2
-data = distances_sc
-plt.hist(data, density=True, bins = np.arange(min(data), max(data) + step, step), alpha = 0.3, label = 'sc')
-data = distances_5mc
-plt.hist(data, density=True, bins = np.arange(min(data), max(data) + step, step), alpha = 0.3, label = '>5mc')
-plt.xlabel('Link distance (m)')
-plt.legend()
-plt.show()
 
 degrees = pickle.load(open(str('Data/total_links_per_user' + name + '.p'),'rb'))
 

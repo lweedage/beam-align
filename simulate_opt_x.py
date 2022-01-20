@@ -13,8 +13,8 @@ if Interference:
 else:
     name = str('users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
 
-iteration_min = 1000
-iteration_max = 5000
+iteration_min = 0
+iteration_max = iterations[number_of_users]
 
 start = time.time()
 for iteration in range(iteration_min, iteration_max):
