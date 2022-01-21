@@ -9,7 +9,7 @@ import pickle
 import os
 
 if Interference:
-    name = str('users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
+    name = str('with_interference_users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
 else:
     name = str('users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
 
@@ -54,7 +54,7 @@ channel_capacity = []
 iteration_min = 0
 iteration_max = iterations[number_of_users]
 
-Heuristic = True
+Heuristic = False
 SCClosestHeuristic = False
 MCClosestHeuristic = False
 
