@@ -14,7 +14,7 @@ else:
 # number_of_bs = 1
 # x_bs, y_bs = [10], [10]
 
-misalignment = {100: 1.78, 300: 1.60, 500: 1.47, 750:1.34}
+misalignment = {100: 1.78, 300: 1.60, 500: 1.47, 750:1.34, 1000:1.28}
 
 def find_sorted_users(bs, x_user, y_user):
     # on a torus
@@ -68,31 +68,34 @@ for iteration in range(iteration_min, iteration_max):
                 else:
                     candidate[beam] = user
         for user in candidate.values():
-            opt_x[user, bs] = 1
+            snr = f.find_snr(user, bs, x_user, y_user)
+            if snr >= SINR_min:
+                opt_x[user, bs] = 1
 
-    link_constraint_fails = 0
+    disconnected_user = 0
     sinr_constraint_fails = 0
     links_per_user = sum(np.transpose(opt_x))
 
     for u in range(number_of_users):
         if links_per_user[u] == 0:
-            link_constraint_fails += 1
-        for bs in range(number_of_bs):
-            if opt_x[u, bs] == 1:
-                sinr = f.find_sinr(u, bs, opt_x, x_user, y_user)
-                if sinr < SINR_min:
-                    sinr_constraint_fails += 1
+            disconnected_user += 1
+        # else:
+        #     for bs in range(number_of_bs):
+        #         if opt_x[u, bs] == 1:
+        #             sinr = f.find_sinr(u, bs, opt_x, x_user, y_user)
+        #             if sinr < SINR_min:
+        #                 sinr_constraint_fails += 1
 
 
     pickle.dump(opt_x, open(str('Data/opt_x_heuristics/iteration_' + str(iteration) + name + '.p'), 'wb'), protocol=4)
-    failed_link_constraints.append(link_constraint_fails)
-    failed_sinr_constraints.append(sinr_constraint_fails)
+    failed_link_constraints.append(disconnected_user)
+    # failed_sinr_constraints.append(sinr_constraint_fails)
 
     # print('one iteration takes', time.time() - start, 'seconds')
     # start = time.time()
 
-pickle.dump(failed_link_constraints, open(str('Data/failed_link_constraints_iteration_' + str(iteration_max) + name + '.p'), 'wb'), protocol=4)
-pickle.dump(failed_sinr_constraints, open(str('Data/failed_sinr_constraints_iteration_' + str(iteration_max) + name + '.p'), 'wb'), protocol=4)
+pickle.dump(failed_link_constraints, open(str('Data/disconnected_users_iteration_' + str(iteration_max) + name + '.p'), 'wb'), protocol=4)
+# pickle.dump(failed_sinr_constraints, open(str('Data/failed_sinr_constraints_iteration_' + str(iteration_max) + name + '.p'), 'wb'), protocol=4)
 
 
 fig, ax = plt.subplots()

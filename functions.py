@@ -222,3 +222,11 @@ def find_sinr(user, bs, opt_x, x_user, y_user):
     else:
         interference = 0
     return (transmission_power * gain_user * gain_bs / path_loss ) / (sigma + transmission_power * interference)
+
+def find_snr(user, bs, x_user, y_user):
+    coords_i = user_coords(user, x_user, y_user)
+    coords_j = bs_coords(bs)
+    gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
+    gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
+    path_loss = find_path_loss(coords_i, coords_j)
+    return (transmission_power * gain_user * gain_bs / path_loss ) / (sigma)

@@ -4,7 +4,7 @@ import numpy as np
 colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22',
           '#17becf'] * 10
 
-Interference = True
+Interference = False
 
 pi = math.pi
 bs_of_interest = 0
@@ -70,7 +70,7 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
 x_bs, y_bs = initialise_graph_triangular(radius, xDelta, yDelta)
 number_of_bs = len(x_bs)
 
-iterations = {100:5000, 300:1667, 500:1000, 750:667}
+iterations = {100:5000, 300:1667, 500:1000, 750:667, 1000:500}
 if Interference:
     iterations = {17: 5000, 51: 1667, 84: 1000, 126: 667}
 
