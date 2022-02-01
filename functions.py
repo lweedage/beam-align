@@ -52,32 +52,40 @@ def find_gain(bore_1, bore_2, geo_1, geo_2, beamwidth_ml):
     else:
         return 10**((-0.4111 * math.log(math.degrees(w)) - 10.579)/10)
 
+def find_user_gain(bore_1, bore_2, geo_1, geo_2, beamwidth_ml):
+    alpha = 0
+    beamwidth_ml = math.degrees(beamwidth_ml)
+    w = beamwidth_ml / 2.58
+    G0 = 20 * math.log10(1.62 / math.sin(math.radians(w / 2)))
+    return 10 ** ((G0 - 3.01 * (2 * alpha / w) ** 2)/10)
+
 def find_bore(coord_1, coord_2, beamwidth):
     radians = find_geo(coord_1, coord_2)
     angle = find_beam(radians, beamwidth)
     return angle
 
 def find_geo(coord_1, coord_2):
-    (x_1, y_1) = coord_1
-    (x_2, y_2) = coord_2
+    if Torus:
+        (x_1, y_1) = coord_1
+        (x_2, y_2) = coord_2
 
-    if (max(coord_2[0], coord_1[0]) - min(coord_2[0], coord_1[0])) > (
-            min(coord_2[0], coord_1[0]) - max(coord_2[0], coord_1[0])) % xDelta:
-        if coord_2[0] > coord_1[0]:
-            x_2 = coord_2[0] - xDelta
-        else:
-            x_1 = coord_1[0] - xDelta
+        if (max(coord_2[0], coord_1[0]) - min(coord_2[0], coord_1[0])) > (
+                min(coord_2[0], coord_1[0]) - max(coord_2[0], coord_1[0])) % xDelta:
+            if coord_2[0] > coord_1[0]:
+                x_2 = coord_2[0] - xDelta
+            else:
+                x_1 = coord_1[0] - xDelta
 
-    if (max(coord_2[1], coord_1[1]) - min(coord_2[1], coord_1[1])) > (
-            min(coord_2[1], coord_1[1]) - max(coord_2[1], coord_1[1])) % yDelta:
-        if coord_2[1] > coord_1[1]:
-            y_2 = coord_2[1] - yDelta
-        else:
-            y_1 = coord_1[1] - yDelta
+        if (max(coord_2[1], coord_1[1]) - min(coord_2[1], coord_1[1])) > (
+                min(coord_2[1], coord_1[1]) - max(coord_2[1], coord_1[1])) % yDelta:
+            if coord_2[1] > coord_1[1]:
+                y_2 = coord_2[1] - yDelta
+            else:
+                y_1 = coord_1[1] - yDelta
 
-    coord_2 = (x_2, y_2)
-    coord_1 = (x_1, y_1)
-    #until here is torus
+        coord_2 = (x_2, y_2)
+        coord_1 = (x_1, y_1)
+        #until here is torus
 
     dy = coord_2[1] - coord_1[1]
     dx = coord_2[0] - coord_1[0]
@@ -113,15 +121,23 @@ def find_path_loss(user, bs):
     return p_los * l_los + p_nlos * l_nlos
 
 def find_distance(user, bs):
-    # on a torus
-    x = np.minimum((bs[0] - user[0]) % xDelta, (user[0] - bs[0]) % xDelta)
-    y = np.minimum((bs[1] - user[1]) % yDelta, (user[1] - bs[1]) % yDelta)
+    if Torus:
+        # on a torus
+        x = np.minimum((bs[0] - user[0]) % xDelta, (user[0] - bs[0]) % xDelta)
+        y = np.minimum((bs[1] - user[1]) % yDelta, (user[1] - bs[1]) % yDelta)
+    else:
+        x = bs[0] - user[0]
+        y = bs[1] - user[1]
     return np.sqrt(x ** 2 + y ** 2)
 
 def find_distance_all_bs(user):
-    # on a torus
-    x = np.minimum((x_bs - user[0]) % xDelta, (user[0] - x_bs) % xDelta)
-    y = np.minimum((y_bs - user[1]) % yDelta, (user[1] - y_bs) % yDelta)
+    if Torus:
+        # on a torus
+        x = np.minimum((x_bs - user[0]) % xDelta, (user[0] - x_bs) % xDelta)
+        y = np.minimum((y_bs - user[1]) % yDelta, (user[1] - y_bs) % yDelta)
+    else:
+        x = x_bs - user[0]
+        y = y_bs - user[1]
     return np.sqrt(x ** 2 + y ** 2)
 
 def initialise_graph_triangular(radius, xDelta, yDelta):
@@ -134,7 +150,7 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
                 ybs.append(j * dy)
     return xbs, ybs
 
-def find_coordinates():
+def find_coordinates(number_of_users):
     x_user, y_user = np.random.uniform(xmin, xmax, number_of_users), np.random.uniform(ymin, ymax, number_of_users)
     return x_user, y_user
 
@@ -185,7 +201,21 @@ def find_distance_allbs(user, xbs, ybs):
     return np.sqrt(xx ** 2 + yy ** 2)
 
 def find_capacity(opt_x, x_user, y_user):
-    capacity = 0
+    per_user_capacity = find_capacity_per_user(opt_x, x_user ,y_user)
+    return sum(per_user_capacity)
+
+def find_capacity_per_user(opt_x, x_user, y_user):
+    occupied_beams = np.zeros((number_of_bs, len(directions_bs)))
+    for u in range(number_of_users):
+        for bs in range(number_of_bs):
+            if opt_x[u, bs] == 1:
+                coords_i = user_coords(u, x_user, y_user)
+                coords_j = bs_coords(bs)
+                geo = find_geo(coords_j, coords_i)
+                beam_number = find_beam_number(geo, beamwidth_b)
+                occupied_beams[bs, beam_number] += 1
+
+    capacity = np.zeros(number_of_users)
     for u in range(number_of_users):
         for bs in range(number_of_bs):
             if opt_x[u, bs] == 1:
@@ -194,12 +224,12 @@ def find_capacity(opt_x, x_user, y_user):
                 gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
                 gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
                 path_loss = find_path_loss(coords_i, coords_j)
-                if Interference:
-                    interference = find_interference(coords_i, coords_j, opt_x, x_user, y_user)
-                else:
-                    interference = 0
-                capacity += W * math.log(1 + transmission_power * gain_bs * gain_user / (path_loss * (sigma + transmission_power * interference)))
+
+                geo = find_geo(coords_j, coords_i)
+                beam_number = find_beam_number(geo, beamwidth_b)
+                capacity[u] += W / occupied_beams[bs, beam_number] * math.log(1 + transmission_power * gain_bs * gain_user / (path_loss * sigma))
     return capacity
+
 
 def find_interference(user, bs, opt_x, x_user, y_user):
     interference = 0
@@ -217,11 +247,7 @@ def find_sinr(user, bs, opt_x, x_user, y_user):
     gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
     gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
     path_loss = find_path_loss(coords_i, coords_j)
-    if Interference:
-        interference = find_interference(coords_i, coords_j, opt_x, x_user, y_user)
-    else:
-        interference = 0
-    return (transmission_power * gain_user * gain_bs / path_loss ) / (sigma + transmission_power * interference)
+    return (transmission_power * gain_user * gain_bs / path_loss ) / (sigma )
 
 def find_snr(user, bs, x_user, y_user):
     coords_i = user_coords(user, x_user, y_user)

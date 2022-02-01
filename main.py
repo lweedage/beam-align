@@ -15,55 +15,35 @@ import functions as f
 from matplotlib.cm import ScalarMappable
 from parameters import *
 
-for iteration in range(1):
-    np.random.seed(iteration)
-    x_user, y_user = f.find_coordinates()
+fig, ax = plt.subplots()
 
-    if Interference:
-        opt_x, capacity = new_optimization.optimization(x_user, y_user)
-    else:
-        opt_x, capacity = new_optimization_no_interference.optimization(x_user, y_user)
+iteration = 5
+for number_of_users in [1000]:
+    np.random.seed(iteration)
+    x_user, y_user = f.find_coordinates(number_of_users)
+    print(len(x_user))
+    opt_x, capacity = new_optimization_no_interference.optimization(x_user, y_user)
 
     print('Average connections per user: ', np.sum(opt_x)/number_of_users)
     print('Capacity:', np.sum(capacity))
 
     calculated_capacity = f.find_capacity(opt_x, x_user ,y_user)
+    calculated_capacity_per_user = f.find_capacity_per_user(opt_x, x_user ,y_user)
+
     print('Calculated capacity:', calculated_capacity)
-
-    fig, ax = plt.subplots()
-    G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
-    f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'black', edgecolor = edgecolor)
-    bound = 0.1 * xDelta
-    plt.xlim((xmin - bound, xmax + bound))
-    plt.ylim((ymin - bound, ymax + bound))
-    ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
-    plt.show()
-
-
-# if Plot_Interference:
-#     delta = 200
-#     bound = 10
-#     grid_size = (xmax + 2*bound)/delta
-#     x_grid = np.arange(xmin - bound, xmax + bound, grid_size)
-#     y_grid = np.arange(ymin - bound, ymax + bound, grid_size)
-#     x_mesh,y_mesh = np.meshgrid(x_grid,y_grid)
-#     xc, yc = x_mesh + grid_size/2, y_mesh + grid_size/2
-#     j = (x_bs[bs_of_interest], y_bs[bs_of_interest])
-#     for bs in range(number_of_bs):
-#         interference = np.zeros((delta, delta))
-#         j = (x_bs[bs], y_bs[bs])
-#         for x in range(delta):
-#             for y in range(delta):
-#                 interference[y, x] = f.find_interference((xc[0, x], xc[0, y]), j, opt_x, x_user, y_user)
-#
-#         fig, ax = plt.subplots()
-#         vmin, vmax = 0, np.max(interference)/10
-#         contour_z1 = ax.pcolormesh(x_grid, x_grid.transpose(), interference, vmin = vmin, vmax = vmax, cmap = 'turbo')
-#         fig.colorbar(ScalarMappable(norm=contour_z1.norm, cmap=contour_z1.cmap))
-#         plt.xlim((xmin - bound, xmax + bound))
-#         plt.ylim((ymin - bound, ymax + bound))
-#         f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'white', edgecolor=edgecolor)
-#         plt.show()
-#
-#
-# degree_U, degree_BS, link_distances, link_distances_MC = analysis.find_metrics(opt_x, x_user, y_user)
+    print(f.find_capacity(opt_x, x_user, y_user))
+    # fig, ax = plt.subplots()
+    # G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x, number_of_users)
+    # f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color = 'black', edgecolor = edgecolor)
+    # bound = 0.1 * xDelta
+    # plt.xlim((xmin - bound, xmax + bound))
+    # plt.ylim((ymin - bound, ymax + bound))
+    # ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+    # plt.show()
+#     n_bins = 50
+#     plt.hist(calculated_capacity_per_user, n_bins, density=True, histtype='step',
+#                                cumulative=True, label = f'{number_of_users} users')
+# plt.legend()
+# plt.xlabel('Capacity per user (Gbps)')
+# plt.ylabel('CDF')
+# plt.show()

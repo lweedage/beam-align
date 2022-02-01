@@ -48,7 +48,10 @@ def optimization(x_user, y_user):
             coords_j = f.bs_coords(j)
             path_loss[i, j] = f.find_path_loss(coords_i, coords_j)
             gain_bs[i, j] = f.find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
-            gain_user[i, j] = f.find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
+            if user_misalignment:
+                gain_user[i, j] = f.find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
+            else:
+                gain_user[i, j] = f.find_user_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
             power[i, j] = transmission_power * gain_bs[i, j] * gain_user[i, j] / path_loss[i, j]
 
     # ------------------------ Start of optimization program ------------------------------------
@@ -158,9 +161,11 @@ def optimization(x_user, y_user):
 
     a = np.zeros((number_of_users, number_of_bs))
     total_C = np.zeros(number_of_users)
+
     if m.status == 2:
         for i in range(number_of_users):
             total_C[i] = C_user[i].X
+            # print([angles_u[i, j].X for j in directions_u])
 
         # print(total_C)
         for i in users:

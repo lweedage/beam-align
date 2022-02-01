@@ -8,10 +8,11 @@ import time
 import pickle
 import os
 
-if Interference:
-    name = str('with_interference_users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(int(np.degrees(beamwidth_b))))
-else:
-    name = str('users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
+
+name = str('users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
+
+if not user_misalignment:
+    name = str(name + 'no_user_misalignment')
 
 delta = 2
 
@@ -54,8 +55,7 @@ channel_capacity = []
 iteration_min = 0
 iteration_max = iterations[number_of_users]
 
-Heuristic = False
-SCClosestHeuristic = False
+Heuristic = True
 MCClosestHeuristic = False
 
 if MCClosestHeuristic:
@@ -63,17 +63,12 @@ if MCClosestHeuristic:
 
 start = time.time()
 for iteration in range(iteration_min, iteration_max):
-    # print('Iteration ', iteration)
+    print('Iteration ', iteration)
     np.random.seed(iteration)
-    x_user, y_user = f.find_coordinates()
+    x_user, y_user = f.find_coordinates(number_of_users)
     if Heuristic:
         if os.path.exists(str('Data/opt_x_heuristics/iteration_' + str(iteration) + 'beamwidth_heuristic_' + name + '.p')):
             opt_x = pickle.load(open(str('Data/opt_x_heuristics/iteration_' + str(iteration) + 'beamwidth_heuristic_' + name + '.p'), 'rb'))
-        else:
-            print('iteration' , iteration, 'does not exist')
-    elif SCClosestHeuristic:
-        if os.path.exists(str('Data/opt_x_heuristics/iteration_' + str(iteration) + 'SC_closest_heuristic_' + name + '.p')):
-            opt_x = pickle.load(open(str('Data/opt_x_heuristics/iteration_' + str(iteration) + 'SC_closest_heuristic_' + name + '.p'), 'rb'))
         else:
             print('iteration' , iteration, 'does not exist')
     elif MCClosestHeuristic:
@@ -110,7 +105,7 @@ for iteration in range(iteration_min, iteration_max):
                 b_coords = f.bs_coords(b)
                 misalignment_user.append(f.find_misalignment(u, b_coords, beamwidth_u))
                 misalignment_bs.append(f.find_misalignment(b_coords, u, beamwidth_b))
-                x = f.find_misalignment(u, b_coords, beamwidth_u)
+                x = f.find_misalignment(b_coords, u, beamwidth_b)
                 dist = f.find_distance(u, b_coords)
                 distances.append(dist)
                 if links_per_user[user] == 1:
@@ -135,37 +130,20 @@ for iteration in range(iteration_min, iteration_max):
     capacity = f.find_capacity(opt_x, x_user, y_user)
     if capacity == 0:
         no_optimal_value_found += 1
-    channel_capacity.append(f.find_capacity(opt_x, x_user, y_user))
+    channel_capacity.append(capacity)
 
 
 if Heuristic:
-    if Interference:
-        name = str('beamwidth_heuristic_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
-    else:
-        name = str('beamwidth_heuristic_no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
-elif SCClosestHeuristic:
-    if Interference:
-        name = str('SC_closest_heuristic_until_iteration_' + str(iteration_max) + 'users=' + str(
-            number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
-            np.degrees(beamwidth_b)) + 'delta=' + str(delta))
-    else:
-        name = str('SC_closest_heuristic_no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(
-            number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
-            np.degrees(beamwidth_b)) + 'delta=' + str(delta))
+    name = str('beamwidth_heuristic_no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
 elif MCClosestHeuristic:
-    if Interference:
-        name = str('MC_closest_heuristic_until_iteration_' + str(iteration_max) + 'k=' + str(k) + 'users=' + str(
-            number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
-            np.degrees(beamwidth_b)) + 'delta=' + str(delta))
-    else:
-        name = str('MC_closest_heuristic_no_interference_until_iteration_' + str(iteration_max) + 'k=' + str(k) + 'users=' + str(
-            number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
-            np.degrees(beamwidth_b)) + 'delta=' + str(delta))
+    name = str('MC_closest_heuristic_no_interference_until_iteration_' + str(iteration_max) + 'k=' + str(k) + 'users=' + str(
+        number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
+        np.degrees(beamwidth_b)) + 'delta=' + str(delta))
 else:
-    if Interference:
-        name = str('until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
-    else:
-        name = str('no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
+    name = str('no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
+
+if not user_misalignment:
+    name = str(name + 'no_user_misalignment')
 
 if Grid:
     pickle.dump(grid_1bs, open(str('Data/grid_1bs_' + name + '.p'),'wb'), protocol=4)
