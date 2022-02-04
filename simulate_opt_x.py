@@ -7,7 +7,9 @@ import functions as f
 import time
 import pickle
 import os
+import find_data
 
+number_of_users = int(input('Number of users?'))
 
 name = str('users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
 if not user_misalignment:
@@ -15,6 +17,9 @@ if not user_misalignment:
 
 iteration_min = 0
 iteration_max = iterations[number_of_users]
+
+optimal = []
+xs, ys = [], []
 
 start = time.time()
 for iteration in range(iteration_min, iteration_max):
@@ -26,4 +31,9 @@ for iteration in range(iteration_min, iteration_max):
 
     print('one iteration takes', time.time() - start, 'seconds')
     start = time.time()
-    print(opt_x)
+
+    optimal.append(opt_x)
+    xs.append(x_user)
+    ys.append(y_user)
+
+find_data.main(optimal, xs, ys)

@@ -1,18 +1,17 @@
 import matplotlib.pyplot as plt
-import numpy as np
 from parameters import *
-import new_optimization
-import functions as f
 import time
 import pickle
 import scipy.stats as stats
+
+number_of_users = int(input('Number of users?'))
 
 iteration_min = 0
 iteration_max = iterations[number_of_users]
 
 delta = 2
 
-Heuristic = False
+Heuristic = True
 
 start = time.time()
 if Heuristic:
@@ -77,7 +76,8 @@ plt.show()
 # plt.show()
 
 name = str(int(math.ceil(np.degrees(beamwidth_b)))) + 'b_' + str(number_of_users) + '_users'
-
+if Heuristic:
+    name = str('heuristic_' + name)
 
 fig, ax = plt.subplots()
 data1 = np.degrees(misalignment_sc)
@@ -95,8 +95,7 @@ plt.show()
 
 
 
-if Heuristic:
-    name = str('heuristic_' + name)
+
 
 fig, ax = plt.subplots()
 data = distances

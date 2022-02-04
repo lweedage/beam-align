@@ -17,30 +17,25 @@ start = time.time()
 Heuristic = False
 ClosestHeuristic = False
 
+bandwidth_sharing = True
+
 
 if Heuristic:
-    if Interference:
-        name = str('beamwidth_heuristic_until_iteration_' + str(iteration_max) + 'users=' + str(
-            number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
-            np.degrees(beamwidth_b)) + 'delta=' + str(delta))
-    else:
+    if bandwidth_sharing:
         name = str('beamwidth_heuristic_no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(
             number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
             np.degrees(beamwidth_b)) + 'delta=' + str(delta))
+    else:
+        name = str('beamwidth_heuristic_nosharing_no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(
+            number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
+            np.degrees(beamwidth_b)) + 'delta=' + str(delta))
+
 elif ClosestHeuristic:
-    if Interference:
-        name = str('closest_heuristic_until_iteration_' + str(iteration_max) + 'users=' + str(
-            number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
-            np.degrees(beamwidth_b)) + 'delta=' + str(delta))
-    else:
-        name = str('closest_heuristic_no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(
-            number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
-            np.degrees(beamwidth_b)) + 'delta=' + str(delta))
+    name = str('closest_heuristic_no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(
+        number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(
+        np.degrees(beamwidth_b)) + 'delta=' + str(delta))
 else:
-    if Interference:
-        name = str('until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
-    else:
-        name = str('no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
+    name = str('no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
 
 grid_1bs = pickle.load(open(str('Data/grid_1bs_' + name + '.p'),'rb'))
 grid_2mc = pickle.load(open(str('Data/grid_2mc_' + name + '.p'),'rb'))

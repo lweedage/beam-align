@@ -18,7 +18,7 @@ from parameters import *
 fig, ax = plt.subplots()
 
 iteration = 5
-for number_of_users in [1000]:
+for number_of_users in [100]:
     np.random.seed(iteration)
     x_user, y_user = f.find_coordinates(number_of_users)
     print(len(x_user))

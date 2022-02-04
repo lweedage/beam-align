@@ -14,13 +14,12 @@ ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 3
 xDelta = xmax - xmin
 yDelta = ymax - ymin
 
-number_of_users = int(input('Number of users?'))
 
 N_bs = 100  # number of connections per BS
 N_user = 100  # number of connections per user
 
 beamwidth_u = math.radians(5)
-beamwidth_b = math.radians(10 )
+beamwidth_b = math.radians(5)
 
 critical_distance = 50
 
@@ -58,7 +57,7 @@ number_of_bs = len(x_bs)
 iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
 
 if beamwidth_b == math.radians(5):
-    misalignment = {100: 1.78, 300: 1.60, 500: 1.47, 750: 1.34, 1000: 1.28}
+    misalignment = {10: 1.78, 100: 1.78, 300: 1.60, 500: 1.47, 750: 1.34, 1000: 1.28}
 
 elif beamwidth_b == math.radians(10):
     misalignment = {100: 2.96, 300: 2.77, 500: 2.72, 750: 2.87, 1000: 2.87}
@@ -66,6 +65,8 @@ elif beamwidth_b == math.radians(10):
 elif beamwidth_b == math.radians(15):
     misalignment = {100: 5.24, 300: 5.32, 500: 5.32, 750: 5.32, 1000: 5.32}
 
+# iterations = {10: 1, 100: 100, 300: 100, 500: 100, 750: 100, 1000: 100}
 
 user_misalignment = True
 Torus = True
+

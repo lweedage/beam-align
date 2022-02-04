@@ -206,6 +206,7 @@ def find_capacity(opt_x, x_user, y_user):
 
 def find_capacity_per_user(opt_x, x_user, y_user):
     occupied_beams = np.zeros((number_of_bs, len(directions_bs)))
+    number_of_users = len(x_user)
     for u in range(number_of_users):
         for bs in range(number_of_bs):
             if opt_x[u, bs] == 1:
@@ -233,6 +234,7 @@ def find_capacity_per_user(opt_x, x_user, y_user):
 
 def find_interference(user, bs, opt_x, x_user, y_user):
     interference = 0
+    number_of_users = len(x_user)
     for u in range(number_of_users):
         coords_k = user_coords(u, x_user, y_user)
         for b in range(number_of_bs):
