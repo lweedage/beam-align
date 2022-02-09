@@ -2,6 +2,7 @@ import numpy as np
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+import numpy.random
 import seaborn
 from parameters import *
 import networkx as nx
@@ -28,15 +29,6 @@ def find_beam_number(radians, beamwidth):
             preferred_angle = i
     return preferred_angle
 
-def find_initial_interference(i, j, k, m):
-    if not (k == i and m == j):
-        gain_bs = find_gain(m, k, m, i, beamwidth_b)
-        gain_user = find_gain(i, j, i, m, beamwidth_u)
-        path_los = find_path_loss(i, m)
-        return gain_bs * gain_user / path_los
-    else:
-        return 0
-
 def find_gain(bore_1, bore_2, geo_1, geo_2, beamwidth_ml):
     bore = find_bore(bore_1, bore_2, beamwidth_ml)
     geo = find_geo(geo_1, geo_2)
@@ -51,13 +43,6 @@ def find_gain(bore_1, bore_2, geo_1, geo_2, beamwidth_ml):
         return 10 ** ((G0 - 3.01 * (2 * alpha / w) ** 2)/10)
     else:
         return 10**((-0.4111 * math.log(math.degrees(w)) - 10.579)/10)
-
-def find_user_gain(bore_1, bore_2, geo_1, geo_2, beamwidth_ml):
-    alpha = 0
-    beamwidth_ml = math.degrees(beamwidth_ml)
-    w = beamwidth_ml / 2.58
-    G0 = 20 * math.log10(1.62 / math.sin(math.radians(w / 2)))
-    return 10 ** ((G0 - 3.01 * (2 * alpha / w) ** 2)/10)
 
 def find_bore(coord_1, coord_2, beamwidth):
     radians = find_geo(coord_1, coord_2)
@@ -106,19 +91,26 @@ def find_misalignment(coord_1, coord_2, beamwidth):
 
 def find_path_loss(user, bs):
     r = find_distance(user, bs)
-    if r <= critical_distance:
-        p_los = 1
+    if Model_3GPP:
+        distance_3D = find_distance_3D(user, bs)
+        breakpoint_distance = 4 * (BS_height - 1) * (user_height - 1) * centre_frequency / propagation_velocity
+        if distance_3D <= breakpoint_distance:
+            path_loss_db = 32.4 + 21 * math.log10(distance_3D) + 20 * math.log10(centre_frequency)
+            path_loss = 10 ** (path_loss_db/10)
     else:
-        p_los = 0
+        k = (4 * pi * centre_frequency/propagation_velocity)
+        if r > 1:
+            path_loss = (k * r) ** (2)
+        else:
+            path_loss = k
+    return path_loss
 
-    p_nlos = 1 - p_los
-    if r > d0:
-        l_los =  k * (r/d0) ** (alpha_los)
-        l_nlos = k * (r/d0) ** (alpha_nlos)
-    else:
-        l_los = k
-        l_nlos = k
-    return p_los * l_los + p_nlos * l_nlos
+def find_path_loss_nlos(user, bs):
+    PL_los = find_path_loss(user, bs)
+
+    distance_3D = find_distance_3D(user, bs)
+    PL_nlos = 35.3 * math.log10(distance_3D) + 22.4 + 21.3*math.log10(centre_frequency) - 0.3*(user_height - 1.5)
+    return max(PL_nlos, PL_los)
 
 def find_distance(user, bs):
     if Torus:
@@ -129,6 +121,12 @@ def find_distance(user, bs):
         x = bs[0] - user[0]
         y = bs[1] - user[1]
     return np.sqrt(x ** 2 + y ** 2)
+
+def find_distance_3D(user, bs):
+    r = find_distance(user, bs)
+    user_height = 1.5
+    BS_height = 10
+    return np.sqrt(r ** 2 + (BS_height - user_height) ** 2)
 
 def find_distance_all_bs(user):
     if Torus:
@@ -193,18 +191,17 @@ def draw_graph(G, colorlist, nodesize, edgesize, labels, ax, color, edgecolor):
 def fairness(x):
     return (sum(x))**2 / (len(x)* sum([i**2 for i in x]))
 
-
 def find_distance_allbs(user, xbs, ybs):
     xu, yu = user[0], user[1]
     xx = xu - xbs
     yy = yu - ybs
     return np.sqrt(xx ** 2 + yy ** 2)
 
-def find_capacity(opt_x, x_user, y_user):
-    per_user_capacity = find_capacity_per_user(opt_x, x_user ,y_user)
+def find_capacity(opt_x, x_user, y_user, with_los = False):
+    per_user_capacity = find_capacity_per_user(opt_x, x_user ,y_user, with_los)
     return sum(per_user_capacity)
 
-def find_capacity_per_user(opt_x, x_user, y_user):
+def find_capacity_per_user(opt_x, x_user, y_user, with_los = False):
     occupied_beams = np.zeros((number_of_bs, len(directions_bs)))
     number_of_users = len(x_user)
     for u in range(number_of_users):
@@ -224,32 +221,17 @@ def find_capacity_per_user(opt_x, x_user, y_user):
                 coords_j = bs_coords(bs)
                 gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
                 gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
-                path_loss = find_path_loss(coords_i, coords_j)
+                if with_los:
+                    path_loss = find_line_of_sight_pathloss(coords_i, coords_j)
+
+                else:
+                    path_loss = find_path_loss(coords_i, coords_j)
 
                 geo = find_geo(coords_j, coords_i)
                 beam_number = find_beam_number(geo, beamwidth_b)
-                capacity[u] += W / occupied_beams[bs, beam_number] * math.log(1 + transmission_power * gain_bs * gain_user / (path_loss * sigma))
+                capacity[u] += W / occupied_beams[bs, beam_number] * math.log(1 + transmission_power * gain_bs * gain_user / (path_loss * noise))
     return capacity
 
-
-def find_interference(user, bs, opt_x, x_user, y_user):
-    interference = 0
-    number_of_users = len(x_user)
-    for u in range(number_of_users):
-        coords_k = user_coords(u, x_user, y_user)
-        for b in range(number_of_bs):
-            coords_m = bs_coords(b)
-            if opt_x[u, b] == 1:
-                interference += find_initial_interference(user, bs, coords_k, coords_m)
-    return interference
-
-def find_sinr(user, bs, opt_x, x_user, y_user):
-    coords_i = user_coords(user, x_user, y_user)
-    coords_j = bs_coords(bs)
-    gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
-    gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
-    path_loss = find_path_loss(coords_i, coords_j)
-    return (transmission_power * gain_user * gain_bs / path_loss ) / (sigma )
 
 def find_snr(user, bs, x_user, y_user):
     coords_i = user_coords(user, x_user, y_user)
@@ -257,4 +239,19 @@ def find_snr(user, bs, x_user, y_user):
     gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
     gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
     path_loss = find_path_loss(coords_i, coords_j)
-    return (transmission_power * gain_user * gain_bs / path_loss ) / (sigma)
+    return (transmission_power * gain_user * gain_bs / path_loss ) / (noise)
+
+def find_line_of_sight_pathloss(user, bs):
+    r = find_distance(user, bs)
+    if r <= 18:
+        p_los = 1
+    else:
+        p_los = 18/r + math.exp(-r/36) * (1 - 18/r)
+    PL_los = find_path_loss(user, bs)
+    PL_nlos = find_path_loss_nlos(user, bs)
+
+    los_fading = 10*math.log10(numpy.random.normal(0, 4))
+    nlos_fading = 10*math.log10(numpy.random.normal(0,7.82))
+
+    return p_los * (PL_los + los_fading) + (1-p_los) * (PL_nlos + nlos_fading)
+

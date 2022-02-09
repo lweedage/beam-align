@@ -21,20 +21,17 @@ N_user = 100  # number of connections per user
 beamwidth_u = math.radians(5)
 beamwidth_b = math.radians(5)
 
-critical_distance = 50
-
-W = 1  # bandwidth (Either 28 GHz or 73 GHz)
+W = 1  # bandwidth
 
 transmission_power = 10 ** 3.0  # 30 dB
 noise = 10 ** 0.7
-sigma = noise
 
-d0 = 1
-wavelength = 10.71 * 10 ** (-3)
-k = (4 * pi * d0 / wavelength) ** 2
+Model_3GPP = True
 
-alpha_nlos = 4
-alpha_los = 2
+BS_height = 10
+user_height = 1.5
+centre_frequency = 28e9
+propagation_velocity = 3e8
 
 SINR_min = 10**(-0.5)
 
@@ -65,8 +62,7 @@ elif beamwidth_b == math.radians(10):
 elif beamwidth_b == math.radians(15):
     misalignment = {100: 5.24, 300: 5.32, 500: 5.32, 750: 5.32, 1000: 5.32}
 
-# iterations = {10: 1, 100: 100, 300: 100, 500: 100, 750: 100, 1000: 100}
+misalignment_user = {10: 1.78, 100: 1.78, 300: 1.60, 500: 1.47, 750: 1.34, 1000: 1.28}
 
-user_misalignment = True
 Torus = True
 

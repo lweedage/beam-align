@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import sys
 from itertools import product
-import new_optimization_no_interference
+import new_optimization
 import new_optimization
 import os
 import functions as f
