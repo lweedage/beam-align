@@ -33,11 +33,9 @@ for number_of_users in [100, 300, 500, 750, 1000]:
         optimal = []
         xs = []
         ys = []
-        name = str('MC_closest_heuristic_k=' + str(k) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
+        disconnected = []
 
         iteration_min, iteration_max = 0, iterations[number_of_users]
-        failed_link_constraints = []
-        failed_sinr_constraints = []
 
         for iteration in range(iteration_min, iteration_max):
             opt_x = np.zeros((number_of_users, number_of_bs))
@@ -59,9 +57,9 @@ for number_of_users in [100, 300, 500, 750, 1000]:
                 if links_per_user[u] == 0:
                     link_constraint_fails += 1
 
-            failed_link_constraints.append(link_constraint_fails)
+            disconnected.append(link_constraint_fails)
             optimal.append(opt_x)
             xs.append(x_user)
             ys.append(y_user)
-        disconnected = [0 for i in range(iteration_max)]
+
         find_data.main(optimal, xs, ys, disconnected, SNRHeuristic = True, k = k)

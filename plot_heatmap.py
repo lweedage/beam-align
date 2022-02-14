@@ -17,7 +17,7 @@ iteration_max = iterations[number_of_users]
 
 start = time.time()
 
-Heuristic = False
+Heuristic = True
 ClosestHeuristic = False
 
 bandwidth_sharing = True
