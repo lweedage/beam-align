@@ -63,6 +63,5 @@ for number_of_users in [100, 300, 500, 750, 1000]:
             optimal.append(opt_x)
             xs.append(x_user)
             ys.append(y_user)
-
-        pickle.dump(failed_link_constraints, open(str('Data/failed_link_constraints_iteration_' + str(iteration_max) + name + '.p'), 'wb'), protocol=4)
-        find_data.main(optimal, xs, ys, SNRHeuristic = True, k = k)
+        disconnected = [0 for i in range(iteration_max)]
+        find_data.main(optimal, xs, ys, disconnected, SNRHeuristic = True, k = k)

@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
 import find_data
 from parameters import *
 import new_optimization
@@ -74,6 +73,7 @@ for number_of_users in [100, 300, 500, 750, 1000]:
         optimal = []
         xs = []
         ys = []
+        disconnected = []
 
         for iteration in range(iteration_min, iteration_max):
             opt_x = np.zeros((number_of_users, number_of_bs))
@@ -90,7 +90,6 @@ for number_of_users in [100, 300, 500, 750, 1000]:
                 for beam_number in to_connect.keys():
                     occupied_beams[bs, beam_number] = 1
                     opt_x[to_connect[beam_number], bs] = 1
-            disconnected = 0
             for user in range(number_of_users): #check if a user is not connected yet and connect to highest snr that is in empty beam
                 possible_links_snr = []
                 possible_links_bs = []
@@ -98,8 +97,6 @@ for number_of_users in [100, 300, 500, 750, 1000]:
 
                 if sum(opt_x[user, :]) == 0:
                     First = True
-                    print('disconnected user')
-                    disconnected += 1
                     bss = np.argsort(f.find_distance_all_bs(user_coords))
                     for bs in bss:
                         snr = f.find_snr(user, bs, x_user, y_user)
@@ -127,19 +124,16 @@ for number_of_users in [100, 300, 500, 750, 1000]:
 
 
             disconnected_user = 0
-            sinr_constraint_fails = 0
             links_per_user = sum(np.transpose(opt_x))
 
             for u in range(number_of_users):
                 if links_per_user[u] == 0:
                     disconnected_user += 1
 
-            print(f.find_capacity(opt_x, x_user, y_user))
             optimal.append(opt_x)
             xs.append(x_user)
             ys.append(y_user)
+            disconnected.append(disconnected_user)
 
-            print(disconnected)
-
-        find_data.main(optimal, xs, ys, Heuristic=True, )
+        find_data.main(optimal, xs, ys, disconnected, Heuristic=True, UserMisalignment = User_Misalignment)
 

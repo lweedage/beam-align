@@ -8,7 +8,7 @@ import time
 import pickle
 import os
 
-def main(optimal, xs, ys, Heuristic=False, MCHeuristic = False, k = 1, SNRHeuristic = False):
+def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k = 1, SNRHeuristic = False, UserMisalignment = False):
     delta = 2
 
     x_max, y_max = int(np.ceil(xmax * delta)), int(np.ceil(ymax * delta))
@@ -88,6 +88,8 @@ def main(optimal, xs, ys, Heuristic=False, MCHeuristic = False, k = 1, SNRHeuris
     name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
     if Heuristic:
         name = str('beamwidth_heuristic' + name)
+        if UserMisalignment:
+            name = str('beamwidth_heuristic_with_usermis' + name)
 
     elif MCHeuristic:
         name = str('closest_k=' + str(k) + name)
@@ -113,6 +115,7 @@ def main(optimal, xs, ys, Heuristic=False, MCHeuristic = False, k = 1, SNRHeuris
     pickle.dump(channel_capacity, open(str('Data/channel_capacity' + name + '.p'),'wb'), protocol=4)
     pickle.dump(channel_capacity_with_los, open(str('Data/channel_capacity_with_los' + name + '.p'),'wb'), protocol=4)
     pickle.dump(no_optimal_value_found, open(str('Data/no_optimal_value_found' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(disconnected, open(str('Data/disconnected_users' + name + '.p'),'wb'), protocol=4)
 
     print('average channel capacity:', sum(channel_capacity)/len(channel_capacity))
     print('average channel capacity with LoS:', sum(channel_capacity_with_los)/len(channel_capacity_with_los))

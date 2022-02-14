@@ -19,9 +19,6 @@ if Heuristic:
 else:
     name = str('no_interference_until_iteration_' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_u=' + str(np.degrees(beamwidth_u)) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))+ 'delta=' + str(delta))
 
-if not user_misalignment:
-    name = str(name + 'no_user_misalignment')
-
 misalignment_user = pickle.load(open(str('Data/grid_misalignment_user' + name + '.p'),'rb'))
 misalignment_bs = pickle.load(open(str('Data/grid_misalignment_bs' + name + '.p'),'rb'))
 misalignment_mc = pickle.load(open(str('Data/grid_misalignment_mc' + name + '.p'),'rb'))

@@ -19,7 +19,7 @@ N_bs = 100  # number of connections per BS
 N_user = 100  # number of connections per user
 
 beamwidth_u = math.radians(5)
-beamwidth_b = math.radians(5)
+beamwidth_b = math.radians(15)
 
 W = 1  # bandwidth
 
@@ -33,7 +33,7 @@ user_height = 1.5
 centre_frequency = 28e9
 propagation_velocity = 3e8
 
-SINR_min = 10**(-0.5)
+SINR_min = 10**(-5/10)
 
 directions_bs = range(int(2 * pi / beamwidth_b))
 directions_u = range(int(2 * pi / beamwidth_u))

@@ -90,12 +90,11 @@ def find_misalignment(coord_1, coord_2, beamwidth):
     return find_geo(coord_1, coord_2) - find_bore(coord_1, coord_2, beamwidth)
 
 def find_path_loss(user, bs):
-    r = find_distance(user, bs)
+    r = find_distance_3D(user, bs)
     if Model_3GPP:
-        distance_3D = find_distance_3D(user, bs)
         breakpoint_distance = 4 * (BS_height - 1) * (user_height - 1) * centre_frequency / propagation_velocity
-        if distance_3D <= breakpoint_distance:
-            path_loss_db = 32.4 + 21 * math.log10(distance_3D) + 20 * math.log10(centre_frequency)
+        if r <= breakpoint_distance:
+            path_loss_db = 32.4 + 21 * math.log10(r) + 20 * math.log10(centre_frequency/1e9)
             path_loss = 10 ** (path_loss_db/10)
     else:
         k = (4 * pi * centre_frequency/propagation_velocity)
@@ -103,13 +102,15 @@ def find_path_loss(user, bs):
             path_loss = (k * r) ** (2)
         else:
             path_loss = k
+
     return path_loss
 
 def find_path_loss_nlos(user, bs):
     PL_los = find_path_loss(user, bs)
 
     distance_3D = find_distance_3D(user, bs)
-    PL_nlos = 35.3 * math.log10(distance_3D) + 22.4 + 21.3*math.log10(centre_frequency) - 0.3*(user_height - 1.5)
+    PL_nlos = 35.3 * math.log10(distance_3D) + 22.4 + 21.3*math.log10(centre_frequency/1e9) - 0.3*(user_height - 1.5)
+    PL_nlos = 10 **(PL_nlos/10)
     return max(PL_nlos, PL_los)
 
 def find_distance(user, bs):
@@ -247,11 +248,11 @@ def find_line_of_sight_pathloss(user, bs):
         p_los = 1
     else:
         p_los = 18/r + math.exp(-r/36) * (1 - 18/r)
+
     PL_los = find_path_loss(user, bs)
     PL_nlos = find_path_loss_nlos(user, bs)
 
-    los_fading = 10*math.log10(numpy.random.normal(0, 4))
-    nlos_fading = 10*math.log10(numpy.random.normal(0,7.82))
-
+    los_fading = 10**(numpy.random.normal(0, 4)/10)
+    nlos_fading = 10**(numpy.random.normal(0, 7.82)/10)
     return p_los * (PL_los + los_fading) + (1-p_los) * (PL_nlos + nlos_fading)
 
