@@ -53,8 +53,8 @@ def find_users_to_connect(bs_coords, x_user, y_user, candidate_user_beams):
             if not User_Misalignment or np.degrees(abs(geo_user - user_beam)) <= misalignment_user[number_of_users]:
                 snr = f.find_snr(user, bs, x_user, y_user)
                 if snr >= SINR_min:
-                    if beam_number_bs in candidate.keys(): # for every user, check if beam is occupied and if so, if you are closer COULD ALSO BE HIGHER SNR?
-                        if find_distance(bs_coords, user_coords) < find_distance(bs_coords, f.user_coords(candidate[beam_number_bs], x_user, y_user)):
+                    if beam_number_bs in candidate.keys(): # for every user, check if beam is occupied and if so, if you have higher SNR? (or smaller distance - other heuristic?)
+                        if f.find_snr(user, bs, x_user, y_user) > f.find_snr(candidate[beam_number_bs],bs, x_user, y_user):
                             candidate[beam_number_bs] = user
                             if beam_number_user in candidate_user_beams[user].keys():
                                 if find_distance(bs_coords, user_coords) < find_distance(
@@ -90,6 +90,7 @@ for number_of_users in [100, 300, 500, 750, 1000]:
                 for beam_number in to_connect.keys():
                     occupied_beams[bs, beam_number] = 1
                     opt_x[to_connect[beam_number], bs] = 1
+
             for user in range(number_of_users): #check if a user is not connected yet and connect to highest snr that is in empty beam
                 possible_links_snr = []
                 possible_links_bs = []
@@ -113,14 +114,14 @@ for number_of_users in [100, 300, 500, 750, 1000]:
                                 print('first in a beam that was still empty!')
                                 First = False
 
-                    if len(possible_links_bs) > 0 and sum(opt_x[user, :]) == 0: # if the user still has no connection
-                        print('Still no connection')
-                        zipje = zip(possible_links_snr, possible_links_bs)
-                        zipje = sorted(zipje, reverse = True)
-                        possible_bs = [y for x, y in zipje]
-                        opt_x[user, possible_bs[0]] = 1
-                    else:
-                        print('No connection possible')
+                    # if len(possible_links_bs) > 0 and sum(opt_x[user, :]) == 0: # if the user still has no connection
+                    #     print('Still no connection')
+                    #     zipje = zip(possible_links_snr, possible_links_bs)
+                    #     zipje = sorted(zipje, reverse = True)
+                    #     possible_bs = [y for x, y in zipje]
+                    #     opt_x[user, possible_bs[0]] = 1
+                    # else:
+                    #     print('No connection possible')
 
 
             disconnected_user = 0
