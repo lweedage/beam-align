@@ -13,7 +13,7 @@ iteration_max = iterations[number_of_users]
 
 delta = 2
 
-Heuristic = False
+Heuristic = True
 
 start = time.time()
 if Heuristic:
@@ -21,7 +21,7 @@ if Heuristic:
         'beamwidth_heuristic' + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
             np.degrees(beamwidth_b)))
 else:
-    name = str('users=' + str(number_of_users)  + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
+    name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
 
 misalignment_user = pickle.load(open(str('Data/grid_misalignment_user' + name + '.p'), 'rb'))
 misalignment_bs = pickle.load(open(str('Data/grid_misalignment_bs' + name + '.p'), 'rb'))
@@ -39,23 +39,10 @@ disconnected = pickle.load(open(str('Data/disconnected_users' + name + '.p'), 'r
 
 data = misalignment_bs
 
-print('Disconnected users:', np.sum(disconnected)/len(disconnected))
+print('Disconnected users:', np.sum(disconnected) / len(disconnected))
 if not (Heuristic):
     no_optimal_value = pickle.load(open(str('Data/no_optimal_value_found' + name + '.p'), 'rb'))
     print('No succes in', no_optimal_value / iterations[number_of_users] * 100, 'percent of the iterations')
-
-
-fig, ax = plt.subplots()
-data = np.degrees(data)
-plt.hist(data, density=True, bins=np.arange(min(data), max(data) + 0.1, 0.1), label='simulated')
-sigma = np.std(data)
-print('STD = ', sigma * 2)
-x = np.linspace(-3 * sigma, 3 * sigma, 100)
-plt.plot(x, stats.norm.pdf(x, 0, sigma), label=f'N(0, {str(sigma)[:5]})')
-plt.xlabel('Misalignment in degrees')
-plt.legend()
-plt.show()
-
 
 name = str(int(math.ceil(np.degrees(beamwidth_b)))) + 'b_' + str(number_of_users) + '_users'
 if Heuristic:
@@ -119,3 +106,22 @@ plt.show()
 # plt.legend()
 # plt.savefig(str('Figures/' + name + '_degrees_scatter.png'))
 # plt.show()
+# beamwidths = [np.radians(5), np.radians(10), np.radians(15)]
+# user = [100, 300, 500, 750, 1000]
+#
+# degrees = {i: [] for i in beamwidths}
+#
+# for beamwidth_b in beamwidths:
+#     for number_of_users in user:
+#         degrees[beamwidth_b].append(pickle.load(open(
+#             str('Data/total_links_per_user' + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
+#                 np.degrees(beamwidth_b)) + '.p'), 'rb')))
+#
+#     fig, ax = plt.subplots()
+#     bplot = plt.boxplot(degrees[beamwidth_b], showfliers=False, patch_artist=True, medianprops={'color': 'black'})
+#     for patch, color in zip(bplot['boxes'], colors[:5]):
+#         patch.set_facecolor(color)
+#     plt.xticks([1, 2, 3, 4, 5], user)
+#     plt.xlabel('Number of users')
+#     plt.ylabel('Number of connections per user')
+#     plt.show()

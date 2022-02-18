@@ -13,11 +13,10 @@ ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 3
 xDelta = xmax - xmin
 yDelta = ymax - ymin
 
-N_bs = 100  # number of connections per BS
-N_user = 100  # number of connections per user
-
 beamwidth_u = math.radians(5)
-beamwidth_b = math.radians(5)
+
+beamwidth_deg = input('Beamwidth BS?')
+beamwidth_b = math.radians(int(beamwidth_deg))
 
 W = 1  # bandwidth
 

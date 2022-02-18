@@ -8,7 +8,7 @@ import time
 import pickle
 import os
 
-def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k = 1, SNRHeuristic = False, UserMisalignment = False):
+def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k = 1, SNRHeuristic = False, UserMisalignment = False, FairComparison = False):
     delta = 2
 
     x_max, y_max = int(np.ceil(xmax * delta)), int(np.ceil(ymax * delta))
@@ -77,7 +77,6 @@ def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k 
 
         capacity = f.find_capacity(opt_x, x_user, y_user)
         capacity_with_los = f.find_capacity(opt_x, x_user, y_user, with_los = True)
-        print(capacity, capacity_with_los)
 
         if capacity == 0:
             no_optimal_value_found += 1
@@ -87,9 +86,12 @@ def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k 
 
     name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
     if Heuristic:
-        name = str('beamwidth_heuristic' + name)
         if UserMisalignment:
             name = str('beamwidth_heuristic_with_usermis' + name)
+        else:
+            name = str('beamwidth_heuristic' + name)
+        if FairComparison:
+            name = str('fair_comparison' + name)
 
     elif MCHeuristic:
         name = str('closest_k=' + str(k) + name)

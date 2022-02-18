@@ -62,7 +62,7 @@ def optimization(x_user, y_user):
     # ------------------------ Start of optimization program ------------------------------------
     try:
         m = gp.Model("Model 1")
-        m.setParam('NonConvex', 2)
+        # m.setParam('NonConvex', 2)
         m.Params.LogToConsole = 0
         m.Params.OutputFlag = 0
         m.Params.Threads = 10
@@ -77,7 +77,6 @@ def optimization(x_user, y_user):
         C_user = {}
         bandwidth = {}
 
-        SNR_penalty = {}
         disconnected = {}
 
         angles_u = {}
@@ -91,7 +90,6 @@ def optimization(x_user, y_user):
                 log_SE[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb = 0, name=f'logSE#{i}#{j}')
                 SE[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb = 0, name=f'SE#{i}#{j}')
                 bandwidth[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb = 0, ub = W, name=f'bandwidth#{i}#{j}')
-                SNR_penalty[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb = 0, ub= SINR_min, name=f'SNR_penalty#{i}#{j}')
 
             SINR_user[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'SINR_user#{i}')
             C_user[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'C_user#{i}')
@@ -183,8 +181,6 @@ def optimization(x_user, y_user):
         sys.exit()
 
     a = np.zeros((number_of_users, number_of_bs))
-    SNRpen = np.zeros((number_of_users, number_of_bs))
-
     total_C = np.zeros(number_of_users)
 
     if m.status == 2:
@@ -195,10 +191,9 @@ def optimization(x_user, y_user):
         for i in users:
             for j in base_stations:
                 a[i, j] = x[i, j].X
-                SNRpen[i, j] = SNR_penalty[i,j].X
 
-        # for j in base_stations:
-        #     print("BS angles: ", [angles_bs[j, i].X for i in directions_bs ]) #if angles_bs[j,i].X > 1.1
+        disconnected_list =[disconnected[i].X for i in users]
+        print(disconnected_list)
         disconnected = sum([1 for i in users if disconnected[i].X == 1])
-        # print('SNR penalty:', np.sum(SNRpen), 'number of users: ', sum([1 for i in users for j in base_stations if SNRpen[i,j] > 0]))
+        print(disconnected)
     return a, disconnected

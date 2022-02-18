@@ -35,7 +35,7 @@ def find_closest(bs):
             users.append(u)
     return users
 
-def find_users_to_connect(bs_coords, x_user, y_user, candidate_user_beams):
+def find_users_to_connect(bs_coords, x_user, y_user, candidate_user_beams, User_Misalignment):
     number_of_users = len(x_user)
     candidate = dict()
     for user in range(number_of_users):
@@ -67,7 +67,8 @@ def find_users_to_connect(bs_coords, x_user, y_user, candidate_user_beams):
     return candidate, candidate_user_beams
 
 for number_of_users in [100, 300, 500, 750, 1000]:
-    for User_Misalignment in [False, True]:
+    real_disconnected_number = pickle.load(open(str('Data/disconnected_users' + str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))) + '.p'), 'rb'))
+    for User_Misalignment in [False]:
         iteration_min, iteration_max = 0, iterations[number_of_users]
 
         optimal = []
@@ -75,7 +76,11 @@ for number_of_users in [100, 300, 500, 750, 1000]:
         ys = []
         disconnected = []
 
+
         for iteration in range(iteration_min, iteration_max):
+            real_disconnected = real_disconnected_number[iteration]
+            print(real_disconnected)
+
             opt_x = np.zeros((number_of_users, number_of_bs))
             print('Iteration ', iteration)
             x_user, y_user = f.find_coordinates(number_of_users)
@@ -85,7 +90,7 @@ for number_of_users in [100, 300, 500, 750, 1000]:
 
             for bs in range(number_of_bs):
                 bs_coords = f.bs_coords(bs)
-                to_connect, candidate_user_beams = find_users_to_connect(bs_coords, x_user, y_user, candidate_user_beams)
+                to_connect, candidate_user_beams = find_users_to_connect(bs_coords, x_user, y_user, candidate_user_beams, User_Misalignment)
 
                 for beam_number in to_connect.keys():
                     occupied_beams[bs, beam_number] = 1
@@ -111,18 +116,21 @@ for number_of_users in [100, 300, 500, 750, 1000]:
                             if occupied_beams[bs, beam_number] == 0 and First:
                                 opt_x[user, bs] = 1
                                 occupied_beams[bs, beam_number] = 1
-                                print('first in a beam that was still empty!')
                                 First = False
 
-                    # if len(possible_links_bs) > 0 and sum(opt_x[user, :]) == 0: # if the user still has no connection
-                    #     print('Still no connection')
-                    #     zipje = zip(possible_links_snr, possible_links_bs)
-                    #     zipje = sorted(zipje, reverse = True)
-                    #     possible_bs = [y for x, y in zipje]
-                    #     opt_x[user, possible_bs[0]] = 1
-                    # else:
-                    #     print('No connection possible')
 
+            capacity = []
+            capacity.append(f.find_capacity(opt_x, x_user, y_user))
+            disconnected_users = [i for i in range(number_of_users) if sum(np.transpose(opt_x))[i] == 0]
+            while sum([1 for i in range(number_of_users) if sum(np.transpose(opt_x))[i]== 0]) > real_disconnected and len(disconnected_users) > 0:
+                user = disconnected_users.pop(0)
+                user_coords = f.user_coords(user, x_user, y_user)
+                bs = np.argsort(f.find_distance_all_bs(user_coords))[0]
+                if f.find_snr(user, bs, x_user, y_user) > SINR_min:
+                    opt_x[user, bs] = 1
+                    capacity.append(f.find_capacity(opt_x, x_user, y_user))
+
+            # print(capacity)
 
             disconnected_user = 0
             links_per_user = sum(np.transpose(opt_x))
@@ -136,5 +144,5 @@ for number_of_users in [100, 300, 500, 750, 1000]:
             ys.append(y_user)
             disconnected.append(disconnected_user)
 
-        find_data.main(optimal, xs, ys, disconnected, Heuristic=True, UserMisalignment = User_Misalignment)
+        find_data.main(optimal, xs, ys, disconnected, Heuristic=True, UserMisalignment = User_Misalignment, FairComparison = True)
 
