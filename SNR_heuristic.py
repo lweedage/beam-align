@@ -28,9 +28,9 @@ def find_closest_snr(user, x_user, y_user):
     return np.argsort(snr)
 
 print(beamwidth_b)
-user = int(input('Number of users?'))
-for number_of_users in [user]:
-    for k in [1, 2, 3, 4, 5]:
+# user = int(input('Number of users?'))
+for number_of_users in [100, 300, 500, 750, 1000]:
+    for k in [24]:
         optimal = []
         xs = []
         ys = []

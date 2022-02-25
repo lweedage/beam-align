@@ -58,6 +58,8 @@ def optimization(x_user, y_user):
                 f.find_bore(coords_i, coords_j, beamwidth_u), beamwidth_u)
             bs_beamnumber[i, j] = f.find_beam_number(
                 f.find_bore(coords_j, coords_i, beamwidth_b), beamwidth_b)
+
+            bandwidth[i,j]
     # ------------------------ Start of optimization program ------------------------------------
     try:
         m = gp.Model("Model 1")

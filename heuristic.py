@@ -66,8 +66,10 @@ def find_users_to_connect(bs_coords, x_user, y_user, candidate_user_beams, User_
                         candidate_user_beams[user][beam_number_user] = bs
     return candidate, candidate_user_beams
 
+# number_of_users = int(input('Number of users?'))
+
 for number_of_users in [100, 300, 500, 750, 1000]:
-    real_disconnected_number = pickle.load(open(str('Data/disconnected_users' + str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))) + '.p'), 'rb'))
+    # real_disconnected_number = pickle.load(open(str('Data/disconnected_users' + str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b))) + '.p'), 'rb'))
     for User_Misalignment in [False]:
         iteration_min, iteration_max = 0, iterations[number_of_users]
 
@@ -78,9 +80,7 @@ for number_of_users in [100, 300, 500, 750, 1000]:
 
 
         for iteration in range(iteration_min, iteration_max):
-            real_disconnected = real_disconnected_number[iteration]
-            print(real_disconnected)
-
+            np.random.seed(iteration)
             opt_x = np.zeros((number_of_users, number_of_bs))
             print('Iteration ', iteration)
             x_user, y_user = f.find_coordinates(number_of_users)
@@ -119,16 +119,16 @@ for number_of_users in [100, 300, 500, 750, 1000]:
                                 First = False
 
 
-            capacity = []
-            capacity.append(f.find_capacity(opt_x, x_user, y_user))
-            disconnected_users = [i for i in range(number_of_users) if sum(np.transpose(opt_x))[i] == 0]
-            while sum([1 for i in range(number_of_users) if sum(np.transpose(opt_x))[i]== 0]) > real_disconnected and len(disconnected_users) > 0:
-                user = disconnected_users.pop(0)
-                user_coords = f.user_coords(user, x_user, y_user)
-                bs = np.argsort(f.find_distance_all_bs(user_coords))[0]
-                if f.find_snr(user, bs, x_user, y_user) > SINR_min:
-                    opt_x[user, bs] = 1
-                    capacity.append(f.find_capacity(opt_x, x_user, y_user))
+            # capacity = []
+            # capacity.append(f.find_capacity(opt_x, x_user, y_user))
+            # disconnected_users = [i for i in range(number_of_users) if sum(np.transpose(opt_x))[i] == 0]
+            # while sum([1 for i in range(number_of_users) if sum(np.transpose(opt_x))[i]== 0]) > real_disconnected and len(disconnected_users) > 0:
+            #     user = disconnected_users.pop(0)
+            #     user_coords = f.user_coords(user, x_user, y_user)
+            #     bs = np.argsort(f.find_distance_all_bs(user_coords))[0]
+            #     if f.find_snr(user, bs, x_user, y_user) > SINR_min:
+            #         opt_x[user, bs] = 1
+            #         capacity.append(f.find_capacity(opt_x, x_user, y_user))
 
             # print(capacity)
 
@@ -144,5 +144,5 @@ for number_of_users in [100, 300, 500, 750, 1000]:
             ys.append(y_user)
             disconnected.append(disconnected_user)
 
-        find_data.main(optimal, xs, ys, disconnected, Heuristic=True, UserMisalignment = User_Misalignment, FairComparison = True)
+        find_data.main(optimal, xs, ys, disconnected, Heuristic=True, UserMisalignment = User_Misalignment, FairComparison = False)
 

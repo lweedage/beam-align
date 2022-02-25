@@ -230,7 +230,7 @@ def find_capacity_per_user(opt_x, x_user, y_user, with_los = False):
 
                 geo = find_geo(coords_j, coords_i)
                 beam_number = find_beam_number(geo, beamwidth_b)
-                capacity[u] += W / occupied_beams[bs, beam_number] * math.log(1 + transmission_power * gain_bs * gain_user / (path_loss * noise))
+                capacity[u] += W / occupied_beams[bs, beam_number] * math.log2(1 + transmission_power * gain_bs * gain_user / (path_loss * noise))
     return capacity
 
 

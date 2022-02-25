@@ -10,6 +10,7 @@ import os
 
 def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k = 1, SNRHeuristic = False, UserMisalignment = False, FairComparison = False):
     delta = 2
+    disconnected = []
 
     x_max, y_max = int(np.ceil(xmax * delta)), int(np.ceil(ymax * delta))
 
@@ -49,10 +50,14 @@ def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k 
         links_per_user = sum(np.transpose(opt_x))
         total_links_per_user = np.append(total_links_per_user, links_per_user)
 
+        discon = 0
+
         for user in range(number_of_users):
             u = f.user_coords(user, x_user, y_user)
             if links_per_user[user] == 1:
                 grid_sc[int(u[1]*delta), int(u[0]*delta)] += 1
+            elif links_per_user[user] == 0:
+                discon += 1
             else:
                 grid_mc[int(u[1]*delta), int(u[0]*delta)] += 1
             total_visits[int(u[1]*delta), int(u[0]*delta)] += 1
@@ -83,8 +88,8 @@ def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k 
 
         channel_capacity.append(capacity)
         channel_capacity_with_los.append(capacity_with_los)
-
-    name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)))
+        disconnected.append(discon)
+    name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(s[0]))
     if Heuristic:
         if UserMisalignment:
             name = str('beamwidth_heuristic_with_usermis' + name)
@@ -99,6 +104,7 @@ def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k 
     elif SNRHeuristic:
         name = str('SNR_k=' + str(k) + name)
 
+
     pickle.dump(grid_mc, open(str('Data/grid_mc_' + name + '.p'),'wb'), protocol=4)
     pickle.dump(grid_sc, open(str('Data/grid_sc_' + name + '.p'),'wb'), protocol=4)
     pickle.dump(total_visits, open(str('Data/grid_total_visits_' + name + '.p'), 'wb'), protocol=4)
@@ -111,6 +117,10 @@ def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k 
     pickle.dump(distances, open(str('Data/distances' + name + '.p'),'wb'), protocol=4)
     pickle.dump(distances_mc, open(str('Data/distances_mc' + name + '.p'),'wb'), protocol=4)
     pickle.dump(distances_sc, open(str('Data/distances_sc' + name + '.p'),'wb'), protocol=4)
+
+    pickle.dump(optimal, open(str('Data/assignment' + name  + '.p'),'wb'), protocol=4)
+    pickle.dump(xs, open(str('Data/xs' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(ys, open(str('Data/ys' + name + '.p'),'wb'), protocol=4)
 
 
     pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'),'wb'), protocol=4)
