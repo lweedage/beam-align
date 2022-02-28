@@ -58,6 +58,8 @@ def optimization(x_user, y_user):
                 f.find_bore(coords_i, coords_j, beamwidth_u), beamwidth_u)
             bs_beamnumber[i, j] = f.find_beam_number(
                 f.find_bore(coords_j, coords_i, beamwidth_b), beamwidth_b)
+
+            bandwidth[i,j]
     # ------------------------ Start of optimization program ------------------------------------
     try:
         m = gp.Model("Model 1")
@@ -78,22 +80,18 @@ def optimization(x_user, y_user):
         for i in users:
             for j in base_stations:
                 x[i, j] = m.addVar(vtype=GRB.BINARY, name=f'x#{i}#{j}')
-
             C_user[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'C_user#{i}')
             disconnected[i] = m.addVar(vtype=GRB.BINARY, name=f'Disconnected_user#{i}')
 
         for j in base_stations:
             for d in directions_bs:
                 angles_bs[j, d] = m.addVar(vtype=GRB.INTEGER, name=f'angle_bs#{j}#{d}')
-
         for i in users:
             for d in directions_u:
                 angles_u[i, d] = m.addVar(vtype=GRB.BINARY, name=f'angle_u#{i}#{d}')
         m.update()
 
         # ----------------- OBJECTIVE ----------------------------------
-        # m.setObjective(quicksum(C_user[i] for i in users), GRB.MAXIMIZE)
-        # m.setObjective(quicksum(C_user[i] for i in users) - 500 * quicksum(SNR_penalty[i,j] for i in users for j in base_stations), GRB.MAXIMIZE)
         m.setObjective(quicksum(C_user[i] for i in users) - M * quicksum(disconnected[i] for i in users), GRB.MAXIMIZE)
 
         # --------------- CONSTRAINTS -----------------------------
@@ -149,7 +147,6 @@ def optimization(x_user, y_user):
             total_C[i] = C_user[i].X
             for j in base_stations:
                 a[i, j] = x[i, j].X
-
 
         for j in base_stations:
             for d in directions_bs:

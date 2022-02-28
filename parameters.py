@@ -1,7 +1,9 @@
 import math
+from cycler import cycler
+import matplotlib
 
-colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22',
-          '#17becf'] * 10
+matplotlib.rcParams['axes.prop_cycle'] = cycler('color', ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen', 'OrangeRed'])
+colors =  ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen', 'OrangeRed'] * 10
 
 pi = math.pi
 bs_of_interest = 0
@@ -15,17 +17,19 @@ yDelta = ymax - ymin
 
 beamwidth_u = math.radians(5)
 
-beamwidth_deg = input('Beamwidth BS?')
+# beamwidth_deg = input('Beamwidth BS?')
+beamwidth_deg = 5
 beamwidth_b = math.radians(int(beamwidth_deg))
 
 W = 1  # bandwidth
 
-M = 100 # penalty on having disconnected users
-s = [2] * 24 # amount of users in a beam
+M = 100  # penalty on having disconnected users
+s = [1] * 24  # amount of users in a beam
 print(s)
 
 transmission_power = 10 ** 3.0  # 30 dB
-noise = 10 ** 0.7
+noise_power_db = -174 + 10 * math.log10(W * 10 ** 9)
+noise = 10 ** (noise_power_db / 10)
 
 Model_3GPP = True
 
@@ -55,26 +59,24 @@ x_bs, y_bs = initialise_graph_triangular(radius, xDelta, yDelta)
 number_of_bs = len(x_bs)
 
 iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
-iterations = {50: 1, 100: 2500, 300: 834, 500: 500, 750: 334, 1000: 250}
 
 if beamwidth_b == math.radians(5):
-    misalignment = {10: 1.78, 100: 1.53, 300: 1.37, 500: 1.25, 750: 1.16, 1000: 1.12}
-    average_connections = {100: 8.65, 300: 4.98, 500: 3.31, 750: 2.27, 1000: 1.72}
+    misalignment = {50: 1.78, 100: 2.47, 300: 1.75, 500: 1.40, 750: 1.21, 1000: 1.13}
+    average_connections = {100: 12.49, 300: 5.58, 500: 3.43, 750: 2.30, 1000: 1.73}
     no_succes = {100: 0, 300: 0, 500: 0, 750: 0, 1000: 0}
-    disconnected = {100: 0.0, 300: 0.0, 500: 0.0, 750: 0.0, 1000:0.0} # average disconnected users per simulation
+    disconnected = {100: 0.0, 300: 0.0, 500: 0.0, 750: 0.0, 1000: 0.0}  # average disconnected users per simulation
 
 elif beamwidth_b == math.radians(10):
-    misalignment = {100: 2.05, 300: 1.88, 500: 1.79, 750: 1.83, 1000: 1.70}
-    average_connections = {100: 3.77, 300: 2.35, 500: 1.62, 750: 1.13, 1000:1.00}
+    misalignment = {100: 4.74, 300: 2.92, 500: 2.22, 750: 2.03, 1000: 1.80}
+    average_connections = {100: 7.89, 300: 2.87, 500: 1.73, 750: 1.15, 1000: 1.00}
     no_succes = {100: 0, 300: 0, 500: 0, 750: 0, 1000: 0}
-    disconnected = {100: 0.0596, 300: 0.20, 500: 0.316, 750: 0.57, 1000:  143.014} # average disconnected users per simulation
+    disconnected = {100: 0.0, 300: 0.0, 500: 0.0, 750: 0.0, 1000: 136.012}  # average disconnected users per simulation
 
 elif beamwidth_b == math.radians(15):
-    misalignment = {100: 4.55, 300: 4.59, 500: 4.73, 750: 4.60, 1000: 4.32}
-    average_connections = {100: 2.08, 300: 1.48, 500: 1.14, 750: 1.02, 1000:0.999}
-    no_succes = {100: 0, 300: 0, 500: 0, 750: 0, 1000: 0}
-    disconnected = {100: 6.15, 300: 23.67, 500: 59.07, 750: 209.08, 1000:  433.12} # average disconnected users per simulation
+    misalignment = {100: 6.74, 300: 5.18, 500: 5.03, 750: 4.78, 1000: 4.38}
+    average_connections = {100: 5.57, 300: 1.92, 500: 1.15, 750: 1.0, 1000: 1.0}
+    disconnected = {100: 0, 300: 0, 500: 0, 750: 174.00, 1000: 424.0}  # average disconnected users per simulation
 
-misalignment_user = {10: 1.78, 100: 1.53, 300: 1.37, 500: 1.25, 750: 1.16, 1000: 1.12}
+misalignment_user = {50: 1.78, 100: 2.47, 300: 1.75, 500: 1.40, 750: 1.21, 1000: 1.13}
 
 Torus = True

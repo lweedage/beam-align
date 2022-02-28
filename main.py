@@ -14,10 +14,9 @@ import functions as f
 from matplotlib.cm import ScalarMappable
 from parameters import *
 
-fig, ax = plt.subplots()
 
-iteration = 5
-for number_of_users in [4]:
+iteration = 0
+for number_of_users in [1000]:
     np.random.seed(iteration)
     x_user, y_user = f.find_coordinates(number_of_users)
     opt_x, disconnected = new_optimization.optimization(x_user, y_user)
@@ -28,6 +27,7 @@ for number_of_users in [4]:
     calculated_capacity_per_user = f.find_capacity_per_user(opt_x, x_user, y_user)
 
     print('Calculated capacity:', calculated_capacity)
+    print(opt_x)
 
     fig, ax = plt.subplots()
     G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x,
