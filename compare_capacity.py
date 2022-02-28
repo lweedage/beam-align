@@ -1,62 +1,39 @@
+import pickle
+
 import matplotlib.pyplot as plt
 import numpy as np
+
 from parameters import *
-import new_optimization
-import functions as f
-import time
-import pickle
 
 
 def average(x):
     return sum(x) / len(x)
 
 
-beamwidths = [np.radians(5), np.radians(10), np.radians(15)]
+beamwidths = [np.radians(5)]  # , np.radians(10), np.radians(15)]
 
-capacity, capacitylos, disconnected_users = {i: [] for i in beamwidths}, {i: [] for i in beamwidths}, {i: [] for i in
-                                                                                                       beamwidths}
-heuristic_beamwidth_capacity, heuristic_beamwidth_capacitylos, disconnected_users_heuristic = {i: [] for i in
-                                                                                               beamwidths}, {i: [] for i
-                                                                                                             in
-                                                                                                             beamwidths}, {
-                                                                                                  i: [] for i in
-                                                                                                  beamwidths}
-MC_closest_heuristic_capacity, MC_SNR_heuristic_capacity = {i: {j: [] for j in [1, 2, 3, 4, 5]} for i in beamwidths}, {
-    i: {j: [] for j in [1, 2, 3, 4, 5]} for i in beamwidths}
+capacity = {i: [] for i in beamwidths}
+capacitylos = {i: [] for i in beamwidths}
+disconnected_users = {i: [] for i in beamwidths}
 
-heuristic_beamwidth_usermis_capacity, heuristic_beamwidth_usermis_capacitylos, disconnected_users_heuristic_usermis = {
-                                                                                                                          i: []
-                                                                                                                          for
-                                                                                                                          i
-                                                                                                                          in
-                                                                                                                          beamwidths}, {
-                                                                                                                          i: []
-                                                                                                                          for
-                                                                                                                          i
-                                                                                                                          in
-                                                                                                                          beamwidths}, {
-                                                                                                                          i: []
-                                                                                                                          for
-                                                                                                                          i
-                                                                                                                          in
-                                                                                                                          beamwidths}
+capacity_nopenalty = {i: [] for i in beamwidths}
+capacitylos_nopenalty = {i: [] for i in beamwidths}
+disconnected_users_nopenalty = {i: [] for i in beamwidths}
 
-heuristic_beamwidth_capacityfair_comparison, heuristic_beamwidth_capacitylosfair_comparison, disconnected_users_heuristicfair_comparison = {
-                                                                                                                                               i: []
-                                                                                                                                               for
-                                                                                                                                               i
-                                                                                                                                               in
-                                                                                                                                               beamwidths}, {
-                                                                                                                                               i: []
-                                                                                                                                               for
-                                                                                                                                               i
-                                                                                                                                               in
-                                                                                                                                               beamwidths}, {
-                                                                                                                                               i: []
-                                                                                                                                               for
-                                                                                                                                               i
-                                                                                                                                               in
-                                                                                                                                               beamwidths}
+heuristic_beamwidth_capacity = {i: [] for i in beamwidths}
+heuristic_beamwidth_capacitylos= {i: [] for i in beamwidths}
+disconnected_users_heuristic = {i: [] for i in beamwidths}
+
+MC_closest_heuristic_capacity,= {i: {j: [] for j in [1, 2, 3, 4, 5]} for i in beamwidths}
+MC_SNR_heuristic_capacity = {i: {j: [] for j in [1, 2, 3, 4, 5]} for i in beamwidths}
+
+heuristic_beamwidth_usermis_capacity = {i: [] for i in beamwidths}
+heuristic_beamwidth_usermis_capacitylos = {i: [] for i in beamwidths}
+disconnected_users_heuristic_usermis = {i: [] for i in beamwidths}
+
+heuristic_beamwidth_capacityfair_comparison = {i: [] for i in beamwidths}
+heuristic_beamwidth_capacitylosfair_comparison = {i: [] for i in beamwidths}
+disconnected_users_heuristicfair_comparison = {i: [] for i in beamwidths}
 
 user = [100, 300, 500, 750, 1000]
 for beamwidth_b in beamwidths:
@@ -117,18 +94,30 @@ for beamwidth_b in beamwidths:
             str('Data/disconnected_users' + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
                 np.degrees(beamwidth_b)) + '.p'), 'rb')))
 
-        for k in [1, 2, 3, 4, 5]:
-            MC_SNR_heuristic_capacity[beamwidth_b][k].append(pickle.load(
-                open(str('Data/channel_capacity' + 'SNR_' + 'k=' + str(k) + 'users=' + str(
-                    number_of_users) + 'beamwidth_b=' + str(
-                    np.degrees(beamwidth_b)) + '.p'), 'rb')))
+        capacity_nopenalty[beamwidth_b].append(pickle.load(open(
+            str('Data/channel_capacity' + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
+                np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(s[0]) +'.p'), 'rb')))
 
-            MC_closest_heuristic_capacity[beamwidth_b][k].append(pickle.load(
-                open(str('Data/channel_capacity' + 'closest_k=' + str(k) + 'users=' + str(
-                    number_of_users) + 'beamwidth_b=' + str(
-                    np.degrees(beamwidth_b)) + '.p'), 'rb')))
+        capacitylos_nopenalty[beamwidth_b].append(pickle.load(open(
+            str('Data/channel_capacity_with_los' + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
+                np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(s[0]) +'.p'), 'rb')))
 
-        print(average(disconnected_users_heuristic[beamwidth_b][-1]))
+        disconnected_users_nopenalty[beamwidth_b].append(pickle.load(open(
+            str('Data/disconnected_users' + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
+                np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(s[0]) +'.p'), 'rb')))
+
+        # for k in [1, 2, 3, 4, 5]:
+        #     MC_SNR_heuristic_capacity[beamwidth_b][k].append(pickle.load(
+        #         open(str('Data/channel_capacity' + 'SNR_' + 'k=' + str(k) + 'users=' + str(
+        #             number_of_users) + 'beamwidth_b=' + str(
+        #             np.degrees(beamwidth_b)) + '.p'), 'rb')))
+        #
+        #     MC_closest_heuristic_capacity[beamwidth_b][k].append(pickle.load(
+        #         open(str('Data/channel_capacity' + 'closest_k=' + str(k) + 'users=' + str(
+        #             number_of_users) + 'beamwidth_b=' + str(
+        #             np.degrees(beamwidth_b)) + '.p'), 'rb')))
+
+        print(average(disconnected_users_nopenalty[beamwidth_b][-1]))
 
 fig, ax = plt.subplots()
 for i, beamwidth_b in zip(range(3), beamwidths):
@@ -143,9 +132,13 @@ for i, beamwidth_b in zip(range(3), beamwidths):
     avg_beamwidth_capacity = [
         sum(heuristic_beamwidth_capacity[beamwidth_b][i]) / len(heuristic_beamwidth_capacity[beamwidth_b][i]) for
         i in range(len(user))]
+    avg_capacity_nopenalty = [sum(capacity_nopenalty[beamwidth_b][i]) / max(1, len(capacity_nopenalty[beamwidth_b][i])) for i in range(len(user))]
+
 
     plt.plot(user, avg_capacity, '-o', color=colors[i], label=name + ' optimal')
+    plt.plot(user, avg_capacity, '-.o', color=colors[i], label=name + ' optimal no penalty')
     plt.plot(user, avg_beamwidth_capacity, '--*', color=colors[i], label=name + ' beamwidth')
+
     # plt.plot(user,
     #          [sum(heuristic_beamwidth_capacityfair_comparison[beamwidth_b][i]) / len(heuristic_beamwidth_capacityfair_comparison[beamwidth_b][i]) for
     #           i in range(len(user))],
@@ -191,119 +184,130 @@ disconnected = [[0, 0, 0, 0, 0],
                 [6.1478 / 100 * 100, 23.668266346730654 / 300 * 100, 59.066 / 500 * 100, 209.07946026986508 / 750 * 100,
                  433.116 / 1000 * 100]]
 
+disconnected_nopenalty = [[0.002/100, 0.6566265/300, 9.82/500, 51/750, 139.6/1000],
+                [0.0596 / 100 * 100, 0.19916 / 300 * 100, 0.316 / 500 * 100, 0.5712143 / 750 * 100,
+                 143.014 / 1000 * 100],
+                [6.1478 / 100 * 100, 23.668266346730654 / 300 * 100, 59.066 / 500 * 100, 209.07946026986508 / 750 * 100,
+                 433.116 / 1000 * 100]]
 
 fix, ax = plt.subplots()
 plt.plot(user, disconnected_heuristic[0], '--*', label='5$\degree$ beamwidth', color=colors[0])
 # plt.plot(user, disconnected_heuristic_both[0], '-.d', label='5$\degree$ beamwidth-both', color=colors[0])
 plt.plot(user, disconnected[0], '-o', label='5$\degree$', color=colors[0])
-plt.plot(user, disconnected_heuristic[1], '--*', label='10$\degree$ beamwidth', color=colors[1])
-# plt.plot(user, disconnected_heuristic_both[1], '-.d', label='10$\degree$ beamwidth-both', color=colors[1])
-plt.plot(user, disconnected[1], '-o', label='10$\degree$', color=colors[1])
-plt.plot(user, disconnected_heuristic[2], '--*', label='15$\degree$ beamwidth', color=colors[2])
-# plt.plot(user, disconnected_heuristic_both[2], '-.d', label='15$\degree$ beamwidth-both', color=colors[2])
-plt.plot(user, disconnected[2], '-*', label='15$\degree$', color=colors[2])
+plt.plot(user, disconnected_nopenalty[0], '-.d', label='5$\degree$', color=colors[0])
+
+# plt.plot(user, disconnected_heuristic[1], '--*', label='10$\degree$ beamwidth', color=colors[1])
+# # plt.plot(user, disconnected_heuristic_both[1], '-.d', label='10$\degree$ beamwidth-both', color=colors[1])
+# plt.plot(user, disconnected[1], '-o', label='10$\degree$', color=colors[1])
+# plt.plot(user, disconnected_heuristic[2], '--*', label='15$\degree$ beamwidth', color=colors[2])
+# # plt.plot(user, disconnected_heuristic_both[2], '-.d', label='15$\degree$ beamwidth-both', color=colors[2])
+# plt.plot(user, disconnected[2], '-*', label='15$\degree$', color=colors[2])
 
 plt.xlabel('Number of users')
 plt.ylabel('Average percentage of disconnected users')
 plt.legend()
 plt.show()
 
-fig, ax = plt.subplots()
-for i, beamwidth_b in zip(range(3), beamwidths):
-    if beamwidth_b == np.radians(5):
-        name = '$5\degree$'
-    elif beamwidth_b == np.radians(10):
-        name = '$10\degree$'
-    elif beamwidth_b == np.radians(15):
-        name = '$15\degree$'
-
-    avg_capacity = [sum(capacity[beamwidth_b][i]) / max(1, len(capacity[beamwidth_b][i])) for i in range(len(user))]
-    avg_beamwidth_capacity = [
-        sum(heuristic_beamwidth_capacity[beamwidth_b][i]) / len(heuristic_beamwidth_capacity[beamwidth_b][i]) for
-        i in range(len(user))]
-
-    plt.plot(user, np.subtract(1,np.divide(disconnected[i], 100)) * avg_capacity, '-o', label=name + ' optimal', color=colors[i])
-    plt.plot(user, np.subtract(1,np.divide(disconnected_heuristic[i], 100)) * avg_beamwidth_capacity, '--*', label=name + ' heuristic', color=colors[i])
-
-plt.xlabel('Number of users')
-plt.ylabel('(1-disconnected) * throughput')
-plt.legend()
-plt.show()
-
-print(average(MC_SNR_heuristic_capacity[beamwidth_b][1][0]))
-for beamwidth in beamwidths:
-    fig, ax = plt.subplots()
-    plt.plot(user, [average(heuristic_beamwidth_capacity[beamwidth][i]) for i in range(len(user))], '-o',
-             label='beamwidth')
-    plt.plot(user, [average(MC_SNR_heuristic_capacity[beamwidth][1][i]) for i in range(len(user))], '-*',
-             label='$SNR - k = 1$')
-    plt.plot(user, [average(MC_SNR_heuristic_capacity[beamwidth][2][i]) for i in range(len(user))], '-d',
-             label='$SNR - k = 2$')
-    plt.plot(user, [average(MC_SNR_heuristic_capacity[beamwidth][3][i]) for i in range(len(user))], '-+',
-             label='$SNR - k = 3$')
-    plt.plot(user, [average(MC_SNR_heuristic_capacity[beamwidth][4][i]) for i in range(len(user))], '-v',
-             label='$SNR - k = 4$')
-    plt.plot(user, [average(MC_SNR_heuristic_capacity[beamwidth][5][i]) for i in range(len(user))], '-1',
-             label='$SNR - k = 5$')
-
-    plt.legend()
-    plt.xlabel('Number of users')
-    plt.ylabel('Total channel capacity (Gbit/s/Hz)')
-    plt.show()
+# fig, ax = plt.subplots()
+# for i, beamwidth_b in zip(range(3), beamwidths):
+#     if beamwidth_b == np.radians(5):
+#         name = '$5\degree$'
+#     elif beamwidth_b == np.radians(10):
+#         name = '$10\degree$'
+#     elif beamwidth_b == np.radians(15):
+#         name = '$15\degree$'
 #
+#     avg_capacity = [sum(capacity[beamwidth_b][i]) / max(1, len(capacity[beamwidth_b][i])) for i in range(len(user))]
+#     avg_capacity_nopenalty = [sum(capacity_nopenalty[beamwidth_b][i]) / max(1, len(capacity_nopenalty[beamwidth_b][i])) for i in range(len(user))]
+#     avg_beamwidth_capacity = [
+#         sum(heuristic_beamwidth_capacity[beamwidth_b][i]) / len(heuristic_beamwidth_capacity[beamwidth_b][i]) for
+#         i in range(len(user))]
+#
+#     plt.plot(user, np.subtract(1, np.divide(disconnected[i], 100)) * avg_capacity, '-o', label=name + ' optimal',
+#              color=colors[i])
+#     plt.plot(user, np.subtract(1, np.divide(disconnected_heuristic[i], 100)) * avg_beamwidth_capacity, '--*',
+#              label=name + ' heuristic', color=colors[i])
+#
+# plt.xlabel('Number of users')
+# plt.ylabel('(1-disconnected) * throughput')
+# plt.legend()
+# plt.show()
+#
+# print(average(MC_SNR_heuristic_capacity[beamwidth_b][1][0]))
+# for beamwidth in beamwidths:
 #     fig, ax = plt.subplots()
 #     plt.plot(user, [average(heuristic_beamwidth_capacity[beamwidth][i]) for i in range(len(user))], '-o',
 #              label='beamwidth')
-#     plt.plot(user, [average(MC_closest_heuristic_capacity[beamwidth][1][i]) for i in range(len(user))], '-*',
-#              label='$Closest - k = 1$')
-#     plt.plot(user, [average(MC_closest_heuristic_capacity[beamwidth][2][i]) for i in range(len(user))], '-d',
-#              label='$Closest - k = 2$')
-#     plt.plot(user, [average(MC_closest_heuristic_capacity[beamwidth][3][i]) for i in range(len(user))], '-+',
-#              label='$Closest - k = 3$')
-#     plt.plot(user, [average(MC_closest_heuristic_capacity[beamwidth][4][i]) for i in range(len(user))], '-v',
-#              label='$Closest - k = 4$')
-#     plt.plot(user, [average(MC_closest_heuristic_capacity[beamwidth][5][i]) for i in range(len(user))], '-1',
-#              label='$Closest - k = 5$')
+#     plt.plot(user, [average(MC_SNR_heuristic_capacity[beamwidth][1][i]) for i in range(len(user))], '-*',
+#              label='$SNR - k = 1$')
+#     plt.plot(user, [average(MC_SNR_heuristic_capacity[beamwidth][2][i]) for i in range(len(user))], '-d',
+#              label='$SNR - k = 2$')
+#     plt.plot(user, [average(MC_SNR_heuristic_capacity[beamwidth][3][i]) for i in range(len(user))], '-+',
+#              label='$SNR - k = 3$')
+#     plt.plot(user, [average(MC_SNR_heuristic_capacity[beamwidth][4][i]) for i in range(len(user))], '-v',
+#              label='$SNR - k = 4$')
+#     plt.plot(user, [average(MC_SNR_heuristic_capacity[beamwidth][5][i]) for i in range(len(user))], '-1',
+#              label='$SNR - k = 5$')
 #
 #     plt.legend()
 #     plt.xlabel('Number of users')
 #     plt.ylabel('Total channel capacity (Gbit/s/Hz)')
 #     plt.show()
-
-fig, ax = plt.subplots()
-for i, beamwidth_b in [(0, np.radians(15))]: #zip(range(3), beamwidths):
-    if beamwidth_b == np.radians(5):
-        name = '$5\degree$'
-    elif beamwidth_b == np.radians(10):
-        name = '$10\degree$'
-    elif beamwidth_b == np.radians(15):
-        name = '$15\degree$'
-
-    avg_capacitylos = [sum(capacitylos[beamwidth_b][i]) / max(1, len(capacitylos[beamwidth_b][i])) for i in range(len(user))]
-    avg_beamwidth_capacitylos = [
-        sum(heuristic_beamwidth_capacitylos[beamwidth_b][i]) / len(heuristic_beamwidth_capacitylos[beamwidth_b][i]) for
-        i in range(len(user))]
-
-    plt.plot(user, avg_capacitylos, '-o', color=colors[0], label=name + ' optimal - los')
-    plt.plot(user, avg_beamwidth_capacitylos, '--*', color=colors[0], label=name + ' beamwidth - los')
-
-    avg_capacity = [sum(capacity[beamwidth_b][i]) / max(1, len(capacity[beamwidth_b][i])) for i in range(len(user))]
-    avg_beamwidth_capacity = [
-        sum(heuristic_beamwidth_capacity[beamwidth_b][i]) / len(heuristic_beamwidth_capacity[beamwidth_b][i]) for
-        i in range(len(user))]
-
-    plt.plot(user, avg_capacity, '-o', color=colors[1], label=name + ' optimal')
-    plt.plot(user, avg_beamwidth_capacity, '--*', color=colors[1], label=name + ' beamwidth')
-    # plt.plot(user,
-    #          [sum(heuristic_beamwidth_capacityfair_comparison[beamwidth_b][i]) / len(heuristic_beamwidth_capacityfair_comparison[beamwidth_b][i]) for
-    #           i in range(len(user))],
-    #          '--*', color=colors[i], label=name + ' beamwidth-fair')
-    # plt.plot(user,
-    #          [sum(heuristic_beamwidth_usermis_capacity[beamwidth_b][i]) / len(heuristic_beamwidth_usermis_capacity[beamwidth_b][i]) for
-    #           i in range(len(user))],
-    #          '-.d', color=colors[i], label=name + ' beamwidth-both')
-
-plt.xlabel('Number of users')
-plt.ylabel('Total channel capacity (Gbit/s/Hz)')
-plt.legend()
-plt.show()
+# #
+# #     fig, ax = plt.subplots()
+# #     plt.plot(user, [average(heuristic_beamwidth_capacity[beamwidth][i]) for i in range(len(user))], '-o',
+# #              label='beamwidth')
+# #     plt.plot(user, [average(MC_closest_heuristic_capacity[beamwidth][1][i]) for i in range(len(user))], '-*',
+# #              label='$Closest - k = 1$')
+# #     plt.plot(user, [average(MC_closest_heuristic_capacity[beamwidth][2][i]) for i in range(len(user))], '-d',
+# #              label='$Closest - k = 2$')
+# #     plt.plot(user, [average(MC_closest_heuristic_capacity[beamwidth][3][i]) for i in range(len(user))], '-+',
+# #              label='$Closest - k = 3$')
+# #     plt.plot(user, [average(MC_closest_heuristic_capacity[beamwidth][4][i]) for i in range(len(user))], '-v',
+# #              label='$Closest - k = 4$')
+# #     plt.plot(user, [average(MC_closest_heuristic_capacity[beamwidth][5][i]) for i in range(len(user))], '-1',
+# #              label='$Closest - k = 5$')
+# #
+# #     plt.legend()
+# #     plt.xlabel('Number of users')
+# #     plt.ylabel('Total channel capacity (Gbit/s/Hz)')
+# #     plt.show()
+#
+# fig, ax = plt.subplots()
+# for i, beamwidth_b in [(0, np.radians(15))]:  # zip(range(3), beamwidths):
+#     if beamwidth_b == np.radians(5):
+#         name = '$5\degree$'
+#     elif beamwidth_b == np.radians(10):
+#         name = '$10\degree$'
+#     elif beamwidth_b == np.radians(15):
+#         name = '$15\degree$'
+#
+#     avg_capacitylos = [sum(capacitylos[beamwidth_b][i]) / max(1, len(capacitylos[beamwidth_b][i])) for i in
+#                        range(len(user))]
+#     avg_beamwidth_capacitylos = [
+#         sum(heuristic_beamwidth_capacitylos[beamwidth_b][i]) / len(heuristic_beamwidth_capacitylos[beamwidth_b][i]) for
+#         i in range(len(user))]
+#
+#     plt.plot(user, avg_capacitylos, '-o', color=colors[0], label=name + ' optimal - los')
+#     plt.plot(user, avg_beamwidth_capacitylos, '--*', color=colors[0], label=name + ' beamwidth - los')
+#
+#     avg_capacity = [sum(capacity[beamwidth_b][i]) / max(1, len(capacity[beamwidth_b][i])) for i in range(len(user))]
+#     avg_beamwidth_capacity = [
+#         sum(heuristic_beamwidth_capacity[beamwidth_b][i]) / len(heuristic_beamwidth_capacity[beamwidth_b][i]) for
+#         i in range(len(user))]
+#
+#     plt.plot(user, avg_capacity, '-o', color=colors[1], label=name + ' optimal')
+#     plt.plot(user, avg_beamwidth_capacity, '--*', color=colors[1], label=name + ' beamwidth')
+#     # plt.plot(user,
+#     #          [sum(heuristic_beamwidth_capacityfair_comparison[beamwidth_b][i]) / len(heuristic_beamwidth_capacityfair_comparison[beamwidth_b][i]) for
+#     #           i in range(len(user))],
+#     #          '--*', color=colors[i], label=name + ' beamwidth-fair')
+#     # plt.plot(user,
+#     #          [sum(heuristic_beamwidth_usermis_capacity[beamwidth_b][i]) / len(heuristic_beamwidth_usermis_capacity[beamwidth_b][i]) for
+#     #           i in range(len(user))],
+#     #          '-.d', color=colors[i], label=name + ' beamwidth-both')
+#
+# plt.xlabel('Number of users')
+# plt.ylabel('Total channel capacity (Gbit/s/Hz)')
+# plt.legend()
+# plt.show()

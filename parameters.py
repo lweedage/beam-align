@@ -20,6 +20,10 @@ beamwidth_b = math.radians(int(beamwidth_deg))
 
 W = 1  # bandwidth
 
+M = 100 # penalty on having disconnected users
+s = [2] * 24 # amount of users in a beam
+print(s)
+
 transmission_power = 10 ** 3.0  # 30 dB
 noise = 10 ** 0.7
 
@@ -51,6 +55,7 @@ x_bs, y_bs = initialise_graph_triangular(radius, xDelta, yDelta)
 number_of_bs = len(x_bs)
 
 iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
+iterations = {50: 1, 100: 2500, 300: 834, 500: 500, 750: 334, 1000: 250}
 
 if beamwidth_b == math.radians(5):
     misalignment = {10: 1.78, 100: 1.53, 300: 1.37, 500: 1.25, 750: 1.16, 1000: 1.12}

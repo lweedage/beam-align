@@ -1,13 +1,10 @@
+import sys
+
 import gurobipy as gp
+import numpy as np
 from gurobipy import GRB
 from gurobipy import quicksum
-import numpy as np
-import scipy.sparse as sp
-import math
-import matplotlib.pyplot as plt
-import networkx as nx
-import sys
-from itertools import product
+
 import functions as f
 from parameters import *
 
@@ -55,8 +52,8 @@ def optimization(x_user, y_user):
             gain_user[i, j] = f.find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
             power[i, j] = transmission_power * gain_bs[i, j] * gain_user[i, j] / path_loss[i, j]
 
-            user_beamnumber[i,j] = f.find_beam_number(
-                    f.find_bore(coords_i, coords_j, beamwidth_u), beamwidth_u)
+            user_beamnumber[i, j] = f.find_beam_number(
+                f.find_bore(coords_i, coords_j, beamwidth_u), beamwidth_u)
             bs_beamnumber[i, j] = f.find_beam_number(
                 f.find_bore(coords_j, coords_i, beamwidth_b), beamwidth_b)
     # ------------------------ Start of optimization program ------------------------------------
@@ -85,19 +82,19 @@ def optimization(x_user, y_user):
         for i in users:
             for j in base_stations:
                 x[i, j] = m.addVar(vtype=GRB.BINARY, name=f'x#{i}#{j}')
-                SINR[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb = 0, name=f'SINR#{i}#{j}')
-                C[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb = 0, name=f'C#{i}#{j}')
-                log_SE[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb = 0, name=f'logSE#{i}#{j}')
-                SE[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb = 0, name=f'SE#{i}#{j}')
-                bandwidth[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb = 0, ub = W, name=f'bandwidth#{i}#{j}')
+                SINR[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb=0, name=f'SINR#{i}#{j}')
+                C[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb=0, name=f'C#{i}#{j}')
+                log_SE[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb=0, name=f'logSE#{i}#{j}')
+                SE[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb=0, name=f'SE#{i}#{j}')
+                bandwidth[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb=0, ub=W, name=f'bandwidth#{i}#{j}')
 
             SINR_user[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'SINR_user#{i}')
             C_user[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'C_user#{i}')
-            disconnected[i] = m.addVar(vtype=GRB.BINARY, name = f'Disconnected_user#{i}')
+            disconnected[i] = m.addVar(vtype=GRB.BINARY, name=f'Disconnected_user#{i}')
 
         for j in base_stations:
             for d in directions_bs:
-                angles_bs[j, d] = m.addVar(vtype=GRB.BINARY, name=f'angle_bs#{j}#{d}') # KEEP IN MIND TO CHANGE THIS
+                angles_bs[j, d] = m.addVar(vtype=GRB.BINARY, name=f'angle_bs#{j}#{d}')  # KEEP IN MIND TO CHANGE THIS
         for i in users:
             for d in directions_u:
                 angles_u[i, d] = m.addVar(vtype=GRB.BINARY, name=f'angle_u#{i}#{d}')
@@ -106,7 +103,7 @@ def optimization(x_user, y_user):
         # ----------------- OBJECTIVE ----------------------------------
         # m.setObjective(quicksum(C_user[i] for i in users), GRB.MAXIMIZE)
         # m.setObjective(quicksum(C_user[i] for i in users) - 500 * quicksum(SNR_penalty[i,j] for i in users for j in base_stations), GRB.MAXIMIZE)
-        m.setObjective(quicksum(C_user[i] for i in users) - 100 * quicksum(disconnected[i] for i in users), GRB.MAXIMIZE)
+        m.setObjective(quicksum(C_user[i] for i in users) - M * quicksum(disconnected[i] for i in users), GRB.MAXIMIZE)
 
         # --------------- CONSTRAINTS -----------------------------
         # Define SINR and interference
@@ -117,37 +114,20 @@ def optimization(x_user, y_user):
         # Only 1 BS/User per angular direction
         for i in users:
             for d in directions_u:
-                m.addConstr(angles_u[i, d] == quicksum(x[i, j] for j in base_stations if user_beamnumber[i,j] == d),
+                m.addConstr(angles_u[i, d] == quicksum(x[i, j] for j in base_stations if user_beamnumber[i, j] == d),
                             name=f'direction_user#{i}#{d}')
-                m.addConstr(angles_u[i, d] <= 1, name = f'angle_u#{i}#{d}')
+                m.addConstr(angles_u[i, d] <= 1, name=f'angle_u#{i}#{d}')
         #
         for j in base_stations:
             for d in directions_bs:
-                m.addConstr(angles_bs[j, d] == quicksum(x[i, j] for i in users if bs_beamnumber[i,j] == d),
+                m.addConstr(angles_bs[j, d] == quicksum(x[i, j] for i in users if bs_beamnumber[i, j] == d),
                             name=f'direction_bs#{j}#{d}')
-                m.addConstr(angles_bs[j, d] <= 1, name=f'angle_bs#{j}#{d}')
-                # for i in users:
-                #     m.addConstr(((bandwidth[i, j] == W) >> (angles_bs[j,d] == 1) ), name=f'find_bw2#{i}#{j}')
-                #     m.addConstr(((bandwidth[i, j] == W / 2) >> (angles_bs[j,d] == 2) ), name=f'find_bw2#{i}#{j}')
-                #     # m.addConstr(((bandwidth[i, j] == W / 3) >> (angles_bs[j,d] == 3) ), name=f'find_bw2#{i}#{j}')
+                m.addConstr(angles_bs[j, d] <= s[j], name=f'angle_bs#{j}#{d}')
 
         # Minimum SNR
         for i in users:
             for j in base_stations:
-                # m.addConstr(SINR[i, j] >= x[i, j] * (SINR_min - SNR_penalty[i,j]), name=f'minimum_SNR#{i}#{j}')
-                m.addConstr(SINR[i, j] >= x[i, j] * (SINR_min), name=f'minimum_SNR#{i}#{j}')
-
-        # # Connections per BS
-        # for j in base_stations:
-        #     m.addConstr(quicksum(x[i, j] for i in users) <= N_bs, name= f'connections_BS#{j}')
-        #
-        # # Connections per user
-        # for i in users:
-        #     m.addConstr(quicksum(x[i,j] for j in base_stations) <= N_user, name=f'connections_user#{i}')
-
-        # Rate requirement
-        # for i in users:
-        #     m.addConstr(quicksum(SINR[i,j] for j in base_stations) >= min_rate_SINR, name='rate_requirement')
+                m.addConstr(SINR[i, j] >= x[i, j] * SINR_min, name=f'minimum_SNR#{i}#{j}')
 
         # at least 1 connection:
         for i in users:
@@ -156,14 +136,10 @@ def optimization(x_user, y_user):
         # find channel capacity
         for i in users:
             for j in base_stations:
-                # d = bs_beamnumber[i, j]
-                # m.addConstr(bandwidth[i,j] * angles_bs[j, d] == x[i,j], name=f'bandwidth_sharing#{i}#{j}')
-
                 m.addConstr(SE[i, j] == (1 + SINR[i, j]), name=f'SE#{i}#{j}')
                 m.addGenConstrLog(SE[i, j], log_SE[i, j], name=f'log_SE#{i}#{j}',
                                   options="FuncPieces=-1 FuncPieceError=0.01")
-                m.addConstr(C[i, j] == log_SE[i, j], name=f'C#{i}#{j}') #* angles_bs[j, d]
-            m.addConstr(C_user[i] == quicksum(C[i, j] for j in base_stations), name=f'C_user#{i}') #* [bandwidth[i,j]
+            m.addConstr(C_user[i] == quicksum(W / s[j] * log_SE[i, j] for j in base_stations), name=f'C_user#{i}')
 
         # --------------------- OPTIMIZE MODEL -------------------------
         # m.computeIIS()
@@ -192,8 +168,6 @@ def optimization(x_user, y_user):
             for j in base_stations:
                 a[i, j] = x[i, j].X
 
-        disconnected_list =[disconnected[i].X for i in users]
-        print(disconnected_list)
+        disconnected_list = [disconnected[i].X for i in users]
         disconnected = sum([1 for i in users if disconnected[i].X == 1])
-        print(disconnected)
     return a, disconnected
