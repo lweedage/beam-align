@@ -8,7 +8,7 @@ import time
 import pickle
 import os
 
-def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k = 1, SNRHeuristic = False, UserMisalignment = False, FairComparison = False):
+def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k = 1, SNRHeuristic = False, UserMisalignment = False, FairComparison = False, Maximization = True):
     delta = 2
     disconnected = []
 
@@ -83,6 +83,9 @@ def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k 
         capacity = f.find_capacity(opt_x, x_user, y_user)
         capacity_with_los = f.find_capacity(opt_x, x_user, y_user, with_los = True)
 
+        if not Maximization:
+            min_capacity = f.find_mincapacity(opt_x, x_user, y_user)
+
         if capacity == 0:
             no_optimal_value_found += 1
 
@@ -103,6 +106,9 @@ def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k 
 
     elif SNRHeuristic:
         name = str('SNR_k=' + str(k) + name)
+
+    elif not Maximization:
+        name = str('minimization' + name)
 
 
     pickle.dump(grid_mc, open(str('Data/grid_mc_' + name + '.p'),'wb'), protocol=4)
@@ -133,3 +139,5 @@ def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k 
     print('average channel capacity with LoS:', sum(channel_capacity_with_los)/len(channel_capacity_with_los))
 
 
+    if not Maximization:
+        pickle.dump(min_capacity, open(str('Data/min_capacity' + name + '.p'), 'wb'), protocol=4)

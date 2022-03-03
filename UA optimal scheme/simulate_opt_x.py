@@ -38,4 +38,4 @@ for number_of_users in [100, 500, 1000]:
 
         # print(opt_x)
 
-    find_data.main(optimal, xs, ys, disconnect)
+    find_data.main(optimal, xs, ys, disconnect, Maximization= Maximization)

@@ -89,14 +89,23 @@ def optimization(x_user, y_user):
         for i in users:
             for d in directions_u:
                 angles_u[i, d] = m.addVar(vtype=GRB.BINARY, name=f'angle_u#{i}#{d}')
+
+        minC = m.addVar(vtype=GRB.CONTINUOUS, name='min_C')
         m.update()
 
         # ----------------- OBJECTIVE ----------------------------------
-        # m.setObjective(quicksum(C_user[i] for i in users), GRB.MAXIMIZE)
-        # m.setObjective(quicksum(C_user[i] for i in users) - 500 * quicksum(SNR_penalty[i,j] for i in users for j in base_stations), GRB.MAXIMIZE)
-        m.setObjective(quicksum(C_user[i] for i in users) - M * quicksum(disconnected[i] for i in users), GRB.MAXIMIZE)
+        if Maximization:
+            # m.setObjective(quicksum(C_user[i] for i in users), GRB.MAXIMIZE)
+            # m.setObjective(quicksum(C_user[i] for i in users) - 500 * quicksum(SNR_penalty[i,j] for i in users for j in base_stations), GRB.MAXIMIZE)
+            m.setObjective(quicksum(C_user[i] for i in users) - M * quicksum(disconnected[i] for i in users), GRB.MAXIMIZE)
+        else:
+            m.setObjective(minC, GRB.MAXIMIZE)
+
 
         # --------------- CONSTRAINTS -----------------------------
+        if not Maximization:
+            m.addGenConstrMin(minC, C_user)
+
         # Only 1 BS/User per angular direction
         for i in users:
             for d in directions_u:
@@ -156,5 +165,4 @@ def optimization(x_user, y_user):
                 angles[j, d] = angles_bs[j, d].X
 
         disconnected = sum([1 for i in users if disconnected[i].X == 1])
-        print(angles)
     return a, disconnected

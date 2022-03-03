@@ -202,6 +202,10 @@ def find_capacity(opt_x, x_user, y_user, with_los = False):
     per_user_capacity = find_capacity_per_user(opt_x, x_user ,y_user, with_los)
     return sum(per_user_capacity)
 
+def find_mincapacity(opt_x, x_user, y_user, with_los = False):
+    per_user_capacity = find_capacity_per_user(opt_x, x_user ,y_user, with_los)
+    return min(per_user_capacity)
+
 def find_capacity_per_user(opt_x, x_user, y_user, with_los = False):
     occupied_beams = np.zeros((number_of_bs, len(directions_bs)))
     number_of_users = len(x_user)

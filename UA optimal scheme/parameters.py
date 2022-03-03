@@ -27,6 +27,8 @@ M = 100  # penalty on having disconnected users
 s = [1] * 24  # amount of users in a beam
 print(s)
 
+Maximization = False
+
 transmission_power = 10 ** 3.0  # 30 dB
 noise_power_db = -174 + 10 * math.log10(W * 10 ** 9)
 noise = 10 ** (noise_power_db / 10)
@@ -59,6 +61,7 @@ x_bs, y_bs = initialise_graph_triangular(radius, xDelta, yDelta)
 number_of_bs = len(x_bs)
 
 iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
+iterations = {50: 1, 100: 500, 300: 500, 500: 500, 750: 250, 1000: 250}
 
 if beamwidth_b == math.radians(5):
     misalignment = {50: 1.78, 100: 2.47, 300: 1.75, 500: 1.40, 750: 1.21, 1000: 1.13}
