@@ -7,9 +7,9 @@ colors =  ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen', 'Or
 
 pi = math.pi
 bs_of_interest = 0
-radius = 25  # for triangular grid
+radius = 50  # for triangular grid
 
-xmin, xmax = 0, 100
+xmin, xmax = 0, 200
 ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 3
 
 xDelta = xmax - xmin
@@ -18,16 +18,13 @@ yDelta = ymax - ymin
 beamwidth_u = math.radians(5)
 
 # beamwidth_deg = input('Beamwidth BS?')
-beamwidth_deg = 5
+beamwidth_deg = 10
 beamwidth_b = math.radians(int(beamwidth_deg))
 
 W = 1  # bandwidth
 
 M = 100  # penalty on having disconnected users
-s = [1] * 24  # amount of users in a beam
-print(s)
-
-Maximization = False
+users_per_beam = 2  # amount of users in a beam
 
 transmission_power = 10 ** 3.0  # 30 dB
 noise_power_db = -174 + 10 * math.log10(W * 10 ** 9)

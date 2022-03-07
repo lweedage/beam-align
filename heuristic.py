@@ -1,11 +1,8 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import find_data
 from parameters import *
-import new_optimization
 import functions as f
-import time
-import pickle
+
 
 def find_sorted_users(bs, x_user, y_user):
     # on a torus

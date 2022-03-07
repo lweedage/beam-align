@@ -33,6 +33,7 @@ def optimization(x_user, y_user):
     number_of_users = len(x_user)
     users = range(number_of_users)
     base_stations = range(number_of_bs)
+    shares = range(users_per_beam)
 
     gain_bs = np.zeros((number_of_users, number_of_bs))
     gain_user = np.zeros((number_of_users, number_of_bs))
@@ -52,14 +53,12 @@ def optimization(x_user, y_user):
             gain_bs[i, j] = f.find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
             gain_user[i, j] = f.find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
             SNR[i, j] = transmission_power * gain_bs[i, j] * gain_user[i, j] / (path_loss[i, j] * noise)
-            spectral_efficiency[i,j] = math.log2(1 + SNR[i,j])
+            spectral_efficiency[i, j] = math.log2(1 + SNR[i, j])
 
             user_beamnumber[i, j] = f.find_beam_number(
                 f.find_bore(coords_i, coords_j, beamwidth_u), beamwidth_u)
             bs_beamnumber[i, j] = f.find_beam_number(
                 f.find_bore(coords_j, coords_i, beamwidth_b), beamwidth_b)
-
-            bandwidth[i,j]
     # ------------------------ Start of optimization program ------------------------------------
     try:
         m = gp.Model("Model 1")
@@ -70,6 +69,7 @@ def optimization(x_user, y_user):
 
         # -------------- VARIABLES -----------------------------------
         x = {}
+        x_user = {}
         C_user = {}
 
         disconnected = {}
@@ -79,48 +79,72 @@ def optimization(x_user, y_user):
 
         for i in users:
             for j in base_stations:
-                x[i, j] = m.addVar(vtype=GRB.BINARY, name=f'x#{i}#{j}')
+                x_user[i, j] = m.addVar(vtype=GRB.BINARY, name=f'x_user{i}{j}')
+                for d in directions_bs:
+                    for s in shares:
+                        x[i, j, d, s] = m.addVar(vtype=GRB.BINARY, name=f'x#{i}#{j}#{d}#{s}')
+
             C_user[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'C_user#{i}')
             disconnected[i] = m.addVar(vtype=GRB.BINARY, name=f'Disconnected_user#{i}')
 
         for j in base_stations:
             for d in directions_bs:
                 angles_bs[j, d] = m.addVar(vtype=GRB.INTEGER, name=f'angle_bs#{j}#{d}')
+
         for i in users:
             for d in directions_u:
                 angles_u[i, d] = m.addVar(vtype=GRB.BINARY, name=f'angle_u#{i}#{d}')
+
         m.update()
 
         # ----------------- OBJECTIVE ----------------------------------
+        # m.setObjective(quicksum(C_user[i] for i in users), GRB.MAXIMIZE)
+        # m.setObjective(quicksum(C_user[i] for i in users) - 500 * quicksum(SNR_penalty[i,j] for i in users for j in base_stations), GRB.MAXIMIZE)
         m.setObjective(quicksum(C_user[i] for i in users) - M * quicksum(disconnected[i] for i in users), GRB.MAXIMIZE)
 
         # --------------- CONSTRAINTS -----------------------------
+
         # Only 1 BS/User per angular direction
         for i in users:
-            for d in directions_u:
-                m.addConstr(angles_u[i, d] == quicksum(x[i, j] for j in base_stations if user_beamnumber[i, j] == d),
-                            name=f'direction_user#{i}#{d}')
+            for d in range(len(directions_u)):
+                m.addConstr(
+                    angles_u[i, d] == quicksum(x_user[i, j] for j in base_stations if user_beamnumber[i, j] == d),
+                    name=f'direction_user#{i}#{d}')
                 m.addConstr(angles_u[i, d] <= 1, name=f'angle_u#{i}#{d}')
 
+        for i in users:
+            for j in base_stations:
+                for s in shares:
+                    for d in range(len(directions_bs)):
+
+                        if d == bs_beamnumber[i, j]:
+                            m.addConstr(x[i, j, d, s] >= 0)
+                        else:
+                            m.addConstr(x[i, j, d, s] == 0)
         for j in base_stations:
             for d in directions_bs:
-                m.addConstr(angles_bs[j, d] == quicksum(x[i, j] for i in users if bs_beamnumber[i, j] == d),
-                            name=f'direction_bs#{j}#{d}')
-                m.addConstr(angles_bs[j, d] <= s[j], name=f'angle_bs#{j}#{d}')
+                m.addConstr(quicksum(x[i, j, d,s] for s in shares for i in users) <= users_per_beam )
+
+        for i in users:
+            for j in base_stations:
+                d = bs_beamnumber[i, j]
+                m.addGenConstrMax(x_user[i, j], [x[i, j, d, s] for s in shares], name='max constraint')
 
         # Minimum SNR
         for i in users:
             for j in base_stations:
-                m.addConstr(x[i, j] * SINR_min <= SNR[i,j] , name=f'minimum_SNR#{i}#{j}')
+                m.addConstr(x_user[i, j] * SINR_min <= SNR[i, j], name=f'minimum_SNR#{i}#{j}')
 
         # at least 1 connection:
         for i in users:
-            m.addConstr(quicksum(x[i, j] for j in base_stations) >= 1 - disconnected[i], name=f'1_con_user#{i}')
+            m.addConstr(quicksum(x_user[i, j] for j in base_stations) >= 1 - disconnected[i], name=f'1_con_user#{i}')
             # m.addConstr(quicksum(x[i, j] for j in base_stations) >= 1, name=f'1_con_user#{i}')
 
         # find channel capacity
         for i in users:
-            m.addConstr(C_user[i] == quicksum(W / s[j] * x[i,j] * spectral_efficiency[i, j] for j in base_stations), name=f'C_user#{i}')
+            m.addConstr(C_user[i] == quicksum(
+                (W / users_per_beam) * x[i, j, d, s] * spectral_efficiency[i, j] for j in base_stations for s in shares
+                for d in range(len(directions_bs))), name=f'C_user#{i}')
 
         # --------------------- OPTIMIZE MODEL -------------------------
         # m.computeIIS()
@@ -136,22 +160,27 @@ def optimization(x_user, y_user):
         print('Error code ' + str(e.errno) + ': ' + str(e))
         sys.exit()
 
-
     a = np.zeros((number_of_users, number_of_bs))
     angles = np.zeros((number_of_bs, len(directions_bs)))
-
+    links = np.zeros((number_of_users, number_of_bs, len(directions_bs), users_per_beam))
     total_C = np.zeros(number_of_users)
 
     if m.status == 2:
         for i in users:
             total_C[i] = C_user[i].X
             for j in base_stations:
-                a[i, j] = x[i, j].X
+                a[i, j] = x_user[i, j].X
 
         for j in base_stations:
             for d in directions_bs:
                 angles[j, d] = angles_bs[j, d].X
 
+        for i in users:
+            for j in base_stations:
+                for d in directions_bs:
+                    for s in shares:
+                        links[i,j,d,s] = x[i,j,d,s].X
+
         disconnected = sum([1 for i in users if disconnected[i].X == 1])
-        print(angles)
-    return a, disconnected
+        print(links)
+    return a, disconnected, links

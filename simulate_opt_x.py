@@ -1,12 +1,8 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from parameters import *
 import new_optimization
-import new_optimization
 import functions as f
 import time
-import pickle
-import os
 import find_data
 
 print('Beamwidth is', np.degrees(beamwidth_b), 'M =', M, 's =', s[0])
