@@ -6,10 +6,10 @@ import scipy.stats as stats
 
 from parameters import *
 
-number_of_users = int(input('Number of users?'))
-user = [100, 500, 1000]
+# number_of_users = int(input('Number of users?'))
+user = [100, 300, 500, 750, 1000]
 
-for number_of_users in [100]: #user:
+for number_of_users in user:
     print(number_of_users)
     iteration_min = 0
     iteration_max = iterations[number_of_users]
@@ -24,28 +24,11 @@ for number_of_users in [100]: #user:
     else:
         name = str(
             'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
-                M) + 's=' + str(
-                s[0]))
+                M) + 's=' + str(users_per_beam))
 
     beamwidths = [np.radians(5)] #, np.radians(10), np.radians(15)]
 
-    degrees = {i: [] for i in beamwidths}
 
-    for beamwidth_b in beamwidths:
-        for number_of_users in user:
-            name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
-                M) + 's=' + str(s[0]))
-            degrees[beamwidth_b].append(pickle.load(open(
-                str('Data/total_links_per_user' + name + '.p'), 'rb')))
-
-        fig, ax = plt.subplots()
-        bplot = plt.boxplot(degrees[beamwidth_b], showfliers=False, patch_artist=True, medianprops={'color': 'black'})
-        for patch, color in zip(bplot['boxes'], colors[:5]):
-            patch.set_facecolor(color)
-        plt.xticks([1, 2, 3], user)
-        plt.xlabel('Number of users')
-        plt.ylabel('Number of connections per user')
-        plt.show()
 
     misalignment_user = pickle.load(open(str('Data/grid_misalignment_user' + name + '.p'), 'rb'))
     misalignment_bs = pickle.load(open(str('Data/grid_misalignment_bs' + name + '.p'), 'rb'))
@@ -74,17 +57,25 @@ for number_of_users in [100]: #user:
     if Heuristic:
         name = str('heuristic_' + name)
 
-    # fig, ax = plt.subplots()
-    # data1 = np.degrees(misalignment_sc)
-    # data2 = np.degrees(misalignment_mc)
-    # plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
-    #          alpha=0.3, label='single connections')
-    # plt.hist(data2, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
-    #          alpha=0.3, label='multiple connections')
-    # plt.xlabel('Misalignment in degrees')
-    # plt.legend()
-    # plt.savefig(str('Figures/' + name + '_misalignment.png'))
-    # plt.show()
+    fig, ax = plt.subplots()
+    data1 = np.degrees(misalignment_sc)
+    data2 = np.degrees(misalignment_mc)
+    plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
+             alpha=0.3, label='single connections')
+    plt.hist(data2, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
+             alpha=0.3, label='multiple connections')
+    plt.xlabel('Misalignment in degrees')
+    plt.legend()
+    plt.savefig(str('Figures/' + name + '_misalignmentmc.png'))
+    plt.show()
+
+    fig, ax = plt.subplots()
+    data1 = np.degrees(misalignment_bs)
+    plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
+             alpha=0.3)
+    plt.xlabel('Misalignment in degrees')
+    plt.savefig(str('Figures/' + name + '_misalignment.png'))
+    plt.show()
 
     # fig, ax = plt.subplots()
     # data = distances_sc
@@ -130,3 +121,20 @@ for number_of_users in [100]: #user:
     # plt.legend()
     # plt.savefig(str('Figures/' + name + '_degrees_scatter.png'))
     # plt.show()
+
+degrees = {i: [] for i in beamwidths}
+for beamwidth_b in beamwidths:
+    for number_of_users in user:
+        name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
+            M) + 's=' + str(users_per_beam))
+        degrees[beamwidth_b].append(pickle.load(open(
+            str('Data/total_links_per_user' + name + '.p'), 'rb')))
+
+    fig, ax = plt.subplots()
+    bplot = plt.boxplot(degrees[beamwidth_b], showfliers=False, patch_artist=True, medianprops={'color': 'black'})
+    for patch, color in zip(bplot['boxes'], colors[:5]):
+        patch.set_facecolor(color)
+    plt.xticks([1, 2, 3, 4, 5], user)
+    plt.xlabel('Number of users')
+    plt.ylabel('Number of connections per user')
+    plt.show()

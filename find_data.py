@@ -8,8 +8,8 @@ import time
 import pickle
 import os
 
-def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k = 1, SNRHeuristic = False, UserMisalignment = False, FairComparison = False, Maximization = True):
-    delta = 2
+def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeuristic = False):
+    delta = 1
     disconnected = []
 
     x_max, y_max = int(np.ceil(xmax * delta)), int(np.ceil(ymax * delta))
@@ -80,35 +80,21 @@ def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k 
                         misalignment_mc.append(x)
                         distances_mc.append(dist)
 
-        capacity = f.find_capacity(opt_x, x_user, y_user)
-        capacity_with_los = f.find_capacity(opt_x, x_user, y_user, with_los = True)
-
-        if not Maximization:
-            min_capacity = f.find_mincapacity(opt_x, x_user, y_user)
+        capacity = sum(capacities[iteration])
 
         if capacity == 0:
             no_optimal_value_found += 1
 
         channel_capacity.append(capacity)
-        channel_capacity_with_los.append(capacity_with_los)
         disconnected.append(discon)
-    name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(s[0]))
-    if Heuristic:
-        if UserMisalignment:
-            name = str('beamwidth_heuristic_with_usermis' + name)
-        else:
-            name = str('beamwidth_heuristic' + name)
-        if FairComparison:
-            name = str('fair_comparison' + name)
 
-    elif MCHeuristic:
-        name = str('closest_k=' + str(k) + name)
+    name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(users_per_beam))
+
+    if Heuristic:
+        name = str('beamwidth_heuristic' + name)
 
     elif SNRHeuristic:
         name = str('SNR_k=' + str(k) + name)
-
-    elif not Maximization:
-        name = str('minimization' + name)
 
 
     pickle.dump(grid_mc, open(str('Data/grid_mc_' + name + '.p'),'wb'), protocol=4)
@@ -124,11 +110,6 @@ def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k 
     pickle.dump(distances_mc, open(str('Data/distances_mc' + name + '.p'),'wb'), protocol=4)
     pickle.dump(distances_sc, open(str('Data/distances_sc' + name + '.p'),'wb'), protocol=4)
 
-    pickle.dump(optimal, open(str('Data/assignment' + name  + '.p'),'wb'), protocol=4)
-    pickle.dump(xs, open(str('Data/xs' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(ys, open(str('Data/ys' + name + '.p'),'wb'), protocol=4)
-
-
     pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'),'wb'), protocol=4)
     pickle.dump(channel_capacity, open(str('Data/channel_capacity' + name + '.p'),'wb'), protocol=4)
     pickle.dump(channel_capacity_with_los, open(str('Data/channel_capacity_with_los' + name + '.p'),'wb'), protocol=4)
@@ -136,8 +117,29 @@ def main(optimal, xs, ys, disconnected, Heuristic=False, MCHeuristic = False, k 
     pickle.dump(disconnected, open(str('Data/disconnected_users' + name + '.p'),'wb'), protocol=4)
 
     print('average channel capacity:', sum(channel_capacity)/len(channel_capacity))
-    print('average channel capacity with LoS:', sum(channel_capacity_with_los)/len(channel_capacity_with_los))
 
+if __name__ == '__main__':
+    Heuristic = False
+    SNRHeuristic = False
+    number_of_users = int(input('Number of users?'))
 
-    if not Maximization:
-        pickle.dump(min_capacity, open(str('Data/min_capacity' + name + '.p'), 'wb'), protocol=4)
+    if SNRHeuristic:
+        k = int(input('k?'))
+    else:
+        k = 1
+
+    name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(
+            users_per_beam))
+    if Heuristic:
+        name = str('beamwidth_heuristic' + name)
+
+    elif SNRHeuristic:
+        name = str('SNR_k=' + str(k) + name)
+
+    optimal = pickle.load(open(str('Data/assignment' + name  + '.p'),'rb'))
+    shares = pickle.load(open(str('Data/shares' + name  + '.p'),'rb'))
+    xs = pickle.load(open(str('Data/xs' + name + '.p'),'rb'))
+    ys = pickle.load(open(str('Data/ys' + name + '.p'),'rb'))
+    capacities = pickle.load(open(str('Data/capacity_users' + name + '.p'),'rb'))
+
+    main(optimal, shares, xs, ys, capacities, Heuristic, k, SNRHeuristic)

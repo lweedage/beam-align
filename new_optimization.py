@@ -7,18 +7,7 @@ from gurobipy import quicksum
 
 import functions as f
 from parameters import *
-
-
-def find_distance_matrix(xu, yu, xbs, ybs):
-    distance = np.zeros((len(xu), len(xbs)))
-    for i in range(len(xu)):
-        for j in range(len(xbs)):
-            # x = np.minimum((xu[i] - xbs[j]) % xMax, (xbs[j] - xu[i]) % xMax)
-            # y = np.minimum((yu[i] - ybs[j]) % yMax, (ybs[j] - yu[i]) % yMax)
-            x = xu[i] - xbs[j]
-            y = yu[i] - ybs[j]
-            distance[i, j] = np.sqrt(x ** 2 + y ** 2)
-    return distance
+import time
 
 
 def number_of_connections(channel_capacity):
@@ -28,12 +17,10 @@ def number_of_connections(channel_capacity):
     connections_per_user = sum(connections.transpose())
     return connections, connections_per_bs, connections_per_user
 
-
 def optimization(x_user, y_user):
     number_of_users = len(x_user)
     users = range(number_of_users)
     base_stations = range(number_of_bs)
-    shares = range(users_per_beam)
 
     gain_bs = np.zeros((number_of_users, number_of_bs))
     gain_user = np.zeros((number_of_users, number_of_bs))
@@ -49,7 +36,7 @@ def optimization(x_user, y_user):
         coords_i = f.user_coords(i, x_user, y_user)
         for j in base_stations:
             coords_j = f.bs_coords(j)
-            path_loss[i, j] = f.find_path_loss(coords_i, coords_j)
+            path_loss[i, j] = f.find_path_loss_los(coords_i, coords_j)
             gain_bs[i, j] = f.find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
             gain_user[i, j] = f.find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
             SNR[i, j] = transmission_power * gain_bs[i, j] * gain_user[i, j] / (path_loss[i, j] * noise)
@@ -59,6 +46,7 @@ def optimization(x_user, y_user):
                 f.find_bore(coords_i, coords_j, beamwidth_u), beamwidth_u)
             bs_beamnumber[i, j] = f.find_beam_number(
                 f.find_bore(coords_j, coords_i, beamwidth_b), beamwidth_b)
+
     # ------------------------ Start of optimization program ------------------------------------
     try:
         m = gp.Model("Model 1")
@@ -80,9 +68,7 @@ def optimization(x_user, y_user):
         for i in users:
             for j in base_stations:
                 x_user[i, j] = m.addVar(vtype=GRB.BINARY, name=f'x_user{i}{j}')
-                for d in directions_bs:
-                    for s in shares:
-                        x[i, j, d, s] = m.addVar(vtype=GRB.BINARY, name=f'x#{i}#{j}#{d}#{s}')
+                x[i, j] = m.addVar(vtype=GRB.INTEGER, lb = 0, name=f'x#{i}#{j}')
 
             C_user[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'C_user#{i}')
             disconnected[i] = m.addVar(vtype=GRB.BINARY, name=f'Disconnected_user#{i}')
@@ -112,23 +98,17 @@ def optimization(x_user, y_user):
                     name=f'direction_user#{i}#{d}')
                 m.addConstr(angles_u[i, d] <= 1, name=f'angle_u#{i}#{d}')
 
-        for i in users:
-            for j in base_stations:
-                for s in shares:
-                    for d in range(len(directions_bs)):
-
-                        if d == bs_beamnumber[i, j]:
-                            m.addConstr(x[i, j, d, s] >= 0)
-                        else:
-                            m.addConstr(x[i, j, d, s] == 0)
+        # the total shares per beam could never exceed the number of users per beam
         for j in base_stations:
             for d in directions_bs:
-                m.addConstr(quicksum(x[i, j, d,s] for s in shares for i in users) <= users_per_beam )
+                m.addConstr(quicksum(x[i, j] for i in users if bs_beamnumber[i,j] == d) <= users_per_beam)
 
+        # if a user has at least one share, the user is connected to that base station
+        epsilon = 0.1
         for i in users:
             for j in base_stations:
-                d = bs_beamnumber[i, j]
-                m.addGenConstrMax(x_user[i, j], [x[i, j, d, s] for s in shares], name='max constraint')
+                m.addConstr(x[i,j] <= 1 - epsilon + (users_per_beam - 1 + epsilon) * x_user[i,j], name = f'lower_bound{i}{j}')
+                m.addConstr(x[i,j] >= x_user[i,j], name = f'upper_bound{i}{j}')
 
         # Minimum SNR
         for i in users:
@@ -143,8 +123,7 @@ def optimization(x_user, y_user):
         # find channel capacity
         for i in users:
             m.addConstr(C_user[i] == quicksum(
-                (W / users_per_beam) * x[i, j, d, s] * spectral_efficiency[i, j] for j in base_stations for s in shares
-                for d in range(len(directions_bs))), name=f'C_user#{i}')
+                (W / users_per_beam) * x[i, j] * spectral_efficiency[i, j] for j in base_stations), name=f'C_user#{i}')
 
         # --------------------- OPTIMIZE MODEL -------------------------
         # m.computeIIS()
@@ -162,7 +141,7 @@ def optimization(x_user, y_user):
 
     a = np.zeros((number_of_users, number_of_bs))
     angles = np.zeros((number_of_bs, len(directions_bs)))
-    links = np.zeros((number_of_users, number_of_bs, len(directions_bs), users_per_beam))
+    links = np.zeros((number_of_users, number_of_bs))
     total_C = np.zeros(number_of_users)
 
     if m.status == 2:
@@ -177,10 +156,10 @@ def optimization(x_user, y_user):
 
         for i in users:
             for j in base_stations:
-                for d in directions_bs:
-                    for s in shares:
-                        links[i,j,d,s] = x[i,j,d,s].X
+                links[i,j] = x[i,j].X
 
-        disconnected = sum([1 for i in users if disconnected[i].X == 1])
-        print(links)
-    return a, disconnected, links
+        # for j in base_stations:
+        #     for d in directions_bs:
+        #         print('bs', j, 'direction', d, [links[i,j] for i in users if bs_beamnumber[i,j] == d])
+
+    return a, links, total_C

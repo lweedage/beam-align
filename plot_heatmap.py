@@ -5,26 +5,27 @@ import new_optimization
 import functions as f
 import time
 import pickle
+
 plt.rcParams["figure.figsize"] = (4, 5)
 bs = 0
-delta = 2
+delta = 1
 
-number_of_users = int(input('Number of users?'))
+# number_of_users = int(input('Number of users?'))
 
-for number_of_users in [100, 300]:
+for number_of_users in [100, 300, 500, 750, 1000]:
     iteration_min = 0
     iteration_max = iterations[number_of_users]
 
-    Heuristic = True
+    Heuristic = False
     ClosestHeuristic = False
 
 
-    name = str('users=' + str(number_of_users)  + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(s[0]))
+    name = str('users=' + str(number_of_users)  + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(users_per_beam))
     if Heuristic:
         name = str('beamwidth_heuristic' + name)
 
     grid_mc = pickle.load(open(str('Data/grid_mc_' + name + '.p'),'rb'))
-
+    print(grid_mc)
     total_visits = pickle.load(open(str('Data/grid_total_visits_' + name + '.p'),'rb'))
 
     x_large = [x * delta for x in x_bs]
