@@ -17,20 +17,20 @@ yDelta = ymax - ymin
 
 beamwidth_u = math.radians(5)
 
-beamwidth_deg = input('Beamwidth BS?')
-# beamwidth_deg = 5
+# beamwidth_deg = input('Beamwidth BS?')
+beamwidth_deg = 5
 beamwidth_b = math.radians(int(beamwidth_deg))
 
 W = 1  # bandwidth
-
-Penalty = bool(input('Penalty?'))
+Penalty = 100
+# Penalty = bool(input('Penalty?'))
 if Penalty:
     M = 100  # penalty on having disconnected users
 else:
     M = 0
 
-# users_per_beam = 2  # amount of users in a beam
-users_per_beam = int(input("Users per beam?"))
+users_per_beam = 2  # amount of users in a beam
+# users_per_beam = int(input("Users per beam?"))
 
 transmission_power = 10 ** 3.0  # 30 dB
 noise_figure = 7.8
