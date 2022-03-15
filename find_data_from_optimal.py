@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 import numpy as np
 from parameters import *
@@ -57,8 +56,8 @@ for iteration in range(iteration_min, iteration_max):
         if links_per_user[user] == 0:
             discon += 1
         else:
-            grid_mc[int(u[1] * delta), int(u[0] * delta)] += 1
-        total_visits[int(u[1] * delta), int(u[0] * delta)] += 1
+            grid_mc[int(user[1] * delta), int(user[0] * delta)] += 1
+        total_visits[int(user[1] * delta), int(user[0] * delta)] += 1
 
         for b in range(number_of_bs):
             if opt_x[user, b] == 1:
@@ -79,17 +78,16 @@ for iteration in range(iteration_min, iteration_max):
                     distances_mc.append(dist)
 
     capacity = f.find_capacity(opt_x, x_user, y_user)
-    capacity_with_los = f.find_capacity(opt_x, x_user, y_user, with_los=True)
 
     if capacity == 0:
         no_optimal_value_found += 1
 
     channel_capacity.append(capacity)
-    channel_capacity_with_los.append(capacity_with_los)
     disconnected.append(discon)
 name = str(
     'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(
-        s[0]))
+        users_per_beam))
+
 if Heuristic:
     if UserMisalignment:
         name = str('beamwidth_heuristic_with_usermis' + name)

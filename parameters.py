@@ -5,6 +5,28 @@ import matplotlib
 matplotlib.rcParams['axes.prop_cycle'] = cycler('color', ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen', 'OrangeRed'])
 colors =  ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen', 'OrangeRed', 'grey'] * 10
 
+scenario = int(input('Scenario?'))
+if scenario in [1, 4, 7, 10, 13, 16, 19, 22]:
+    beamwidth_deg = 5
+elif scenario in [2, 5, 8, 11, 14, 17, 20, 23]:
+    beamwidth_deg = 10
+else:
+    beamwidth_deg = 15
+
+if scenario in [1, 2, 3, 4, 5, 6]:
+    users_per_beam = 1
+elif scenario in [7, 8, 9, 10, 11, 12]:
+    users_per_beam = 2
+elif scenario in [13, 14, 15, 16, 17, 18]:
+    users_per_beam = 5
+elif scenario in [19, 20, 21, 22, 23, 24]:
+    users_per_beam = 10
+
+if scenario in [1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21]:
+    Penalty = True
+else:
+    Penalty = False
+
 pi = math.pi
 bs_of_interest = 0
 radius = 50  # for triangular grid
@@ -17,19 +39,16 @@ yDelta = ymax - ymin
 
 beamwidth_u = math.radians(5)
 
-# beamwidth_deg = input('Beamwidth BS?')
-beamwidth_deg = 5
 beamwidth_b = math.radians(int(beamwidth_deg))
 
 W = 1  # bandwidth
-Penalty = 100
-# Penalty = bool(input('Penalty?'))
+
 if Penalty:
     M = 100  # penalty on having disconnected users
 else:
     M = 0
 
-users_per_beam = 2  # amount of users in a beam
+# users_per_beam = 2  # amount of users in a beam
 # users_per_beam = int(input("Users per beam?"))
 
 transmission_power = 10 ** 3.0  # 30 dB
@@ -63,22 +82,38 @@ x_bs, y_bs = initialise_graph_triangular(radius, xDelta, yDelta)
 number_of_bs = len(x_bs)
 
 iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
-iterations = {50: 1, 100: 2500, 300: 834, 500: 500, 750: 334, 1000: 250}
+# iterations = {50: 1, 100: 2500, 300: 834, 500: 500, 750: 334, 1000: 250}
 
 if beamwidth_b == math.radians(5):
-    misalignment = {50: 1.78, 100: 5, 300: 2.14, 500: 1.87, 750: 1.69, 1000: 1.58} #s = 2
-    average_connections = {100: 12.49, 300: 5.58, 500: 3.43, 750: 2.30, 1000: 1.73}
-    disconnected = {100: 0.0, 300: 0.0, 500: 0.0, 750: 0.0, 1000: 0.0}  # average disconnected users per simulation
+    if users_per_beam == 1:
+        misalignment = {50: 1.78, 100: 5, 300: 2.14, 500: 1.87, 750: 1.69, 1000: 1.58}
+    elif users_per_beam == 2:
+        misalignment = {50: 1.78, 100: 5, 300: 1.77, 500: 1.43, 750: 1.26, 1000: 1.20} #updated
+    elif users_per_beam == 5:
+        misalignment = {50: 1.78, 100: 5, 300: 2.14, 500: 1.87, 750: 1.69, 1000: 1.58}
+    elif users_per_beam == 10:
+        misalignment = {50: 1.78, 100: 5, 300: 2.14, 500: 1.87, 750: 1.69, 1000: 1.58}
 
 elif beamwidth_b == math.radians(10):
-    misalignment = {100: 4.74, 300: 2.92, 500: 2.22, 750: 2.03, 1000: 1.80}
-    average_connections = {100: 7.89, 300: 2.87, 500: 1.73, 750: 1.15, 1000: 1.00}
-    disconnected = {100: 0.0, 300: 0.0, 500: 0.0, 750: 0.0, 1000: 136.012}  # average disconnected users per simulation
+    if users_per_beam == 1:
+        misalignment = {50: 1.78, 100: 5, 300: 2.14, 500: 1.87, 750: 1.69, 1000: 1.58}
+    elif users_per_beam == 2:
+        misalignment = {50: 1.78, 100: 5, 300: 1.77, 500: 1.43, 750: 1.26, 1000: 1.20}
+    elif users_per_beam == 5:
+        misalignment = {50: 1.78, 100: 5, 300: 2.14, 500: 1.87, 750: 1.69, 1000: 1.58}
+    elif users_per_beam == 10:
+        misalignment = {50: 1.78, 100: 5, 300: 2.14, 500: 1.87, 750: 1.69, 1000: 1.58}
 
 elif beamwidth_b == math.radians(15):
-    misalignment = {100: 6.74, 300: 5.18, 500: 5.03, 750: 4.78, 1000: 4.38}
-    average_connections = {100: 5.57, 300: 1.92, 500: 1.15, 750: 1.0, 1000: 1.0}
-    disconnected = {100: 0, 300: 0, 500: 0, 750: 174.00, 1000: 424.0}  # average disconnected users per simulation
+    if users_per_beam == 1:
+        misalignment = {50: 1.78, 100: 5, 300: 2.14, 500: 1.87, 750: 1.69, 1000: 1.58}
+    elif users_per_beam == 2:
+        misalignment = {50: 1.78, 100: 5, 300: 1.77, 500: 1.43, 750: 1.26, 1000: 1.20}
+    elif users_per_beam == 5:
+        misalignment = {50: 1.78, 100: 5, 300: 2.14, 500: 1.87, 750: 1.69, 1000: 1.58}
+    elif users_per_beam == 10:
+        misalignment = {50: 1.78, 100: 5, 300: 2.14, 500: 1.87, 750: 1.69, 1000: 1.58}
+
 
 misalignment_user = {50: 1.78, 100: 2.47, 300: 1.75, 500: 1.40, 750: 1.21, 1000: 1.13}
 

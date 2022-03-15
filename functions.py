@@ -3,8 +3,11 @@ import math
 import matplotlib.pyplot as plt
 import numpy.random
 import seaborn
+
+import simulate_blockers
 from parameters import *
 import networkx as nx
+import simulate_blockers as b
 
 pi = math.pi
 
@@ -125,13 +128,12 @@ def find_path_loss_los(user, bs, SF = 0):
 
     return path_loss
 
-def find_path_loss(user, bs):
-    p_los = probability_los(user, bs)
-    p = np.random.uniform(0, 1)
-    if p <= p_los:
-        PL = find_path_loss_los(user, bs, SF = np.random.normal(0, 4))
-    else:
+def find_path_loss(user, bs, blockers):
+    blocked = simulate_blockers.is_connection_blocked(user, bs, blockers)
+    if blocked:
         PL = find_path_loss_nlos(user, bs, SF = np.random.normal(0, 7.82))
+    else:
+        PL = find_path_loss_los(user, bs, SF = np.random.normal(0, 4))
     return PL
 
 def probability_los(user, bs):
@@ -231,11 +233,11 @@ def find_distance_allbs(user, xbs, ybs):
     yy = yu - ybs
     return np.sqrt(xx ** 2 + yy ** 2)
 
-def find_capacity(opt_x, x_user, y_user):
-    per_user_capacity = find_capacity_per_user(opt_x, x_user ,y_user)
+def find_capacity(opt_x, x_user, y_user, blockers):
+    per_user_capacity = find_capacity_per_user(opt_x, x_user ,y_user, blockers)
     return sum(per_user_capacity)
 
-def find_capacity_per_user(opt_x, x_user, y_user):
+def find_capacity_per_user(opt_x, x_user, y_user, blockers):
     number_of_users = len(x_user)
     capacity = np.zeros(number_of_users)
     for u in range(number_of_users):
@@ -245,7 +247,7 @@ def find_capacity_per_user(opt_x, x_user, y_user):
                 coords_j = bs_coords(bs)
                 gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
                 gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
-                path_loss = find_path_loss(coords_i, coords_j)
+                path_loss = find_path_loss(coords_i, coords_j, blockers)
                 capacity[u] += W / users_per_beam * opt_x[u,bs] * math.log2(1 + transmission_power * gain_bs * gain_user / (path_loss * noise))
     return capacity
 

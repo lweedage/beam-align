@@ -32,7 +32,8 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
     no_optimal_value_found = 0
 
     channel_capacity = []
-    channel_capacity_with_los = []
+    channel_capacity_real = []
+    channel_capacity_real_per_user = []
 
     number_of_users = len(xs[0])
 
@@ -41,6 +42,8 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
 
 
     for iteration in range(iteration_min, iteration_max):
+        blockers = pickle.load(open(str('Data/Blockers/blockers' + str(iteration)  + '.p'),'rb'))
+
         print('Iteration ', iteration)
         np.random.seed(iteration)
 
@@ -51,6 +54,10 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
         total_links_per_user = np.append(total_links_per_user, links_per_user)
 
         discon = 0
+
+        channel_capacity_per_user = f.find_capacity_per_user(opt_x, x_user, y_user, blockers)
+        channel_capacity_real_per_user.append(channel_capacity_per_user)
+        channel_capacity_real.append(sum(channel_capacity_per_user))
 
         for user in range(number_of_users):
             u = f.user_coords(user, x_user, y_user)
@@ -111,8 +118,11 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
     pickle.dump(distances_sc, open(str('Data/distances_sc' + name + '.p'),'wb'), protocol=4)
 
     pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'),'wb'), protocol=4)
+
     pickle.dump(channel_capacity, open(str('Data/channel_capacity' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(channel_capacity_with_los, open(str('Data/channel_capacity_with_los' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(channel_capacity_real, open(str('Data/blocked_capacity' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(channel_capacity_real_per_user, open(str('Data/blocked_capacity_per_user' + name + '.p'),'wb'), protocol=4)
+
     pickle.dump(no_optimal_value_found, open(str('Data/no_optimal_value_found' + name + '.p'),'wb'), protocol=4)
     pickle.dump(disconnected, open(str('Data/disconnected_users' + name + '.p'),'wb'), protocol=4)
 

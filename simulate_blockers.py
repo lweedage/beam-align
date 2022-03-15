@@ -4,6 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches
 from shapely.geometry import *
+from shapely.ops import unary_union
+from descartes import PolygonPatch
+from shapely import affinity
+import pickle
 
 subdivisions = 2
 
@@ -32,38 +36,29 @@ class Rectangle():
         self.x4 = x_c + math.cos(gamma4 + angle) * math.sqrt(width ** 2 + length ** 2) / 2
         self.y4 = y_c + math.sin(gamma4 + angle) * math.sqrt(width ** 2 + length ** 2) / 2
 
-        self.coords = [[self.x1, self.y1], [self.x2, self.y2], [self.x3, self.y3], [self.x4, self.y4]]
-        self.points = (
-        Point(self.x1, self.y1), Point(self.x2, self.y2), Point(self.x3, self.y3), Point(self.x4, self.y4))
+        self.coords = [(self.x1, self.y1), (self.x2, self.y2), (self.x3, self.y3), (self.x4, self.y4)]
+        self.points = (Point(self.x1, self.y1), Point(self.x2, self.y2), Point(self.x3, self.y3), Point(self.x4, self.y4))
         self.line_segments = [LineString([(self.x1, self.y1), (self.x2, self.y2)]),
                               LineString([(self.x1, self.y1), (self.x4, self.y4)]),
                               LineString([(self.x3, self.y3), (self.x4, self.y4)])]
         self.area = width * length
 
-        # self.poly = Polygon(*self.points)
+        self.poly = Polygon(self.points)
 
 
 def simulate_blockers():
     max_area = 1 / 10 * xmax * ymax
     area = 0
+    blockers = Polygon([])
 
-    rectangles = [[] for i in range(2 ** (2 * subdivisions))]
-    print(rectangles, len(rectangles))
-    while area < max_area:
+    while blockers.area < max_area:
         x_c, y_c = np.random.uniform(0, xmax), np.random.uniform(0, ymax)
         width, length = np.random.uniform(1, 25), np.random.uniform(1, 25)
         angle = np.random.uniform(0, 2 * math.pi)
         rectangle = Rectangle(x_c, y_c, angle, length, width)
-        area += rectangle.area
-        for segment in rectangle.line_segments:
-            first, last = segment.boundary
-            part1 = find_which_part((first.x, first.y))
-            part2 = find_which_part((last.x, last.y))
 
-            rectangles[part1].append(segment)
-            if part1 != part2:
-                rectangles[part2].append(segment)
-    return rectangles
+        blockers = unary_union([blockers, rectangle.poly])
+    return blockers
 
 
 def segmentation(x, y, index, x_center, y_center):
@@ -118,82 +113,53 @@ def find_modified_coords(coord_1, coord_2):
             y_1 = coord_1[1] + yDelta
         else:
             y_1 = coord_1[1] - yDelta
-
     return (x_1, y_1)
 
 
-def find_modified_blockers(coord_1, blockers):
-    for i in range(len(blockers)):
-        for j in range(len(blockers[i])):
-            first, last = blockers[i][j].boundary
-            center_coord = ((first.x + last.x) / 2, (first.y + last.y) / 2)
-            (x1, y1) = (first.x, first.y)
-            (x2, y2) = (last.x, last.y)
-
-            if (max(center_coord[0], coord_1[0]) - min(center_coord[0], coord_1[0])) > (
-                    min(center_coord[0], coord_1[0]) - max(center_coord[0], coord_1[0])) % xDelta:
-                if center_coord[0] > coord_1[0]:
-                    x1 += xDelta
-                    x2 += xDelta
-                else:
-                    x1 -= xDelta
-                    x2 -= xDelta
-
-            if (max(center_coord[1], coord_1[1]) - min(center_coord[1], coord_1[1])) > (
-                    min(center_coord[1], coord_1[1]) - max(center_coord[1], coord_1[1])) % yDelta:
-                if center_coord[1] > coord_1[1]:
-                    y1 += yDelta
-                    y2 += yDelta
-                else:
-                    y1 -= yDelta
-                    y2 -= yDelta
-
-            blockers[i][j] = LineString([(x1, y1), (x2, y2)])
-    return blockers
-
-
 def is_connection_blocked(user, bs, blockers):
-    # if Torus:
-    #     user, bs = f.find_modified_coords(user, bs)
-    no_intersect = True
-    part1 = find_which_part(user)
-    part2 = find_which_part(bs)
-
-    i = 0
-    if part1 != part2:
-        user = find_modified_coords(user, bs)
-        blockers = find_modified_blockers(bs, blockers)
+    user = find_modified_coords(user, bs)
     s = LineString([user, bs])
+    intersect = s.intersects(blockers)
 
-    while no_intersect and i < len(blockers[part1]):
-        no_intersect = not s.intersects(blockers[part1][i])
-        i += 1
+    plt.plot([user[0], bs[0]], [user[1], bs[1]])
 
-    if part1 != part2:
-        if (part1 - part2) % 5 != 0:
-            for part1 in range(len(blockers)):
-                while no_intersect and i < len(blockers[part1]):
-                    no_intersect = not s.intersects(blockers[part1][i])
-                    i += 1
+    return intersect
 
-        else:
-            while no_intersect and i < len(blockers[part2]):
-                no_intersect = not s.intersects(blockers[part2][i])
-                i += 1
-    return not no_intersect
+def plot_blockers(blockers, ax):
+    patchPoly = PolygonPatch(blockers)
+    ax.add_patch(patchPoly)
 
+def blockers_on_torus():
+    blockers = simulate_blockers()
+    to_combine = [blockers]
+    for shift in [(-xmax, ymax), (0, ymax), (xmax, ymax), (-xmax, 0), (xmax, 0), (-xmax, -ymax), (0, -ymax), (xmax, -ymax)]:
+        new_blockers = affinity.translate(blockers, xoff = shift[0], yoff = shift[1])
+        to_combine.append(new_blockers)
+    torus_blockers = unary_union(to_combine)
+    return torus_blockers
 
 if __name__ == '__main__':
-    blockers = simulate_blockers()
+    for iteration in range(5000):
+        print(iteration)
+        np.random.seed(iteration)
+        blockers = blockers_on_torus()
+        pickle.dump(blockers, open(str('Data/Blockers/blockers' + str(iteration) + '.p'),'wb'), protocol=4)
+
+    #
+    # bs = (xmax - 100, 50)
+    # x_user, y_user = f.find_coordinates(5)
     #
     # fig, ax = plt.subplots()
-    # draw_blockers(blockers, ax)
-    # plt.xlim([0, xmax])
-    # plt.ylim([0, ymax])
+    #
+    # for u in range(len(x_user)):
+    #     user = (x_user[u], y_user[u])
+    #     print(is_connection_blocked(user, bs, blockers))
+    #
+    # patchPoly = PolygonPatch(blockers,  fc='b', ec='b', alpha=1, zorder=2)
+    # ax.add_patch(patchPoly)
+    # plt.scatter(bs[0], bs[1])
+    # plt.scatter(x_user, y_user)
+    # plt.xlim([xmin - xmax, xmax + xmax])
+    # plt.ylim([ymin - ymax, ymax + ymax])
     # plt.show()
-    bs = (10, 20)
-    x_user, y_user = f.find_coordinates(100)
 
-    for u in range(len(x_user)):
-        user = (x_user[u], y_user[u])
-        print(is_connection_blocked(user, bs, blockers))
