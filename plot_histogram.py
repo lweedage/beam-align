@@ -3,13 +3,17 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
-
 from parameters import *
 
 # number_of_users = int(input('Number of users?'))
 user = [100, 300, 500, 750, 1000]
 
+mis = dict()
+dis = dict()
+deg = dict()
+
 for number_of_users in user:
+
     print(number_of_users)
     iteration_min = 0
     iteration_max = iterations[number_of_users]
@@ -40,42 +44,48 @@ for number_of_users in user:
     distances_sc = pickle.load(open(str('Data/distances_sc' + name + '.p'), 'rb'))
 
     degrees = pickle.load(open(str('Data/total_links_per_user' + name + '.p'), 'rb'))
+    deg[number_of_users] = sum(degrees)/len(degrees)
+
     degrees = [i for i in degrees if i != 0]
+
 
     disconnected = pickle.load(open(str('Data/disconnected_users' + name + '.p'), 'rb'))
 
     data = misalignment_bs
 
-    print('2 sigma misalignment', np.degrees(np.std(data) * 2))
+    # print('2 sigma misalignment', np.degrees(np.std(data) * 2))
+    mis[number_of_users] = np.degrees(np.std(data) * 2)
 
-    print('Disconnected users:', np.sum(disconnected) / len(disconnected))
-    if not (Heuristic):
-        no_optimal_value = pickle.load(open(str('Data/no_optimal_value_found' + name + '.p'), 'rb'))
-        print('No succes in', no_optimal_value / iterations[number_of_users] * 100, 'percent of the iterations')
+    # print('Disconnected users:', np.sum(disconnected) / len(disconnected))
+    dis[number_of_users] = np.sum(disconnected) / len(disconnected)
+    # if not (Heuristic):
+    #     no_optimal_value = pickle.load(open(str('Data/no_optimal_value_found' + name + '.p'), 'rb'))
+    #     print('No succes in', no_optimal_value / iterations[number_of_users] * 100, 'percent of the iterations')
 
-    name = str(int(math.ceil(np.degrees(beamwidth_b)))) + 'b_' + str(number_of_users) + '_users'
+    name = str(int(math.ceil(np.degrees(beamwidth_b)))) + 'b_' + str(number_of_users) + '_users_M=' + str(M) + 's='  + str(users_per_beam)
     if Heuristic:
         name = str('heuristic_' + name)
 
-    fig, ax = plt.subplots()
-    data1 = np.degrees(misalignment_sc)
-    data2 = np.degrees(misalignment_mc)
-    plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
-             alpha=0.3, label='single connections')
-    plt.hist(data2, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
-             alpha=0.3, label='multiple connections')
-    plt.xlabel('Misalignment in degrees')
-    plt.legend()
-    plt.savefig(str('Figures/' + name + '_misalignmentmc.png'))
-    plt.show()
+    # fig, ax = plt.subplots()
+    # data1 = np.degrees(misalignment_sc)
+    # data2 = np.degrees(misalignment_mc)
+    # plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
+    #          alpha=0.3, label='single connections')
+    # plt.hist(data2, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
+    #          alpha=0.3, label='multiple connections')
+    # plt.xlabel('Misalignment in degrees')
+    # plt.legend()
+    # plt.savefig(str('Figures/' + name + '_misalignmentmc.png'))
+    # plt.show()
 
-    fig, ax = plt.subplots()
-    data1 = np.degrees(misalignment_bs)
-    plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
-             alpha=0.3)
-    plt.xlabel('Misalignment in degrees')
-    plt.savefig(str('Figures/' + name + '_misalignment.png'))
-    plt.show()
+    # fig, ax = plt.subplots()
+    # data1 = np.degrees(misalignment_bs)
+    # (n, bins, patches) = plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
+    #          alpha=0.3)
+    # plt.xlabel('Misalignment in degrees')
+    # plt.savefig(str('Figures/' + name + '_misalignment.png'))
+    # plt.show()
+
 
     # fig, ax = plt.subplots()
     # data = distances_sc
@@ -122,19 +132,26 @@ for number_of_users in user:
     # plt.savefig(str('Figures/' + name + '_degrees_scatter.png'))
     # plt.show()
 
-degrees = {i: [] for i in beamwidths}
-for beamwidth_b in beamwidths:
-    for number_of_users in user:
-        name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
-            M) + 's=' + str(users_per_beam))
-        degrees[beamwidth_b].append(pickle.load(open(
-            str('Data/total_links_per_user' + name + '.p'), 'rb')))
+# print('Misalignment || beam=', beamwidth_deg, ' M=', M, ' s = ', users_per_beam, ':', mis)
+# print('Disconnected || beam=', beamwidth_deg, ' M=', M, ' s = ', users_per_beam, ':', dis)
 
-    fig, ax = plt.subplots()
-    bplot = plt.boxplot(degrees[beamwidth_b], showfliers=False, patch_artist=True, medianprops={'color': 'black'})
-    for patch, color in zip(bplot['boxes'], colors[:5]):
-        patch.set_facecolor(color)
-    plt.xticks([1, 2, 3, 4, 5], user)
-    plt.xlabel('Number of users')
-    plt.ylabel('Number of connections per user')
-    plt.show()
+
+# degrees = {i: [] for i in beamwidths}
+# for beamwidth_b in beamwidths:
+#     for number_of_users in user:
+#         name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
+#             M) + 's=' + str(users_per_beam))
+#         degrees[beamwidth_b].append(pickle.load(open(
+#             str('Data/total_links_per_user' + name + '.p'), 'rb')))
+#
+#     fig, ax = plt.subplots()
+#     bplot = plt.boxplot(degrees[beamwidth_b], showfliers=False, patch_artist=True, medianprops={'color': 'black'})
+#     for patch, color in zip(bplot['boxes'], colors[:5]):
+#         patch.set_facecolor(color)
+#     plt.xticks([1, 2, 3, 4, 5], user)
+#     plt.xlabel('Number of users')
+#     plt.ylabel('Number of connections per user')
+#     plt.savefig('Figures/links_all_users'  + name + '.png')
+#     plt.show()
+
+print(f'Degree{beamwidth_deg}{M}{users_per_beam}={deg}')

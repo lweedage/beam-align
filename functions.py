@@ -128,8 +128,7 @@ def find_path_loss_los(user, bs, SF = 0):
 
     return path_loss
 
-def find_path_loss(user, bs, blockers):
-    blocked = simulate_blockers.is_connection_blocked(user, bs, blockers)
+def find_path_loss(user, bs, blocked):
     if blocked:
         PL = find_path_loss_nlos(user, bs, SF = np.random.normal(0, 7.82))
     else:
@@ -237,7 +236,7 @@ def find_capacity(opt_x, x_user, y_user, blockers):
     per_user_capacity = find_capacity_per_user(opt_x, x_user ,y_user, blockers)
     return sum(per_user_capacity)
 
-def find_capacity_per_user(opt_x, x_user, y_user, blockers):
+def find_capacity_per_user(opt_x, x_user, y_user, blocked_connections):
     number_of_users = len(x_user)
     capacity = np.zeros(number_of_users)
     for u in range(number_of_users):
@@ -247,16 +246,16 @@ def find_capacity_per_user(opt_x, x_user, y_user, blockers):
                 coords_j = bs_coords(bs)
                 gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
                 gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
-                path_loss = find_path_loss(coords_i, coords_j, blockers)
+                path_loss = find_path_loss(coords_i, coords_j, blocked_connections[u,bs])
                 capacity[u] += W / users_per_beam * opt_x[u,bs] * math.log2(1 + transmission_power * gain_bs * gain_user / (path_loss * noise))
     return capacity
 
-def find_snr(user, bs, x_user, y_user):
+def find_snr(user, bs, x_user, y_user, blocked):
     coords_i = user_coords(user, x_user, y_user)
     coords_j = bs_coords(bs)
     gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
     gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
-    path_loss = find_path_loss(coords_i, coords_j)
+    path_loss = find_path_loss(coords_i, coords_j, blocked)
     return (transmission_power * gain_user * gain_bs / path_loss ) / (noise)
 
 def plot_BSs(x_user, y_user, opt_x):

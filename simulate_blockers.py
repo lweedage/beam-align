@@ -8,9 +8,103 @@ from shapely.ops import unary_union
 from descartes import PolygonPatch
 from shapely import affinity
 import pickle
+import time
 
 subdivisions = 2
 
+class Segment():
+    def __init__(self, xmin, ymin, xmax, ymax):
+        self.xmin = xmin
+        self.ymin = ymin
+        self.xmax = xmax
+        self.ymax = ymax
+
+        self.links = dict()
+        self.blockers = list()
+
+    def split_x(self):
+        new_segment1 = Segment(self.xmin, self.ymin, (self.xmin + self.xmax)/2, self.ymax)
+        new_segment2 = Segment((self.xmin + self.xmax)/2, self.ymin, self.xmax, self.ymax)
+
+        for [coord1, coord2], [user, bs] in self.links.items():
+            coord1_new, bs_shift = find_modified_coords(coord1, coord2)
+            if bs_shift != (0, 0):
+                coord2_new = (coord2[0] + bs_shift[0], coord2[1] + bs_shift[1])
+                coords = [(coord1, coord2_new), (coord1_new, coord2)]
+            else:
+                coords = [(coord1, coord2)]
+
+            for coord1, coord2 in coords:
+                left, right = False, False
+
+                if coord1[0] <= (self.xmin + self.xmax)/2 or coord2[0] <= (self.xmin + self.xmax)/2:
+                    left = True
+                if coord1[0] > (self.xmin + self.xmax)/2 or coord2[0] > (self.xmin + self.xmax)/2:
+                    right = True
+                if left:
+                    new_segment1.links[coord1, coord2] = [user, bs]
+                if right:
+                    new_segment2.links[coord1, coord2] = [user, bs]
+
+        for blocker in self.blockers:
+            first, last = blocker.boundary
+            left, right = False, False
+
+            if first.x <= (self.xmin + self.xmax)/2 or last.x <= (self.xmin + self.xmax)/2:
+                left = True
+            if first.x > (self.xmin + self.xmax)/2 or last.x > (self.xmin + self.xmax)/2:
+                right = True
+
+            if left:
+                new_segment1.blockers.append(blocker)
+            if right:
+                new_segment2.blockers.append(blocker)
+        return new_segment1, new_segment2
+
+    def split_y(self):
+        new_segment1 = Segment(self.xmin, self.ymin, self.xmax, (self.ymin + self.ymax) / 2)
+        new_segment2 = Segment(self.xmin, (self.ymin + self.ymax) / 2, self.xmax, self.ymax)
+        for [coord1, coord2], [user, bs] in self.links.items():
+            coord1_new, bs_shift = find_modified_coords(coord1, coord2)
+            if bs_shift != (0, 0):
+                coord2_new = (coord2[0] + bs_shift[0], coord2[1] + bs_shift[1])
+                coords = [(coord1, coord2_new), (coord1_new, coord2)]
+            else:
+                coords = [(coord1, coord2)]
+
+            for coord1, coord2 in coords:
+                left, right = False, False
+
+                if coord1[1] <= (self.ymin + self.ymax) / 2 or coord2[1] <= (self.ymin + self.ymax) / 2:
+                    left = True
+                if coord1[1] > (self.ymin + self.ymax) / 2 or coord2[1] > (self.ymin + self.ymax) / 2:
+                    right = True
+                if left:
+                    new_segment1.links[coord1, coord2] = [user, bs]
+                if right:
+                    new_segment2.links[coord1, coord2] = [user, bs]
+
+        for blocker in self.blockers:
+            first, last = blocker.boundary
+            left, right = False, False
+
+            if first.y <= (self.ymin + self.ymax) / 2 or last.y <= (self.ymin + self.ymax) / 2:
+                left = True
+            if first.y > (self.ymin + self.ymax) / 2 or last.y > (self.ymin + self.ymax) / 2:
+                right = True
+
+            if left:
+                new_segment1.blockers.append(blocker)
+            if right:
+                new_segment2.blockers.append(blocker)
+
+        return new_segment1, new_segment2
+
+    def split(self):
+        sega, segb = self.split_x()
+        seg1, seg2 = sega.split_y()
+        seg3, seg4 = segb.split_y()
+        return seg1, seg2, seg3, seg4
 
 class Rectangle():
     def __init__(self, x_c, y_c, angle, length, width):
@@ -49,45 +143,18 @@ class Rectangle():
 def simulate_blockers():
     max_area = 1 / 10 * xmax * ymax
     area = 0
-    blockers = Polygon([])
+    segment = Segment(xmin, ymin, xmax, ymax)
 
-    while blockers.area < max_area:
+    while area < max_area:
         x_c, y_c = np.random.uniform(0, xmax), np.random.uniform(0, ymax)
         width, length = np.random.uniform(1, 25), np.random.uniform(1, 25)
         angle = np.random.uniform(0, 2 * math.pi)
         rectangle = Rectangle(x_c, y_c, angle, length, width)
+        for blocker in rectangle.line_segments:
+            segment.blockers.append(blocker)
+        area += rectangle.area
 
-        blockers = unary_union([blockers, rectangle.poly])
-    return blockers
-
-
-def segmentation(x, y, index, x_center, y_center):
-    if x <= x_center:
-        x_center = x_center / 2
-        if y >= y_center:
-            index += '00'
-            y_center = y_center + y_center / 2
-        else:
-            index += '01'
-            y_center = y_center / 2
-    elif x > x_center:
-        x_center = x_center + x_center / 2
-        if y >= y_center:
-            index += '10'
-            y_center = y_center + y_center / 2
-        else:
-            index += '11'
-            y_center = y_center / 2
-    return index, x_center, y_center
-
-
-def find_which_part(coord):
-    x, y = coord
-    index = str()
-    x_center, y_center = xmax / 2, ymax / 2
-    for k in range(subdivisions):
-        index, x_center, y_center = segmentation(x, y, index, x_center, y_center)
-    return int(index, 2)
+    return segment
 
 
 def draw_blockers(rectangles, ax):
@@ -99,56 +166,87 @@ def draw_blockers(rectangles, ax):
 
 def find_modified_coords(coord_1, coord_2):
     (x_1, y_1) = coord_1
+    bs_shift_x, bs_shift_y = 0, 0
 
     if (max(coord_2[0], coord_1[0]) - min(coord_2[0], coord_1[0])) > (
             min(coord_2[0], coord_1[0]) - max(coord_2[0], coord_1[0])) % xDelta:
         if coord_2[0] > coord_1[0]:
             x_1 = coord_1[0] + xDelta
+            bs_shift_x = -xDelta
         else:
             x_1 = coord_1[0] - xDelta
+            bs_shift_x = xDelta
 
     if (max(coord_2[1], coord_1[1]) - min(coord_2[1], coord_1[1])) > (
             min(coord_2[1], coord_1[1]) - max(coord_2[1], coord_1[1])) % yDelta:
         if coord_2[1] > coord_1[1]:
             y_1 = coord_1[1] + yDelta
+            bs_shift_y = -yDelta
         else:
             y_1 = coord_1[1] - yDelta
-    return (x_1, y_1)
+            bs_shift_y = yDelta
+
+    return (x_1, y_1), [bs_shift_x, bs_shift_y]
 
 
 def is_connection_blocked(user, bs, blockers):
+
     user = find_modified_coords(user, bs)
     s = LineString([user, bs])
     intersect = s.intersects(blockers)
-
-    plt.plot([user[0], bs[0]], [user[1], bs[1]])
-
     return intersect
 
 def plot_blockers(blockers, ax):
     patchPoly = PolygonPatch(blockers)
     ax.add_patch(patchPoly)
 
-def blockers_on_torus():
-    blockers = simulate_blockers()
-    to_combine = [blockers]
-    for shift in [(-xmax, ymax), (0, ymax), (xmax, ymax), (-xmax, 0), (xmax, 0), (-xmax, -ymax), (0, -ymax), (xmax, -ymax)]:
-        new_blockers = affinity.translate(blockers, xoff = shift[0], yoff = shift[1])
-        to_combine.append(new_blockers)
-    torus_blockers = unary_union(to_combine)
-    return torus_blockers
+def find_blocked_connections(opt_x, x_user, y_user, number_of_users):
+    blockers = segmentation(opt_x, x_user, y_user, number_of_users)
+    connection_blocked = np.zeros((number_of_users, number_of_bs))
+    for blocker in blockers:
+        for (coord1, coord2), (user, bs) in blocker.links.items():
+            s = LineString([coord1, coord2])
+            lines = blocker.blockers
+            for line in lines:
+                if s.intersects(line):
+                    connection_blocked[user, bs] = 1
+    return connection_blocked
+
+def segmentation(opt_x, x_user, y_user, number_of_users):
+    segment = simulate_blockers()
+
+    for i in range(number_of_users):
+        for j in range(number_of_bs):
+            if opt_x[i, j] > 0:
+                segment.links[(x_user[i], y_user[i]), (x_bs[j], y_bs[j])] = (i,j)
+
+    to_split = [segment]
+    finished = []
+
+    while to_split:
+        seg = to_split.pop(0)
+        segments = seg.split()
+        for segment in segments:
+            if len(segment.links.values()) > 200:
+                to_split.append(segment)
+            else:
+                finished.append(segment)
+
+    return finished
 
 if __name__ == '__main__':
-    for iteration in range(5000):
-        print(iteration)
-        np.random.seed(iteration)
-        blockers = blockers_on_torus()
-        pickle.dump(blockers, open(str('Data/Blockers/blockers' + str(iteration) + '.p'),'wb'), protocol=4)
+    x_user, y_user = f.find_coordinates(100)
+    number_of_users = len(x_user)
 
-    #
-    # bs = (xmax - 100, 50)
-    # x_user, y_user = f.find_coordinates(5)
-    #
+    name = str(
+        'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(
+            users_per_beam))
+    optimal = pickle.load(open(str('Data/assignment' + name + '.p'), 'rb'))
+
+    opt_x = optimal[0]
+
+
+    print(find_blocked_connections(opt_x, x_user, y_user, number_of_users))
     # fig, ax = plt.subplots()
     #
     # for u in range(len(x_user)):

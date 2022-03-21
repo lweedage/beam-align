@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+
+import simulate_blockers
 from parameters import *
 import new_optimization
 import new_optimization
@@ -40,10 +42,9 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
     iteration_min = 0
     iteration_max = iterations[number_of_users]
 
-
+    start = time.time()
     for iteration in range(iteration_min, iteration_max):
         blockers = pickle.load(open(str('Data/Blockers/blockers' + str(iteration)  + '.p'),'rb'))
-
         print('Iteration ', iteration)
         np.random.seed(iteration)
 
@@ -54,10 +55,7 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
         total_links_per_user = np.append(total_links_per_user, links_per_user)
 
         discon = 0
-
-        channel_capacity_per_user = f.find_capacity_per_user(opt_x, x_user, y_user, blockers)
-        channel_capacity_real_per_user.append(channel_capacity_per_user)
-        channel_capacity_real.append(sum(channel_capacity_per_user))
+        blocked_connections = simulate_blockers.find_blocked_connections(opt_x, x_user, y_user, number_of_users)
 
         for user in range(number_of_users):
             u = f.user_coords(user, x_user, y_user)
@@ -87,6 +85,9 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
                         misalignment_mc.append(x)
                         distances_mc.append(dist)
 
+                    if f.find_snr(user, b, x_user, y_user, blocked_connections[user, b]) < SINR_min:
+                        opt_x[user, b] = 0
+
         capacity = sum(capacities[iteration])
 
         if capacity == 0:
@@ -94,6 +95,14 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
 
         channel_capacity.append(capacity)
         disconnected.append(discon)
+
+        channel_capacity_per_user = f.find_capacity_per_user(opt_x, x_user, y_user, blocked_connections)
+        channel_capacity_real_per_user.append(channel_capacity_per_user)
+        channel_capacity_real.append(sum(channel_capacity_per_user))
+
+
+        print(time.time() - start)
+        start = time.time()
 
     name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(users_per_beam))
 
@@ -131,25 +140,24 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
 if __name__ == '__main__':
     Heuristic = False
     SNRHeuristic = False
-    number_of_users = int(input('Number of users?'))
+    for number_of_users in [100, 300, 500, 750, 1000]:
+        if SNRHeuristic:
+            k = int(input('k?'))
+        else:
+            k = 1
 
-    if SNRHeuristic:
-        k = int(input('k?'))
-    else:
-        k = 1
+        name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(
+                users_per_beam))
+        if Heuristic:
+            name = str('beamwidth_heuristic' + name)
 
-    name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(
-            users_per_beam))
-    if Heuristic:
-        name = str('beamwidth_heuristic' + name)
+        elif SNRHeuristic:
+            name = str('SNR_k=' + str(k) + name)
 
-    elif SNRHeuristic:
-        name = str('SNR_k=' + str(k) + name)
+        optimal = pickle.load(open(str('Data/assignment' + name  + '.p'),'rb'))
+        shares = pickle.load(open(str('Data/shares' + name  + '.p'),'rb'))
+        xs = pickle.load(open(str('Data/xs' + name + '.p'),'rb'))
+        ys = pickle.load(open(str('Data/ys' + name + '.p'),'rb'))
+        capacities = pickle.load(open(str('Data/capacity_per_user' + name + '.p'),'rb'))
 
-    optimal = pickle.load(open(str('Data/assignment' + name  + '.p'),'rb'))
-    shares = pickle.load(open(str('Data/shares' + name  + '.p'),'rb'))
-    xs = pickle.load(open(str('Data/xs' + name + '.p'),'rb'))
-    ys = pickle.load(open(str('Data/ys' + name + '.p'),'rb'))
-    capacities = pickle.load(open(str('Data/capacity_users' + name + '.p'),'rb'))
-
-    main(optimal, shares, xs, ys, capacities, Heuristic, k, SNRHeuristic)
+        main(optimal, shares, xs, ys, capacities, Heuristic, k, SNRHeuristic)
