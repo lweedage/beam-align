@@ -9,57 +9,72 @@ import functions as f
 import time
 import pickle
 import os
+import progressbar
 
-def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeuristic = False):
-    delta = 1
-    disconnected = []
+Optimal = True
+Blocked = True
+Plotting = True
 
-    x_max, y_max = int(np.ceil(xmax * delta)), int(np.ceil(ymax * delta))
 
-    grid_sc = np.zeros((y_max, x_max))
-    grid_mc = np.zeros((y_max, x_max))
+def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeuristic = False, Clustered = False, User_Heuristic = False):
+    if Plotting:
+        delta = 1
+        x_max, y_max = int(np.ceil(xmax * delta)), int(np.ceil(ymax * delta))
+        grid_sc = np.zeros((y_max, x_max))
+        grid_mc = np.zeros((y_max, x_max))
+        total_visits = np.zeros((y_max, x_max))
+        misalignment_user = []
+        misalignment_bs = []
+        misalignment_mc = []
+        misalignment_sc = []
+        distances = []
+        distances_sc = []
+        distances_mc = []
 
-    total_visits = np.zeros((y_max, x_max))
+        grid_bs = np.zeros((y_max, x_max))
 
-    misalignment_user = []
-    misalignment_bs = []
-    misalignment_mc = []
-    misalignment_sc = []
-    distances = []
-    distances_sc = []
-    distances_mc = []
+    if Optimal:
+        disconnected = []
+        total_links_per_user = np.array([])
+        channel_capacity = []
+        cap_per_user = []
 
-    total_links_per_user = np.array([])
-
-    no_optimal_value_found = 0
-
-    channel_capacity = []
-    channel_capacity_real = []
-    channel_capacity_real_per_user = []
+    if Blocked:
+        channel_capacity_real = []
+        channel_capacity_real_per_user = []
+        disconnected_blocked = []
 
     number_of_users = len(xs[0])
 
     iteration_min = 0
     iteration_max = iterations[number_of_users]
 
-    start = time.time()
+    bar = progressbar.ProgressBar(maxval=iteration_max, widgets=[progressbar.Bar('=', f'Finding data... scenario: {scenario}, #users: {number_of_users} [', ']'), ' ', progressbar.Percentage(), ' ', progressbar.ETA()])
+    bar.start()
     for iteration in range(iteration_min, iteration_max):
-        blockers = pickle.load(open(str('Data/Blockers/blockers' + str(iteration)  + '.p'),'rb'))
-        print('Iteration ', iteration)
+        bar.update(iteration)
         np.random.seed(iteration)
 
         x_user, y_user = xs[iteration], ys[iteration] #f.find_coordinates(number_of_users)
         opt_x = optimal[iteration]
-
+        share = shares[iteration]
         links_per_user = sum(np.transpose(opt_x))
-        total_links_per_user = np.append(total_links_per_user, links_per_user)
-
         discon = 0
-        blocked_connections = simulate_blockers.find_blocked_connections(opt_x, x_user, y_user, number_of_users)
+
+        if Optimal:
+            total_links_per_user = np.append(total_links_per_user, links_per_user)
+            capacity_per_user = f.find_capacity_per_user(share, x_user, y_user, np.zeros((number_of_users, number_of_bs)))
+
+        if Blocked:
+            blocked_connections = simulate_blockers.find_blocked_connections(opt_x, x_user, y_user, number_of_users)
+            discon_blocked = 0
 
         for user in range(number_of_users):
             u = f.user_coords(user, x_user, y_user)
-            if links_per_user[user] == 1:
+            if opt_x[user, bs_of_interest] == 1:
+                grid_bs[int(u[1] * delta), int(u[0] * delta)] += 1
+
+            if Plotting and links_per_user[user] == 1:
                 grid_sc[int(u[1]*delta), int(u[0]*delta)] += 1
             elif links_per_user[user] == 0:
                 discon += 1
@@ -71,93 +86,144 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
                 if opt_x[user, b] == 1:
                     b_coords = f.bs_coords(b)
 
-                    x = f.find_misalignment(b_coords, u, beamwidth_b)
-                    dist = f.find_distance(u, b_coords)
+                    if Plotting:
+                        x = f.find_misalignment(b_coords, u, beamwidth_b)
+                        dist = f.find_distance(u, b_coords)
 
-                    misalignment_user.append(f.find_misalignment(u, b_coords, beamwidth_u))
-                    misalignment_bs.append(x)
+                        misalignment_user.append(f.find_misalignment(u, b_coords, beamwidth_u))
+                        misalignment_bs.append(x)
 
-                    distances.append(dist)
-                    if links_per_user[user] == 1:
-                        misalignment_sc.append(x)
-                        distances_sc.append(dist)
-                    else:
-                        misalignment_mc.append(x)
-                        distances_mc.append(dist)
+                        distances.append(dist)
+                        if links_per_user[user] == 1:
+                            misalignment_sc.append(x)
+                            distances_sc.append(dist)
+                        else:
+                            misalignment_mc.append(x)
+                            distances_mc.append(dist)
 
-                    if f.find_snr(user, b, x_user, y_user, blocked_connections[user, b]) < SINR_min:
+                    if Blocked and f.find_snr(user, b, x_user, y_user, blocked_connections[user, b]) < SINR_min:
                         opt_x[user, b] = 0
 
-        capacity = sum(capacities[iteration])
+        if Blocked:
+            links_per_user = sum(np.transpose(opt_x))
+            for user in range(number_of_users):
+                if links_per_user[user] == 0:
+                    discon_blocked += 1
 
-        if capacity == 0:
-            no_optimal_value_found += 1
+        if Optimal:
+            capacity = sum(capacities[iteration])
+            channel_capacity.append(capacity)
+            disconnected.append(discon)
+            cap_per_user.append(capacity_per_user)
 
-        channel_capacity.append(capacity)
-        disconnected.append(discon)
+        if Blocked:
+            channel_capacity_per_user = f.find_capacity_per_user(share, x_user, y_user, blocked_connections)
+            channel_capacity_real_per_user.append(channel_capacity_per_user)
+            channel_capacity_real.append(sum(channel_capacity_per_user))
+            disconnected_blocked.append(discon_blocked)
 
-        channel_capacity_per_user = f.find_capacity_per_user(opt_x, x_user, y_user, blocked_connections)
-        channel_capacity_real_per_user.append(channel_capacity_per_user)
-        channel_capacity_real.append(sum(channel_capacity_per_user))
 
-
-        print(time.time() - start)
-        start = time.time()
-
-    name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(users_per_beam))
+    bar.finish()
+    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(users_per_beam))
 
     if Heuristic:
-        name = str('beamwidth_heuristic' + name)
+        if User_Heuristic:
+            name = str('beamwidth_user_heuristic' + name)
+        else:
+            name = str('beamwidth_heuristic' + name)
 
     elif SNRHeuristic:
         name = str('SNR_k=' + str(k) + name)
 
+    if Clustered:
+        name = str(name + '_clustered')
 
-    pickle.dump(grid_mc, open(str('Data/grid_mc_' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(grid_sc, open(str('Data/grid_sc_' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(total_visits, open(str('Data/grid_total_visits_' + name + '.p'), 'wb'), protocol=4)
+    if Plotting:
+        pickle.dump(grid_mc, open(str('Data/grid_mc_' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(grid_sc, open(str('Data/grid_sc_' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(grid_bs, open(str('Data/grid_bs_' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(total_visits, open(str('Data/grid_total_visits_' + name + '.p'), 'wb'), protocol=4)
 
-    pickle.dump(misalignment_user, open(str('Data/grid_misalignment_user' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(misalignment_bs, open(str('Data/grid_misalignment_bs' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(misalignment_mc, open(str('Data/grid_misalignment_mc' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(misalignment_sc, open(str('Data/grid_misalignment_sc' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(misalignment_user, open(str('Data/grid_misalignment_user' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(misalignment_bs, open(str('Data/grid_misalignment_bs' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(misalignment_mc, open(str('Data/grid_misalignment_mc' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(misalignment_sc, open(str('Data/grid_misalignment_sc' + name + '.p'),'wb'), protocol=4)
 
-    pickle.dump(distances, open(str('Data/distances' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(distances_mc, open(str('Data/distances_mc' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(distances_sc, open(str('Data/distances_sc' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(distances, open(str('Data/distances' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(distances_mc, open(str('Data/distances_mc' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(distances_sc, open(str('Data/distances_sc' + name + '.p'),'wb'), protocol=4)
 
-    pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'),'wb'), protocol=4)
+    if Optimal:
+        pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(channel_capacity, open(str('Data/channel_capacity' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(cap_per_user, open(str('Data/channel_capacity_per_user' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(disconnected, open(str('Data/disconnected_users' + name + '.p'),'wb'), protocol=4)
 
-    pickle.dump(channel_capacity, open(str('Data/channel_capacity' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(channel_capacity_real, open(str('Data/blocked_capacity' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(channel_capacity_real_per_user, open(str('Data/blocked_capacity_per_user' + name + '.p'),'wb'), protocol=4)
+    if Blocked:
+        pickle.dump(disconnected_blocked, open(str('Data/disconnected_blocked_users' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(channel_capacity_real, open(str('Data/blocked_capacity' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(channel_capacity_real_per_user, open(str('Data/blocked_capacity_per_user' + name + '.p'),'wb'), protocol=4)
 
-    pickle.dump(no_optimal_value_found, open(str('Data/no_optimal_value_found' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(disconnected, open(str('Data/disconnected_users' + name + '.p'),'wb'), protocol=4)
+def find_scenario(scenario):
+    if scenario in [1, 4, 7, 10, 13, 16, 19, 22, 25, 28]:
+        beamwidth_deg = 5
+    elif scenario in [2, 5, 8, 11, 14, 17, 20, 23, 26, 29]:
+        beamwidth_deg = 10
+    else:
+        beamwidth_deg = 15
 
-    print('average channel capacity:', sum(channel_capacity)/len(channel_capacity))
+    if scenario in [1, 2, 3, 4, 5, 6]:
+        users_per_beam = 1
+    elif scenario in [7, 8, 9, 10, 11, 12]:
+        users_per_beam = 2
+    elif scenario in [13, 14, 15, 16, 17, 18, 25, 26, 27, 28, 29, 30]:
+        users_per_beam = 5
+    elif scenario in [19, 20, 21, 22, 23, 24]:
+        users_per_beam = 10
+    else:
+        users_per_beam = False
+
+    if scenario in [1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21, 25, 26, 27]:
+        Penalty = True
+    else:
+        Penalty = False
+
+    if scenario in [25, 26, 27, 28, 29, 30]:
+        Clustered = True
+    else:
+        Clustered = False
+
+    return beamwidth_deg, users_per_beam, Penalty, Clustered
+
 
 if __name__ == '__main__':
-    Heuristic = False
-    SNRHeuristic = False
-    for number_of_users in [100, 300, 500, 750, 1000]:
-        if SNRHeuristic:
-            k = int(input('k?'))
-        else:
-            k = 1
+    for scenario in [22]: #range(1, 24):
+        beamwidth_deg, users_per_beam, Penalty, Clustered = find_scenario(scenario)
+        Heuristic = False
+        SNRHeuristic = False
 
-        name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(
-                users_per_beam))
-        if Heuristic:
-            name = str('beamwidth_heuristic' + name)
+        beamwidth_b = np.radians(beamwidth_deg)
+        for number_of_users in [100, 300, 500, 750, 1000]:
+            if SNRHeuristic:
+                k = int(input('k?'))
+            else:
+                k = 1
+            iteration_max = iterations[number_of_users]
+            name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(
+                    users_per_beam))
+            if Heuristic:
+                name = str(name + "_heuristic")
 
-        elif SNRHeuristic:
-            name = str('SNR_k=' + str(k) + name)
+            elif SNRHeuristic:
+                name = str('SNR_k=' + str(k) + name)
 
-        optimal = pickle.load(open(str('Data/assignment' + name  + '.p'),'rb'))
-        shares = pickle.load(open(str('Data/shares' + name  + '.p'),'rb'))
-        xs = pickle.load(open(str('Data/xs' + name + '.p'),'rb'))
-        ys = pickle.load(open(str('Data/ys' + name + '.p'),'rb'))
-        capacities = pickle.load(open(str('Data/capacity_per_user' + name + '.p'),'rb'))
+            if Clustered:
+                name = str(name + '_clustered')
 
-        main(optimal, shares, xs, ys, capacities, Heuristic, k, SNRHeuristic)
+            optimal = pickle.load(open(str('Data/assignment' + name  + '.p'),'rb'))
+            shares = pickle.load(open(str('Data/shares' + name  + '.p'),'rb'))
+            xs = pickle.load(open(str('Data/xs' + name + '.p'),'rb'))
+            ys = pickle.load(open(str('Data/ys' + name + '.p'),'rb'))
+            capacities = pickle.load(open(str('Data/capacity_per_user' + name + '.p'),'rb'))
+
+            main(optimal, shares, xs, ys, capacities, Heuristic, k, SNRHeuristic, Clustered)

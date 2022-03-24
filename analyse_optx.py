@@ -82,8 +82,6 @@ for number_of_users in [100, 300, 500, 750, 1000]:
     #     # plt.savefig(str('Figures/mc_heatmap' + name + '.png'))
     #     plt.show()
 
-
-
     averages = []
     error = []
     # for degree in range(24):

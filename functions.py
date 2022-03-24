@@ -117,7 +117,7 @@ def find_beam(radians, beamwidth):
     return preferred_angle
 
 def find_misalignment(coord_1, coord_2, beamwidth):
-    return find_geo(coord_1, coord_2) - find_bore(coord_1, coord_2, beamwidth)
+    return np.degrees(find_geo(coord_1, coord_2) - find_bore(coord_1, coord_2, beamwidth))
 
 def find_path_loss_los(user, bs, SF = 0):
     r = find_distance_3D(user, bs)
@@ -184,8 +184,56 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
                 ybs.append(j * dy)
     return xbs, ybs
 
-def find_coordinates(number_of_users):
-    x_user, y_user = np.random.uniform(xmin, xmax, number_of_users), np.random.uniform(ymin, ymax, number_of_users)
+def find_coordinates(number_of_users, Clustered = False):
+    # Matern point process, from H. Paul Keeler
+    if Clustered:
+        # Parameters for the parent and daughter point processes
+        lambdaParent = 10  # density of parent Poisson point process
+        lambdaDaughter = number_of_users//10  # mean number of points in each cluster
+        radiusCluster = 25  # radius of cluster disk (for daughter points)
+
+        # Simulate Poisson point process for the parents
+        xxParent = xmin + xDelta * np.random.uniform(0, 1, lambdaParent)
+        yyParent = ymin + yDelta * np.random.uniform(0, 1, lambdaParent)
+
+        # Simulate Poisson point process for the daughters (ie final point process)
+        # numbPointsDaughter = np.random.poisson(lambdaDaughter, lambdaParent)
+        # number_of_users = sum(numbPointsDaughter)  # total number of points   #it is now deterministic instead of random
+
+        # Generate the (relative) locations in polar coordinates by
+        # simulating independent variables.
+        theta = 2 * np.pi * np.random.uniform(0, 1, number_of_users)  # angular coordinates
+        rho = radiusCluster * np.sqrt(np.random.uniform(0, 1, number_of_users))  # radial coordinates
+
+        # Convert from polar to Cartesian coordinates
+        xx0 = rho * np.cos(theta)
+        yy0 = rho * np.sin(theta)
+
+        # replicate parent points (ie centres of disks/clusters)
+        xx = np.repeat(xxParent, lambdaDaughter)
+        yy = np.repeat(yyParent, lambdaDaughter)
+
+        # translate points (ie parents points are the centres of cluster disks)
+        xx = xx + xx0
+        yy = yy + yy0
+
+        # thin points if outside the simulation window
+        for i in range(len(xx)):
+            x = xx[i]
+            if x <= xmin:
+                xx[i] += xDelta
+            elif x >= xmax:
+                xx[i] -= xDelta
+        for i in range(len(yy)):
+            y = yy[i]
+            if y <= ymin:
+                yy[i] += yDelta
+            elif y >= ymax:
+                yy[i] -= yDelta
+
+        x_user, y_user = xx, yy
+    else:
+        x_user, y_user = np.random.uniform(xmin, xmax, number_of_users), np.random.uniform(ymin, ymax, number_of_users)
     return x_user, y_user
 
 def make_graph(xbs, ybs, xu, yu, x, number_of_users):
@@ -250,7 +298,7 @@ def find_capacity_per_user(opt_x, x_user, y_user, blocked_connections):
                 capacity[u] += W / users_per_beam * opt_x[u,bs] * math.log2(1 + transmission_power * gain_bs * gain_user / (path_loss * noise))
     return capacity
 
-def find_snr(user, bs, x_user, y_user, blocked):
+def find_snr(user, bs, x_user, y_user, blocked = None):
     coords_i = user_coords(user, x_user, y_user)
     coords_j = bs_coords(bs)
     gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)

@@ -4,9 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 from parameters import *
+import seaborn as sns
+
+colors = sns.color_palette("ch:s=-.2,r=.6")
 
 # number_of_users = int(input('Number of users?'))
 user = [100, 300, 500, 750, 1000]
+# user = [500]
 
 mis = dict()
 dis = dict()
@@ -35,56 +39,47 @@ for number_of_users in user:
 
 
     misalignment_user = pickle.load(open(str('Data/grid_misalignment_user' + name + '.p'), 'rb'))
-    misalignment_bs = pickle.load(open(str('Data/grid_misalignment_bs' + name + '.p'), 'rb'))
+    # misalignment_bs = pickle.load(open(str('Data/grid_misalignment_bs' + name + '.p'), 'rb'))
     misalignment_mc = pickle.load(open(str('Data/grid_misalignment_mc' + name + '.p'), 'rb'))
     misalignment_sc = pickle.load(open(str('Data/grid_misalignment_sc' + name + '.p'), 'rb'))
 
-    distances = pickle.load(open(str('Data/distances' + name + '.p'), 'rb'))
-    distances_mc = pickle.load(open(str('Data/distances_mc' + name + '.p'), 'rb'))
-    distances_sc = pickle.load(open(str('Data/distances_sc' + name + '.p'), 'rb'))
+    # distances = pickle.load(open(str('Data/distances' + name + '.p'), 'rb'))
+    # distances_mc = pickle.load(open(str('Data/distances_mc' + name + '.p'), 'rb'))
+    # distances_sc = pickle.load(open(str('Data/distances_sc' + name + '.p'), 'rb'))
+    #
+    # degrees = pickle.load(open(str('Data/total_links_per_user' + name + '.p'), 'rb'))
+    # deg[number_of_users] = sum(degrees)/len(degrees)
+    #
+    # degrees = [i for i in degrees if i != 0]
 
-    degrees = pickle.load(open(str('Data/total_links_per_user' + name + '.p'), 'rb'))
-    deg[number_of_users] = sum(degrees)/len(degrees)
 
-    degrees = [i for i in degrees if i != 0]
-
-
-    disconnected = pickle.load(open(str('Data/disconnected_users' + name + '.p'), 'rb'))
-
-    data = misalignment_bs
-
-    # print('2 sigma misalignment', np.degrees(np.std(data) * 2))
-    mis[number_of_users] = np.degrees(np.std(data) * 2)
-
-    # print('Disconnected users:', np.sum(disconnected) / len(disconnected))
-    dis[number_of_users] = np.sum(disconnected) / len(disconnected)
-    # if not (Heuristic):
-    #     no_optimal_value = pickle.load(open(str('Data/no_optimal_value_found' + name + '.p'), 'rb'))
-    #     print('No succes in', no_optimal_value / iterations[number_of_users] * 100, 'percent of the iterations')
+    # disconnected = pickle.load(open(str('Data/disconnected_users' + name + '.p'), 'rb'))
 
     name = str(int(math.ceil(np.degrees(beamwidth_b)))) + 'b_' + str(number_of_users) + '_users_M=' + str(M) + 's='  + str(users_per_beam)
     if Heuristic:
         name = str('heuristic_' + name)
 
-    # fig, ax = plt.subplots()
-    # data1 = np.degrees(misalignment_sc)
-    # data2 = np.degrees(misalignment_mc)
-    # plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
-    #          alpha=0.3, label='single connections')
-    # plt.hist(data2, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
-    #          alpha=0.3, label='multiple connections')
-    # plt.xlabel('Misalignment in degrees')
-    # plt.legend()
-    # plt.savefig(str('Figures/' + name + '_misalignmentmc.png'))
+    fig, ax = plt.subplots()
+    data1 = np.degrees(misalignment_sc)
+    data2 = np.degrees(misalignment_mc)
+    plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
+             alpha=0.3, label='single connections')
+    plt.hist(data2, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
+             alpha=0.3, label='multiple connections')
+    plt.xlabel('Misalignment in degrees')
+    plt.legend()
+    plt.savefig(str('Figures/' + name + '_misalignmentmc.png'))
     # plt.show()
 
-    # fig, ax = plt.subplots()
-    # data1 = np.degrees(misalignment_bs)
-    # (n, bins, patches) = plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
-    #          alpha=0.3)
-    # plt.xlabel('Misalignment in degrees')
-    # plt.savefig(str('Figures/' + name + '_misalignment.png'))
+    fig, ax = plt.subplots()
+    data1 = np.degrees(misalignment_user)
+    (n, bins, patches) = plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
+             alpha=0.3)
+    plt.xlabel('Misalignment in degrees')
+    plt.savefig(str('Figures/' + name + '_user_misalignment.png'))
     # plt.show()
+
+    print(np.std(data1) * 2)
 
 
     # fig, ax = plt.subplots()
@@ -98,20 +93,6 @@ for number_of_users in user:
     # plt.legend()
     # plt.xlabel('Link distance (m)')
     # plt.savefig(str('Figures/' + name + '_distances.png'))
-    # plt.show()
-
-    # fig, ax = plt.subplots()
-    # step = 2
-    # data = distances_2mc
-    # plt.hist(data, density=True, bins = np.arange(min(data), 55 + step, step), alpha = 0.3, label = '2mc')
-    # data = distances_3mc
-    # plt.hist(data, density=True, bins = np.arange(min(data), 55 + step, step), alpha = 0.3, label = '3mc')
-    # data = distances_4mc
-    # plt.hist(data, density=True, bins = np.arange(min(data), 55 + step, step), alpha = 0.3, label = '4mc')
-    # data = distances_5mc
-    # plt.hist(data, density=True, bins = np.arange(min(data), 55 + step, step), alpha = 0.3, label = '>5mc')
-    # plt.xlabel('Link distance (m)')
-    # plt.legend()
     # plt.show()
 
     # fig, ax = plt.subplots()
@@ -154,4 +135,3 @@ for number_of_users in user:
 #     plt.savefig('Figures/links_all_users'  + name + '.png')
 #     plt.show()
 
-print(f'Degree{beamwidth_deg}{M}{users_per_beam}={deg}')

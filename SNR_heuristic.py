@@ -23,14 +23,15 @@ def find_closest_snr(user, x_user, y_user):
         snr.append(f.find_snr(user, bs, x_user, y_user))
     return np.argsort(snr)
 
-print(beamwidth_b)
 # user = int(input('Number of users?'))
 for number_of_users in [100, 300, 500, 750, 1000]:
-    for k in [24]:
+    for k in [1, 5]:
         optimal = []
         xs = []
         ys = []
         disconnected = []
+        capacities = []
+        shares = []
 
         iteration_min, iteration_max = 0, iterations[number_of_users]
 
@@ -40,25 +41,37 @@ for number_of_users in [100, 300, 500, 750, 1000]:
             np.random.seed(iteration)
             x_user, y_user = f.find_coordinates(number_of_users)
 
+            occupied_beams = np.zeros((number_of_bs, len(directions_bs)))
+
             for u in range(number_of_users):
+                user_coords = f.user_coords(u, x_user, y_user)
                 bs = list(find_closest_snr(u, x_user, y_user))
                 while sum(np.transpose(opt_x))[u] < k and len(bs) > 0:
                     b = bs.pop(0)
                     snr = f.find_snr(u, b,  x_user, y_user)
                     if snr > SINR_min:
-                        opt_x[u, b] = 1
+                        bs_coords = f.bs_coords(b)
+                        geo = f.find_geo(bs_coords, user_coords)
+                        beam_number = f.find_beam_number(geo, beamwidth_b)
+                        opt_x[u, bs] = 1
+                        occupied_beams[bs, beam_number] += 1
 
+            share = np.zeros((number_of_users, number_of_bs))
+            for user in range(number_of_users):
+                for bs in range(number_of_bs):
+                    share[user, bs] = occupied_beams[bs, f.find_beam_number(f.find_geo(bs_coords, user_coords),
+                                                                    beamwidth_b)] / users_per_beam
 
-            link_constraint_fails = 0
             links_per_user = sum(np.transpose(opt_x))
 
-            for u in range(number_of_users):
-                if links_per_user[u] == 0:
-                    link_constraint_fails += 1
 
-            disconnected.append(link_constraint_fails)
+
+            capacity = f.find_capacity_per_user(opt_x, x_user, y_user, np.zeros((number_of_users, number_of_bs)))
+
             optimal.append(opt_x)
             xs.append(x_user)
             ys.append(y_user)
+            capacities.append(capacity)
+            shares.append(share)
 
-        find_data.main(optimal, xs, ys, disconnected, SNRHeuristic = True, k = k)
+        find_data.main(optimal, shares,  xs, ys, capacities, SNRHeuristic = True, k = k)
