@@ -15,9 +15,9 @@ def find_scenario(scenario):
 
     if scenario in [1, 2, 3, 4, 5, 6]:
         users_per_beam = 1
-    elif scenario in [7, 8, 9, 10, 11, 12]:
+    elif scenario in [7, 8, 9, 10, 11, 12, 25, 26, 27, 28, 29, 30]:
         users_per_beam = 2
-    elif scenario in [13, 14, 15, 16, 17, 18, 25, 26, 27, 28, 29, 30]:
+    elif scenario in [13, 14, 15, 16, 17, 18]:
         users_per_beam = 5
     elif scenario in [19, 20, 21, 22, 23, 24]:
         users_per_beam = 10
@@ -54,7 +54,7 @@ beamwidth_u = math.radians(5)
 
 beamwidth_b = math.radians(int(beamwidth_deg))
 
-W = 1  # bandwidth
+W = 200 # in MHz  # bandwidth
 
 if Penalty:
     M = 100  # penalty on having disconnected users
@@ -64,7 +64,7 @@ else:
 # users_per_beam = 2  # amount of users in a beam
 # users_per_beam = int(input("Users per beam?"))
 
-transmission_power = 10 ** 3.0  # 30 dB
+transmission_power = 10 ** 2.0  # 20 dB
 noise_figure = 7.8
 noise_power_db = -174 + 10 * math.log10(W * 10 ** 9) + noise_figure
 noise = 10 ** (noise_power_db / 10)
@@ -74,7 +74,7 @@ user_height = 1.5
 centre_frequency = 28e9
 propagation_velocity = 3e8
 
-SINR_min = 10 ** (-5 / 10)
+SINR_min = 10 ** (5 / 10)
 
 directions_bs = range(int(2 * pi / beamwidth_b))
 directions_u = range(int(2 * pi / beamwidth_u))
@@ -95,7 +95,8 @@ x_bs, y_bs = initialise_graph_triangular(radius, xDelta, yDelta)
 number_of_bs = len(x_bs)
 
 iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
-iterations = {50: 1, 100: 1250, 300: 417, 500: 250, 750: 167, 1000: 125}
+# iterations = {50: 1, 100: 1250, 300: 417, 500: 250, 750: 167, 1000: 125}
+# iterations = {50: 1, 100: 2, 300: 100, 500: 100, 750: 100, 1000: 100}
 
 if beamwidth_b == math.radians(5):
     if users_per_beam == 1:
@@ -132,6 +133,7 @@ elif beamwidth_b == math.radians(15):
     elif users_per_beam == 10:
         misalignment = {50: 1.78, 100: 5, 300: 2.14, 500: 1.87, 750: 1.69, 1000: 1.58}
 
-
+RateRequirement = True
+user_rate = 1000 # mbps
 
 Torus = True

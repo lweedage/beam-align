@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+import get_data
 import simulate_blockers
 from parameters import *
 import new_optimization
@@ -16,7 +17,7 @@ Blocked = True
 Plotting = True
 
 
-def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeuristic = False, Clustered = False, User_Heuristic = False):
+def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeuristic = False, Clustered = False, User_Heuristic = False, GreedyHeuristic = False, GreedyRate = False):
     if Plotting:
         delta = 1
         x_max, y_max = int(np.ceil(xmax * delta)), int(np.ceil(ymax * delta))
@@ -63,7 +64,7 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
 
         if Optimal:
             total_links_per_user = np.append(total_links_per_user, links_per_user)
-            capacity_per_user = f.find_capacity_per_user(share, x_user, y_user, np.zeros((number_of_users, number_of_bs)))
+            capacity_per_user = f.find_capacity_per_user(share, x_user, y_user)
 
         if Blocked:
             blocked_connections = simulate_blockers.find_blocked_connections(opt_x, x_user, y_user, number_of_users)
@@ -117,7 +118,7 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
             cap_per_user.append(capacity_per_user)
 
         if Blocked:
-            channel_capacity_per_user = f.find_capacity_per_user(share, x_user, y_user, blocked_connections)
+            channel_capacity_per_user = f.find_capacity_per_user(share, x_user, y_user, blocked_connections = blocked_connections)
             channel_capacity_real_per_user.append(channel_capacity_per_user)
             channel_capacity_real.append(sum(channel_capacity_per_user))
             disconnected_blocked.append(discon_blocked)
@@ -135,8 +136,15 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
     elif SNRHeuristic:
         name = str('SNR_k=' + str(k) + name)
 
+    elif GreedyRate:
+        name = str(name + 'GreedyRate')
+    elif GreedyHeuristic:
+        name = str(name + 'GreedyHeuristic')
+
     if Clustered:
         name = str(name + '_clustered')
+
+
 
     if Plotting:
         pickle.dump(grid_mc, open(str('Data/grid_mc_' + name + '.p'),'wb'), protocol=4)
@@ -164,43 +172,14 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
         pickle.dump(channel_capacity_real, open(str('Data/blocked_capacity' + name + '.p'),'wb'), protocol=4)
         pickle.dump(channel_capacity_real_per_user, open(str('Data/blocked_capacity_per_user' + name + '.p'),'wb'), protocol=4)
 
-def find_scenario(scenario):
-    if scenario in [1, 4, 7, 10, 13, 16, 19, 22, 25, 28]:
-        beamwidth_deg = 5
-    elif scenario in [2, 5, 8, 11, 14, 17, 20, 23, 26, 29]:
-        beamwidth_deg = 10
-    else:
-        beamwidth_deg = 15
-
-    if scenario in [1, 2, 3, 4, 5, 6]:
-        users_per_beam = 1
-    elif scenario in [7, 8, 9, 10, 11, 12]:
-        users_per_beam = 2
-    elif scenario in [13, 14, 15, 16, 17, 18, 25, 26, 27, 28, 29, 30]:
-        users_per_beam = 5
-    elif scenario in [19, 20, 21, 22, 23, 24]:
-        users_per_beam = 10
-    else:
-        users_per_beam = False
-
-    if scenario in [1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21, 25, 26, 27]:
-        Penalty = True
-    else:
-        Penalty = False
-
-    if scenario in [25, 26, 27, 28, 29, 30]:
-        Clustered = True
-    else:
-        Clustered = False
-
-    return beamwidth_deg, users_per_beam, Penalty, Clustered
-
-
 if __name__ == '__main__':
     for scenario in [22]: #range(1, 24):
         beamwidth_deg, users_per_beam, Penalty, Clustered = find_scenario(scenario)
         Heuristic = False
         SNRHeuristic = False
+        User_Heuristic = False
+        GreedyRate = False
+        GreedyHeuristic = False
 
         beamwidth_b = np.radians(beamwidth_deg)
         for number_of_users in [100, 300, 500, 750, 1000]:
@@ -209,13 +188,22 @@ if __name__ == '__main__':
             else:
                 k = 1
             iteration_max = iterations[number_of_users]
-            name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(
-                    users_per_beam))
+            name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
+                np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(users_per_beam))
+
             if Heuristic:
-                name = str(name + "_heuristic")
+                if User_Heuristic:
+                    name = str('beamwidth_user_heuristic' + name)
+                else:
+                    name = str('beamwidth_heuristic' + name)
 
             elif SNRHeuristic:
                 name = str('SNR_k=' + str(k) + name)
+
+            elif GreedyRate:
+                name = str(name + 'GreedyRate')
+            elif GreedyHeuristic:
+                name = str(name + 'GreedyHeuristic')
 
             if Clustered:
                 name = str(name + '_clustered')
@@ -226,4 +214,4 @@ if __name__ == '__main__':
             ys = pickle.load(open(str('Data/ys' + name + '.p'),'rb'))
             capacities = pickle.load(open(str('Data/capacity_per_user' + name + '.p'),'rb'))
 
-            main(optimal, shares, xs, ys, capacities, Heuristic, k, SNRHeuristic, Clustered)
+            main(optimal, shares, xs, ys, capacities, Heuristic, k, SNRHeuristic, Clustered, User_Heuristic, GreedyHeuristic, GreedyRate)

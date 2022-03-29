@@ -119,21 +119,23 @@ def find_beam(radians, beamwidth):
 def find_misalignment(coord_1, coord_2, beamwidth):
     return np.degrees(find_geo(coord_1, coord_2) - find_bore(coord_1, coord_2, beamwidth))
 
-def find_path_loss_los(user, bs, SF = 0):
+def find_path_loss(user, bs, Blocked = None):
     r = find_distance_3D(user, bs)
     breakpoint_distance = 4 * (BS_height - 1) * (user_height - 1) * centre_frequency / propagation_velocity
+    if Blocked:
+        SF = np.random.normal(0, 7.8)
+        PL_nlos = find_path_loss_nlos(user, bs, SF)
+    else:
+        SF = np.random.normal(0, 4)
+
     if r <= breakpoint_distance:
         path_loss_db = 32.4 + 21 * math.log10(r) + 20 * math.log10(centre_frequency / 1e9) + SF
         path_loss = 10 ** (path_loss_db / 10)
 
+    if Blocked:
+        path_loss = max(path_loss, PL_nlos)
     return path_loss
 
-def find_path_loss(user, bs, blocked):
-    if blocked:
-        PL = find_path_loss_nlos(user, bs, SF = np.random.normal(0, 7.82))
-    else:
-        PL = find_path_loss_los(user, bs, SF = np.random.normal(0, 4))
-    return PL
 
 def probability_los(user, bs):
     dist = find_distance(user, bs)
@@ -284,9 +286,12 @@ def find_capacity(opt_x, x_user, y_user, blockers):
     per_user_capacity = find_capacity_per_user(opt_x, x_user ,y_user, blockers)
     return sum(per_user_capacity)
 
-def find_capacity_per_user(opt_x, x_user, y_user, blocked_connections):
+def find_capacity_per_user(opt_x, x_user, y_user, blocked_connections = None):
     number_of_users = len(x_user)
     capacity = np.zeros(number_of_users)
+    if blocked_connections is None:
+        blocked_connections = np.zeros((number_of_users, number_of_bs))
+
     for u in range(number_of_users):
         for bs in range(number_of_bs):
             if opt_x[u, bs] >= 1:
@@ -298,12 +303,12 @@ def find_capacity_per_user(opt_x, x_user, y_user, blocked_connections):
                 capacity[u] += W / users_per_beam * opt_x[u,bs] * math.log2(1 + transmission_power * gain_bs * gain_user / (path_loss * noise))
     return capacity
 
-def find_snr(user, bs, x_user, y_user, blocked = None):
+def find_snr(user, bs, x_user, y_user, Fading = False):
     coords_i = user_coords(user, x_user, y_user)
     coords_j = bs_coords(bs)
     gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
     gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
-    path_loss = find_path_loss(coords_i, coords_j, blocked)
+    path_loss = find_path_loss(coords_i, coords_j, Fading)
     return (transmission_power * gain_user * gain_bs / path_loss ) / (noise)
 
 def plot_BSs(x_user, y_user, opt_x):

@@ -21,6 +21,7 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
 
 iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
 iterations = {50: 1, 100: 1250, 300: 417, 500: 250, 750: 167, 1000: 125}
+iterations = {50: 1, 100: 100, 300: 100, 500: 100, 750: 100, 1000: 100}
 
 Torus = True
 
@@ -63,9 +64,9 @@ def find_scenario(scenario):
 
     if scenario in [1, 2, 3, 4, 5, 6]:
         users_per_beam = 1
-    elif scenario in [7, 8, 9, 10, 11, 12]:
+    elif scenario in [7, 8, 9, 10, 11, 12, 25, 26, 27, 28, 29, 30]:
         users_per_beam = 2
-    elif scenario in [13, 14, 15, 16, 17, 18, 25, 26, 27, 28, 29, 30]:
+    elif scenario in [13, 14, 15, 16, 17, 18]:
         users_per_beam = 5
     elif scenario in [19, 20, 21, 22, 23, 24]:
         users_per_beam = 10
@@ -89,19 +90,17 @@ def fairness(x):
     noemer = len(x) * sum([i**2 for i in x])
     return teller/noemer
 
-for scenario in [7, 8, 9]: #range(25, 31):
-    print(f'Scenario {scenario}')
+
+
+def get_data(scenario, Heuristic = False, SNR_heuristic = False, k = 0, User_Heuristic = False, GreedyHeuristic = False, GreedyRate = False):
+    print('Getting data...')
     beamwidth_deg, users_per_beam, Penalty, Clustered = find_scenario(scenario)
     beamwidth_b = math.radians(int(beamwidth_deg))
-    Heuristic = True
 
     if Penalty:
         M = 100  # penalty on having disconnected users
     else:
         M = 0
-
-    directions_bs = range(int(2 * pi / beamwidth_b))
-    directions_u = range(int(2 * pi / beamwidth_u))
 
     user = [100, 300, 500, 750, 1000]
 
@@ -117,22 +116,30 @@ for scenario in [7, 8, 9]: #range(25, 31):
     fair_blocked = dict()
 
 
-
     for number_of_users in user:
         iteration_min = 0
         iteration_max = iterations[number_of_users]
 
         # print(iteration_max)
-        name = str(str(iteration_max) +
-            'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
-                M) + 's=' + str(users_per_beam))
+        name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
+            np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(users_per_beam))
 
+        if Heuristic:
+            if User_Heuristic:
+                name = str('beamwidth_user_heuristic' + name)
+            else:
+                name = str('beamwidth_heuristic' + name)
+
+        elif SNRHeuristic:
+            name = str('SNR_k=' + str(k) + name)
+
+        elif GreedyRate:
+            name = str(name + 'GreedyRate')
+        elif GreedyHeuristic:
+            name = str(name + 'GreedyHeuristic')
 
         if Clustered:
             name = str(name + '_clustered')
-
-        if Heuristic:
-            name = str('beamwidth_heuristic' + name)
 
         degrees = pickle.load(open(str('Data/total_links_per_user' + name + '.p'), 'rb'))
         disconnected = pickle.load(open(str('Data/disconnected_users' + name + '.p'), 'rb'))
@@ -161,9 +168,9 @@ for scenario in [7, 8, 9]: #range(25, 31):
     if Heuristic:
         name = str(name + '_heuristic')
 
-    print(name)
-    print(mis)
-    print(mis_user)
+    if SNR_heuristic:
+        name = str(name + f'_SNRk={k}')
+
 
     pickle.dump(deg, open(str('Data/Processed/deg' + name + '.p'),'wb'), protocol=4)
     pickle.dump(mis, open(str('Data/Processed/mis' + name + '.p'),'wb'), protocol=4)
@@ -173,3 +180,15 @@ for scenario in [7, 8, 9]: #range(25, 31):
     pickle.dump(cap_blocked, open(str('Data/Processed/cap_blocked' + name + '.p'),'wb'), protocol=4)
     pickle.dump(dis_blocked, open(str('Data/Processed/dis_blocked' + name + '.p'),'wb'), protocol=4)
     pickle.dump(fair_blocked, open(str('Data/Processed/fair_blocked' + name + '.p'),'wb'), protocol=4)
+
+if __name__ == '__main__':
+    for scenario in [1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21]:  # range(25, 31):
+        print(f'Scenario {scenario}')
+        Heuristic = False
+        SNRHeuristic = False
+        k = 0
+        User_Heuristic = False
+        GreedyRate = False
+        GreedyHeuristic = False
+
+        get_data(scenario, Heuristic, SNRheuristic, k, User_Heuristic, GreedyHeuristic, GreedyRate)

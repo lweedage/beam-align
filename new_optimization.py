@@ -36,7 +36,7 @@ def optimization(x_user, y_user):
         coords_i = f.user_coords(i, x_user, y_user)
         for j in base_stations:
             coords_j = f.bs_coords(j)
-            path_loss[i, j] = f.find_path_loss_los(coords_i, coords_j)
+            path_loss[i, j] = f.find_path_loss(coords_i, coords_j)
             gain_bs[i, j] = f.find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
             gain_user[i, j] = f.find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
             SNR[i, j] = transmission_power * gain_bs[i, j] * gain_user[i, j] / (path_loss[i, j] * noise)
@@ -124,6 +124,12 @@ def optimization(x_user, y_user):
         for i in users:
             m.addConstr(C_user[i] == quicksum(
                 (W / users_per_beam) * x[i, j] * spectral_efficiency[i, j] for j in base_stations), name=f'C_user#{i}')
+
+        # rate requirement
+        if RateRequirement:
+            for i in users:
+                m.addConstr(C_user[i] >= user_rate * (1 - disconnected[i]), name = f'rate_req{i}')
+
 
         # --------------------- OPTIMIZE MODEL -------------------------
         # m.computeIIS()

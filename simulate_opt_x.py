@@ -6,8 +6,15 @@ import time
 import find_data
 import pickle
 import progressbar
+import os
 
 # number_of_users = int(input('Number of users?'))
+
+def from_data(name):
+    if os.path.exists(name):
+        return pickle.load(open(name, 'rb'))
+    else:
+        return None
 
 for number_of_users in [100, 300, 500, 750, 1000]:
 
@@ -15,14 +22,15 @@ for number_of_users in [100, 300, 500, 750, 1000]:
     iteration_max = iterations[number_of_users]
 
     name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(users_per_beam))
+
     if Clustered:
         name = str(name + '_clustered')
 
-    optimal = pickle.load(open(str('Data/assignment' + name + '.p'), 'rb'))
-    shares = pickle.load(open(str('Data/shares' + name + '.p'), 'rb'))
-    xs = pickle.load(open(str('Data/xs' + name + '.p'), 'rb'))
-    ys = pickle.load(open(str('Data/ys' + name + '.p'), 'rb'))
-    user_capacities = pickle.load(open(str('Data/capacity_per_user' + name + '.p'), 'rb'))
+    optimal = from_data(str('Data/assignment' + name + '.p'))
+    shares = from_data(str('Data/shares' + name + '.p'))
+    xs = from_data(str('Data/xs' + name + '.p'))
+    ys = from_data(str('Data/ys' + name + '.p'))
+    user_capacities = from_data(str('Data/capacity_per_user' + name + '.p'))
 
     if optimal == None:
         optimal = []

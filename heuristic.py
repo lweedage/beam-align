@@ -28,7 +28,6 @@ for number_of_users in [100, 300, 500, 750, 1000]:
     if User_Heuristic:
         name = str(name + '_users')
 
-
     if os.path.exists(str('Data/assignment' + name + '.p')):
         optimal = pickle.load(open(str('Data/assignment' + name + '.p'), 'rb'))
         shares = pickle.load(open(str('Data/shares' + name + '.p'), 'rb'))
@@ -93,7 +92,7 @@ for number_of_users in [100, 300, 500, 750, 1000]:
             ys.append(y_user)
             disconnected.append(disconnected_user)
             shares.append(share)
-            user_capacities.append(f.find_capacity_per_user(opt_x, x_user, y_user, np.zeros((number_of_users, number_of_bs))))
+            user_capacities.append(f.find_capacity_per_user(share, x_user, y_user, np.zeros((number_of_users, number_of_bs))))
         bar.finish()
 
 
