@@ -6,3 +6,4 @@ cycler
 shapely
 descartes
 seaborn
+progressbar2

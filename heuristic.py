@@ -7,7 +7,7 @@ import progressbar
 from time import sleep
 import os
 
-User_Heuristic = True
+User_Heuristic = False
 
 def find_sorted_users(bs, x_user, y_user):
     # on a torus

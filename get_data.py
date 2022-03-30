@@ -20,8 +20,8 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
 
 
 iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
-iterations = {50: 1, 100: 1250, 300: 417, 500: 250, 750: 167, 1000: 125}
-iterations = {50: 1, 100: 100, 300: 100, 500: 100, 750: 100, 1000: 100}
+# iterations = {50: 1, 100: 1250, 300: 417, 500: 250, 750: 167, 1000: 125}
+# iterations = {50: 1, 100: 100, 300: 100, 500: 100, 750: 100, 1000: 100}
 
 Torus = True
 
@@ -154,26 +154,34 @@ def get_data(scenario, Heuristic = False, SNR_heuristic = False, k = 0, User_Heu
         fair[number_of_users] = fairness(capacity_per_user)
         fair_blocked[number_of_users] = fairness(capacity_per_user_blocked)
         deg[number_of_users] = sum(degrees) / len(degrees)
-        mis[number_of_users] = np.degrees(np.std(misalignment_bs) * 2)
-        mis_user[number_of_users] = np.degrees(np.std(misalignment_user)*2)
+        # mis[number_of_users] = np.degrees(np.std(misalignment_bs) * 2)
+        # mis_user[number_of_users] = np.degrees(np.std(misalignment_user)*2)
         dis[number_of_users] = np.sum(disconnected) / len(disconnected)
         cap[number_of_users] = np.sum(capacity)/len(capacity)
         cap_blocked[number_of_users] = np.sum(blocked_capacity)/len(blocked_capacity)
         dis_blocked[number_of_users] = np.sum(disconnected_blocked)/len(disconnected_blocked)
 
     name = str(str(beamwidth_deg) + str(M) + str(users_per_beam))
+    if Heuristic:
+        if User_Heuristic:
+            name = str('beamwidth_user_heuristic' + name)
+        else:
+            name = str('beamwidth_heuristic' + name)
+
+    elif SNRHeuristic:
+        name = str('SNR_k=' + str(k) + name)
+
+    elif GreedyRate:
+        name = str(name + 'GreedyRate')
+    elif GreedyHeuristic:
+        name = str(name + 'GreedyHeuristic')
+
     if Clustered:
         name = str(name + '_clustered')
 
-    if Heuristic:
-        name = str(name + '_heuristic')
-
-    if SNR_heuristic:
-        name = str(name + f'_SNRk={k}')
-
 
     pickle.dump(deg, open(str('Data/Processed/deg' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(mis, open(str('Data/Processed/mis' + name + '.p'),'wb'), protocol=4)
+    # pickle.dump(mis, open(str('Data/Processed/mis' + name + '.p'),'wb'), protocol=4)
     pickle.dump(dis, open(str('Data/Processed/dis' + name + '.p'),'wb'), protocol=4)
     pickle.dump(cap, open(str('Data/Processed/cap' + name + '.p'),'wb'), protocol=4)
     pickle.dump(fair, open(str('Data/Processed/fair' + name + '.p'),'wb'), protocol=4)
@@ -182,13 +190,13 @@ def get_data(scenario, Heuristic = False, SNR_heuristic = False, k = 0, User_Heu
     pickle.dump(fair_blocked, open(str('Data/Processed/fair_blocked' + name + '.p'),'wb'), protocol=4)
 
 if __name__ == '__main__':
-    for scenario in [1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21]:  # range(25, 31):
+    for scenario in [7, 8, 9]:  # range(25, 31):
         print(f'Scenario {scenario}')
         Heuristic = False
         SNRHeuristic = False
-        k = 0
+        k = 5
         User_Heuristic = False
         GreedyRate = False
         GreedyHeuristic = False
 
-        get_data(scenario, Heuristic, SNRheuristic, k, User_Heuristic, GreedyHeuristic, GreedyRate)
+        get_data(scenario, Heuristic, SNRHeuristic, k, User_Heuristic, GreedyHeuristic, GreedyRate)

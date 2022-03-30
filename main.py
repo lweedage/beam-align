@@ -18,13 +18,15 @@ for number_of_users in [100, 300, 500, 750, 1000]:
 
     n_bins = 50
     plt.hist(capacity_per_user, n_bins, density=True, histtype='step',
-                               cumulative=True, label = f'{number_of_users} users')
+             cumulative=True, label=f'{number_of_users} users')
 plt.legend()
 plt.xlabel('Capacity per user (Mbps)')
 plt.ylabel('CDF')
-plt.show()
+plt.savefig('test.png', dpi=300)
+# plt.show()
+print(' blub')
 
-name = str(
-    'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(
-        users_per_beam))
-optimal = pickle.dump(opt_x, open(str('Data/assignment' + name + '.p'), 'wb'))
+# name = str(
+#     'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(
+#         users_per_beam))
+# optimal = pickle.dump(opt_x, open(str('Data/assignment' + name + '.p'), 'wb'))

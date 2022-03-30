@@ -173,7 +173,7 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
         pickle.dump(channel_capacity_real_per_user, open(str('Data/blocked_capacity_per_user' + name + '.p'),'wb'), protocol=4)
 
 if __name__ == '__main__':
-    for scenario in [22]: #range(1, 24):
+    for scenario in [7, 8, 9]: #range(1, 24):
         beamwidth_deg, users_per_beam, Penalty, Clustered = find_scenario(scenario)
         Heuristic = False
         SNRHeuristic = False

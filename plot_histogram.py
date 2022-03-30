@@ -16,32 +16,49 @@ mis = dict()
 dis = dict()
 deg = dict()
 
-for number_of_users in user:
+mis_user = dict()
+mis_bs = dict()
 
-    print(number_of_users)
+for number_of_users in user:
     iteration_min = 0
     iteration_max = iterations[number_of_users]
 
     Heuristic = False
+    SNRHeuristic = False
+    User_Heuristic = False
+    GreedyRate = False
+    GreedyHeuristic = False
 
-    start = time.time()
+
+    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
+        np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(users_per_beam))
+
     if Heuristic:
-        name = str(
-            'beamwidth_heuristic' + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
-                np.degrees(beamwidth_b)))
-    else:
-        name = str(
-            'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
-                M) + 's=' + str(users_per_beam))
+        if User_Heuristic:
+            name = str('beamwidth_user_heuristic' + name)
+        else:
+            name = str('beamwidth_heuristic' + name)
 
-    beamwidths = [np.radians(5)] #, np.radians(10), np.radians(15)]
+    elif SNRHeuristic:
+        name = str('SNR_k=' + str(k) + name)
+
+    elif GreedyRate:
+        name = str(name + 'GreedyRate')
+    elif GreedyHeuristic:
+        name = str(name + 'GreedyHeuristic')
+
+    if Clustered:
+        name = str(name + '_clustered')
 
 
 
     misalignment_user = pickle.load(open(str('Data/grid_misalignment_user' + name + '.p'), 'rb'))
-    # misalignment_bs = pickle.load(open(str('Data/grid_misalignment_bs' + name + '.p'), 'rb'))
+    misalignment_bs = pickle.load(open(str('Data/grid_misalignment_bs' + name + '.p'), 'rb'))
     misalignment_mc = pickle.load(open(str('Data/grid_misalignment_mc' + name + '.p'), 'rb'))
     misalignment_sc = pickle.load(open(str('Data/grid_misalignment_sc' + name + '.p'), 'rb'))
+
+    mis_bs[number_of_users] = np.std(misalignment_bs) * 2
+
 
     # distances = pickle.load(open(str('Data/distances' + name + '.p'), 'rb'))
     # distances_mc = pickle.load(open(str('Data/distances_mc' + name + '.p'), 'rb'))
@@ -60,8 +77,8 @@ for number_of_users in user:
         name = str('heuristic_' + name)
 
     fig, ax = plt.subplots()
-    data1 = np.degrees(misalignment_sc)
-    data2 = np.degrees(misalignment_mc)
+    data1 = misalignment_sc
+    data2 = misalignment_mc
     plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
              alpha=0.3, label='single connections')
     plt.hist(data2, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
@@ -72,14 +89,17 @@ for number_of_users in user:
     # plt.show()
 
     fig, ax = plt.subplots()
-    data1 = np.degrees(misalignment_user)
+    data1 = misalignment_user
     (n, bins, patches) = plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
              alpha=0.3)
     plt.xlabel('Misalignment in degrees')
     plt.savefig(str('Figures/' + name + '_user_misalignment.png'))
     # plt.show()
+    mis_user[number_of_users] = np.std(data1) * 2
+    # print(np.std(data1) * 2)
 
-    print(np.std(data1) * 2)
+print(f'misalignment_user={mis_user}')
+print(f'misalignment={mis_bs}')
 
 
     # fig, ax = plt.subplots()
@@ -112,9 +132,6 @@ for number_of_users in user:
     # plt.legend()
     # plt.savefig(str('Figures/' + name + '_degrees_scatter.png'))
     # plt.show()
-
-# print('Misalignment || beam=', beamwidth_deg, ' M=', M, ' s = ', users_per_beam, ':', mis)
-# print('Disconnected || beam=', beamwidth_deg, ' M=', M, ' s = ', users_per_beam, ':', dis)
 
 
 # degrees = {i: [] for i in beamwidths}
