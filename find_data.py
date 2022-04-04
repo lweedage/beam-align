@@ -56,7 +56,9 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
         bar.update(iteration)
         np.random.seed(iteration)
 
-        x_user, y_user = xs[iteration], ys[iteration] #f.find_coordinates(number_of_users)
+        # x_user, y_user = f.find_coordinates(number_of_users)
+        x_user, y_user = xs[iteration], ys[iteration]
+
         opt_x = optimal[iteration]
         share = shares[iteration]
         links_per_user = sum(np.transpose(opt_x))

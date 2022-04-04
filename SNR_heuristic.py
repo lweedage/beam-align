@@ -27,7 +27,7 @@ def find_closest_snr(user, x_user, y_user):
 
 # user = int(input('Number of users?'))
 for number_of_users in [100, 300, 500, 750, 1000]:
-    for k in [1, 5]:
+    for k in [1, 2, 3, 4, 5]:
         optimal = []
         xs = []
         ys = []
@@ -37,10 +37,10 @@ for number_of_users in [100, 300, 500, 750, 1000]:
 
         iteration_min, iteration_max = 0, iterations[number_of_users]
 
-        name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
+        name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
             M) + 's=' + str(users_per_beam) + '_SNRheuristick=' + str(k))
 
-        if os.path.exists(str('Data/assignment' + name + '.p')):
+        if os.path.exists(str('Data/assignment' + name + '.p')) and 3 == 2:
             optimal = pickle.load(open(str('Data/assignment' + name + '.p'), 'rb'))
             shares = pickle.load(open(str('Data/shares' + name + '.p'), 'rb'))
             xs = pickle.load(open(str('Data/xs' + name + '.p'), 'rb'))
@@ -71,17 +71,17 @@ for number_of_users in [100, 300, 500, 750, 1000]:
                             geo = f.find_geo(bs_coords, user_coords)
                             beam_number = f.find_beam_number(geo, beamwidth_b)
                             if occupied_beams[b, beam_number] < users_per_beam:
-                                opt_x[u, bs] = 1
-                                occupied_beams[bs, beam_number] += 1
+                                opt_x[u, b] = 1
+                                occupied_beams[b, beam_number] += 1
+                                number_of_links += 1
 
                 share = np.zeros((number_of_users, number_of_bs))
                 for user in range(number_of_users):
                     user_coords = f.user_coords(user, x_user, y_user)
                     for bs in range(number_of_bs):
-                        bs_coords = f.bs_coords(bs)
-                        share[user, bs] = occupied_beams[bs, f.find_beam_number(f.find_geo(bs_coords, user_coords),
-                                                                        beamwidth_b)] / users_per_beam
-
+                        if opt_x[user, bs] == 1:
+                            bs_coords = f.bs_coords(bs)
+                            share[user, bs] = users_per_beam / occupied_beams[bs, f.find_beam_number(f.find_geo(bs_coords, user_coords), beamwidth_b)]
                 links_per_user = sum(np.transpose(opt_x))
 
 

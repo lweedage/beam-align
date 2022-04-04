@@ -16,8 +16,7 @@ def from_data(name):
     else:
         return None
 
-for number_of_users in [100, 300, 500, 750, 1000]:
-
+for number_of_users in [1000]:
     iteration_min = 0
     iteration_max = iterations[number_of_users]
 
@@ -32,7 +31,7 @@ for number_of_users in [100, 300, 500, 750, 1000]:
     ys = from_data(str('Data/ys' + name + '.p'))
     user_capacities = from_data(str('Data/capacity_per_user' + name + '.p'))
 
-    if optimal == None:
+    if optimal == None or 3 == 3:
         optimal = []
         xs, ys = [], []
         shares = []

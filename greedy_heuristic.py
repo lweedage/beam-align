@@ -35,10 +35,10 @@ for number_of_users in [100, 300, 500, 750, 1000]:
 
     iteration_min, iteration_max = 0, iterations[number_of_users]
     if GreedyRate:
-        name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
+        name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
         M) + 's=' + str(users_per_beam) + '_GreedyRate')
     elif GreedyHeuristic:
-        name = str('users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
+        name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
                 M) + 's=' + str(users_per_beam) + '_GreedyHeuristic')
 
 

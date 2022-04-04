@@ -311,20 +311,19 @@ def find_snr(user, bs, x_user, y_user, Fading = False):
     path_loss = find_path_loss(coords_i, coords_j, Fading)
     return (transmission_power * gain_user * gain_bs / path_loss ) / (noise)
 
-def plot_BSs(x_user, y_user, opt_x):
-    fig, ax = plt.subplots()
+def plot_BSs(x_user, y_user, opt_x, s = 1):
     for i in range(len(x_user)):
         for j in range(len(x_bs)):
-            if opt_x[i,j] == 1:
+            if opt_x[i,j] >= 0.5:
                 user = (x_user[i], y_user[i])
                 bs = (x_bs[j], y_bs[j])
                 user, bs, user2, bs2 = plot_modified_coords(user, bs)
 
                 if user != user2 or bs != bs2:
-                    plt.plot([user2[0], bs2[0]], [user2[1], bs2[1]], '--', color = colors[j], linewidth = 0.5)
-                    plt.plot([user[0], bs[0]], [user[1], bs[1]], '--', color=colors[j], linewidth =0.5)
+                    plt.plot([user2[0], bs2[0]], [user2[1], bs2[1]], '--', color = colors[j], linewidth = opt_x[i,j]/10)
+                    plt.plot([user[0], bs[0]], [user[1], bs[1]], '--', color=colors[j], linewidth =opt_x[i,j]/10)
                 else:
-                    plt.plot([user[0], bs[0]], [user[1], bs[1]], color=colors[j], linewidth = 0.5)
+                    plt.plot([user[0], bs[0]], [user[1], bs[1]], color=colors[j], linewidth = opt_x[i,j]/10)
 
     plt.scatter(x_user, y_user, marker = '.', color = 'k', s = 1)
 
@@ -332,7 +331,13 @@ def plot_BSs(x_user, y_user, opt_x):
     for b in range(len(x_bs)):
         plt.text(x_bs[b] + 2, y_bs[b] - 3, b, fontsize = 9)
 
+    # for u in range(len(x_user)):
+    #     plt.text(x_user[u] + 2, y_user[u] - 3, u, fontsize = 2)
+
     bound = 0.1 * xDelta
     plt.xlim((xmin - bound, xmax + bound))
     plt.ylim((ymin - bound, ymax + bound))
+
+    plt.savefig(f'BSs{s}.png', dpi=300)
+
     plt.show()

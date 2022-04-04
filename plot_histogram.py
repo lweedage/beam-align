@@ -29,6 +29,7 @@ for number_of_users in user:
     GreedyRate = False
     GreedyHeuristic = False
 
+    k = 0
 
     name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
         np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(users_per_beam))
@@ -85,7 +86,7 @@ for number_of_users in user:
              alpha=0.3, label='multiple connections')
     plt.xlabel('Misalignment in degrees')
     plt.legend()
-    plt.savefig(str('Figures/' + name + '_misalignmentmc.png'))
+    plt.savefig(str('Figures/' + name + '_misalignmentmc.png'), dpi = 300)
     # plt.show()
 
     fig, ax = plt.subplots()
@@ -93,7 +94,7 @@ for number_of_users in user:
     (n, bins, patches) = plt.hist(data1, density=True, bins=np.arange(-np.degrees(beamwidth_b / 2), np.degrees(beamwidth_b / 2) + 0.1, 0.1),
              alpha=0.3)
     plt.xlabel('Misalignment in degrees')
-    plt.savefig(str('Figures/' + name + '_user_misalignment.png'))
+    plt.savefig(str('Figures/' + name + '_user_misalignment.png'), dpi = 300)
     # plt.show()
     mis_user[number_of_users] = np.std(data1) * 2
     # print(np.std(data1) * 2)

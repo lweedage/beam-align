@@ -20,7 +20,7 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
 
 
 iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
-# iterations = {50: 1, 100: 1250, 300: 417, 500: 250, 750: 167, 1000: 125}
+iterations = {50: 1, 100: 1000, 300: 334, 500: 200, 750: 133, 1000: 100}
 # iterations = {50: 1, 100: 100, 300: 100, 500: 100, 750: 100, 1000: 100}
 
 Torus = True
@@ -38,7 +38,6 @@ yDelta = ymax - ymin
 beamwidth_u = math.radians(5)
 W = 1  # bandwidth
 
-transmission_power = 10 ** 3.0  # 30 dB
 noise_figure = 7.8
 noise_power_db = -174 + 10 * math.log10(W * 10 ** 9) + noise_figure
 noise = 10 ** (noise_power_db / 10)
@@ -55,25 +54,27 @@ number_of_bs = len(x_bs)
 
 
 def find_scenario(scenario):
-    if scenario in [1, 4, 7, 10, 13, 16, 19, 22, 25, 28]:
+    if scenario in [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31]:
         beamwidth_deg = 5
-    elif scenario in [2, 5, 8, 11, 14, 17, 20, 23, 26, 29]:
+    elif scenario in [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32]:
         beamwidth_deg = 10
     else:
         beamwidth_deg = 15
 
     if scenario in [1, 2, 3, 4, 5, 6]:
         users_per_beam = 1
-    elif scenario in [7, 8, 9, 10, 11, 12, 25, 26, 27, 28, 29, 30]:
+    elif scenario in [7, 8, 9, 10, 11, 12]:
         users_per_beam = 2
     elif scenario in [13, 14, 15, 16, 17, 18]:
         users_per_beam = 5
-    elif scenario in [19, 20, 21, 22, 23, 24]:
+    elif scenario in [19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]:
         users_per_beam = 10
+    elif scenario in [31, 32, 33]:
+        users_per_beam = 1000
     else:
         users_per_beam = False
 
-    if scenario in [1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21, 25, 26, 27]:
+    if scenario in [1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21, 25, 26, 27, 31, 32, 33]:
         Penalty = True
     else:
         Penalty = False
@@ -95,7 +96,10 @@ def fairness(x):
 def get_data(scenario, Heuristic = False, SNR_heuristic = False, k = 0, User_Heuristic = False, GreedyHeuristic = False, GreedyRate = False):
     print('Getting data...')
     beamwidth_deg, users_per_beam, Penalty, Clustered = find_scenario(scenario)
+    users_per_beam = 3
     beamwidth_b = math.radians(int(beamwidth_deg))
+
+    transmission_power = 10 ** 2.0 /(360/beamwidth_deg) # 20 dB
 
     if Penalty:
         M = 100  # penalty on having disconnected users
@@ -190,11 +194,11 @@ def get_data(scenario, Heuristic = False, SNR_heuristic = False, k = 0, User_Heu
     pickle.dump(fair_blocked, open(str('Data/Processed/fair_blocked' + name + '.p'),'wb'), protocol=4)
 
 if __name__ == '__main__':
-    for scenario in [7, 8, 9]:  # range(25, 31):
+    for scenario in [1, 2, 3, 7, 8, 9, 19, 20, 21, 25, 26, 27]:  # range(25, 31):
         print(f'Scenario {scenario}')
-        Heuristic = False
+        k = 0
+        Heuristic = True
         SNRHeuristic = False
-        k = 5
         User_Heuristic = False
         GreedyRate = False
         GreedyHeuristic = False
