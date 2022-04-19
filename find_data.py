@@ -7,6 +7,8 @@ from parameters import *
 import new_optimization
 import new_optimization
 import functions as f
+
+
 import time
 import pickle
 import os
@@ -17,7 +19,7 @@ Blocked = True
 Plotting = True
 
 
-def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeuristic = False, Clustered = False, User_Heuristic = False, GreedyHeuristic = False, GreedyRate = False):
+def main(optimal, shares, xs, ys, capacities, satisfaction, Heuristic=False, k = 1, SNRHeuristic = False, Clustered = False, User_Heuristic = False, GreedyHeuristic = False, GreedyRate = False):
     if Plotting:
         delta = 1
         x_max, y_max = int(np.ceil(xmax * delta)), int(np.ceil(ymax * delta))
@@ -127,7 +129,7 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
 
 
     bar.finish()
-    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(users_per_beam))
+    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(M) + 's=' + str(users_per_beam))
 
     if Heuristic:
         if User_Heuristic:
@@ -145,7 +147,6 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
 
     if Clustered:
         name = str(name + '_clustered')
-
 
 
     if Plotting:
@@ -168,6 +169,7 @@ def main(optimal, shares, xs, ys, capacities, Heuristic=False, k = 1, SNRHeurist
         pickle.dump(channel_capacity, open(str('Data/channel_capacity' + name + '.p'),'wb'), protocol=4)
         pickle.dump(cap_per_user, open(str('Data/channel_capacity_per_user' + name + '.p'),'wb'), protocol=4)
         pickle.dump(disconnected, open(str('Data/disconnected_users' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'),'wb'), protocol=4)
 
     if Blocked:
         pickle.dump(disconnected_blocked, open(str('Data/disconnected_blocked_users' + name + '.p'),'wb'), protocol=4)
@@ -191,7 +193,7 @@ if __name__ == '__main__':
                 k = 1
             iteration_max = iterations[number_of_users]
             name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
-                np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(users_per_beam))
+                beamwidth_b) + 'M=' + str(M) + 's=' + str(users_per_beam))
 
             if Heuristic:
                 if User_Heuristic:
@@ -215,5 +217,6 @@ if __name__ == '__main__':
             xs = pickle.load(open(str('Data/xs' + name + '.p'),'rb'))
             ys = pickle.load(open(str('Data/ys' + name + '.p'),'rb'))
             capacities = pickle.load(open(str('Data/capacity_per_user' + name + '.p'),'rb'))
+            satisfaction = pickle.load(open(str('Data/satisfaction' + name + '.p'),'rb'))
 
-            main(optimal, shares, xs, ys, capacities, Heuristic, k, SNRHeuristic, Clustered, User_Heuristic, GreedyHeuristic, GreedyRate)
+            main(optimal, shares, xs, ys, capacities, satisfaction, Heuristic, k, SNRHeuristic, Clustered, User_Heuristic, GreedyHeuristic, GreedyRate)

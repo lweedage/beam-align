@@ -5,6 +5,8 @@ import find_data
 import progressbar
 import os
 import pickle
+
+
 # k = int(input('k ='))
 
 
@@ -14,10 +16,12 @@ def find_sorted_users(bs, x_user, y_user):
     y = np.minimum((y_user - bs[1]) % yDelta, (bs[1] - y_user) % yDelta)
     return np.argsort(x ** 2 + y ** 2)
 
+
 def find_closest(user):
     x = np.minimum((x_bs - user[0]) % xDelta, (user[0] - x_bs) % xDelta)
     y = np.minimum((y_bs - user[1]) % yDelta, (user[1] - y_bs) % yDelta)
-    return np.argsort(x**2 + y**2)[:k]
+    return np.argsort(x ** 2 + y ** 2)[:k]
+
 
 def find_closest_snr(user, x_user, y_user):
     snr = []
@@ -25,19 +29,21 @@ def find_closest_snr(user, x_user, y_user):
         snr.append(-f.find_snr(user, bs, x_user, y_user))
     return np.argsort(snr)
 
+
 # user = int(input('Number of users?'))
 for number_of_users in [100, 300, 500, 750, 1000]:
     for k in [1, 2, 3, 4, 5]:
         optimal = []
         xs = []
         ys = []
-        disconnected = []
+        satisfaction = []
         capacities = []
         shares = []
 
         iteration_min, iteration_max = 0, iterations[number_of_users]
 
-        name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(
+        name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
+            np.degrees(beamwidth_b)) + 'M=' + str(
             M) + 's=' + str(users_per_beam) + '_SNRheuristick=' + str(k))
 
         if os.path.exists(str('Data/assignment' + name + '.p')) and 3 == 2:
@@ -81,24 +87,31 @@ for number_of_users in [100, 300, 500, 750, 1000]:
                     for bs in range(number_of_bs):
                         if opt_x[user, bs] == 1:
                             bs_coords = f.bs_coords(bs)
-                            share[user, bs] = users_per_beam / occupied_beams[bs, f.find_beam_number(f.find_geo(bs_coords, user_coords), beamwidth_b)]
+                            share[user, bs] = users_per_beam / occupied_beams[
+                                bs, f.find_beam_number(f.find_geo(bs_coords, user_coords), beamwidth_b)]
                 links_per_user = sum(np.transpose(opt_x))
 
-
-
                 capacity = f.find_capacity_per_user(share, x_user, y_user)
+
+                satisfied = np.ones(number_of_users)
+
+                for u in range(number_of_users):
+                    if capacity[u] < user_rate:
+                        satisfied[u] = capacity[u] / user_rate
 
                 optimal.append(opt_x)
                 xs.append(x_user)
                 ys.append(y_user)
                 capacities.append(capacity)
                 shares.append(share)
+                satisfaction.append(satisfied)
+
             bar.finish()
 
-            pickle.dump(optimal, open(str('Data/assignment' + name  + '.p'),'wb'), protocol=4)
-            pickle.dump(shares, open(str('Data/shares' + name  + '.p'),'wb'), protocol=4)
-            pickle.dump(xs, open(str('Data/xs' + name + '.p'),'wb'), protocol=4)
-            pickle.dump(ys, open(str('Data/ys' + name + '.p'),'wb'), protocol=4)
-            pickle.dump(capacities, open(str('Data/capacity_per_user' + name + '.p'),'wb'), protocol=4)
+            pickle.dump(optimal, open(str('Data/assignment' + name + '.p'), 'wb'), protocol=4)
+            pickle.dump(shares, open(str('Data/shares' + name + '.p'), 'wb'), protocol=4)
+            pickle.dump(xs, open(str('Data/xs' + name + '.p'), 'wb'), protocol=4)
+            pickle.dump(ys, open(str('Data/ys' + name + '.p'), 'wb'), protocol=4)
+            pickle.dump(capacities, open(str('Data/capacity_per_user' + name + '.p'), 'wb'), protocol=4)
 
-        find_data.main(optimal, shares,  xs, ys, capacities, SNRHeuristic = True, k = k)
+        find_data.main(optimal, shares, xs, ys, capacities, satisfaction, SNRHeuristic=True, k=k)

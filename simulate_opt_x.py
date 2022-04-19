@@ -16,7 +16,7 @@ def from_data(name):
     else:
         return None
 
-for number_of_users in [1000]:
+for number_of_users in [100, 300, 500, 750, 1000]:
     iteration_min = 0
     iteration_max = iterations[number_of_users]
 
@@ -30,6 +30,7 @@ for number_of_users in [1000]:
     xs = from_data(str('Data/xs' + name + '.p'))
     ys = from_data(str('Data/ys' + name + '.p'))
     user_capacities = from_data(str('Data/capacity_per_user' + name + '.p'))
+    satisfaction = from_data(str('Data/satisfaction' + name + '.p'))
 
     if optimal == None or 3 == 3:
         optimal = []
@@ -37,7 +38,7 @@ for number_of_users in [1000]:
         shares = []
         capacities = []
         user_capacities = []
-
+        satisfaction = []
 
         start = time.time()
         bar = progressbar.ProgressBar(maxval=iteration_max, widgets=[progressbar.Bar('=', f'Scenario: {scenario}, #users: {number_of_users} [', ']'), ' ', progressbar.Percentage(), ' ', progressbar.ETA()])
@@ -46,16 +47,16 @@ for number_of_users in [1000]:
             bar.update(iteration)
             np.random.seed(iteration)
             x_user, y_user = f.find_coordinates(number_of_users, Clustered = True)
-            opt_x, s, user_capacity = new_optimization.optimization(x_user, y_user)
+            opt_x, s, user_capacity, satisfied = new_optimization.optimization(x_user, y_user)
             # print('one iteration takes', time.time() - start, 'seconds')
             # print('Number of users:', number_of_users, 'beamwidth is', np.degrees(beamwidth_b), 'M =', M, 'users per beam =', users_per_beam)
             start = time.time()
-
             optimal.append(opt_x)
             shares.append(s)
             xs.append(x_user)
             ys.append(y_user)
             user_capacities.append(user_capacity)
+            satisfaction.append(satisfied)
         bar.finish()
 
 
@@ -64,5 +65,6 @@ for number_of_users in [1000]:
         pickle.dump(xs, open(str('Data/xs' + name + '.p'),'wb'), protocol=4)
         pickle.dump(ys, open(str('Data/ys' + name + '.p'),'wb'), protocol=4)
         pickle.dump(user_capacities, open(str('Data/capacity_per_user' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'),'wb'), protocol=4)
 
-    find_data.main(optimal, shares, xs, ys, user_capacities, Clustered = Clustered)
+    find_data.main(optimal, shares, xs, ys, user_capacities, satisfaction, Clustered = Clustered)

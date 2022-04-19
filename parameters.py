@@ -1,9 +1,13 @@
 import math
 from cycler import cycler
 import matplotlib
+import numpy as np
 
-matplotlib.rcParams['axes.prop_cycle'] = cycler('color', ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen', 'OrangeRed'])
-colors =  ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen', 'OrangeRed', 'grey'] * 100
+matplotlib.rcParams['axes.prop_cycle'] = cycler('color',
+                                                ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen',
+                                                 'OrangeRed'])
+colors = ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen', 'OrangeRed', 'grey'] * 100
+
 
 def find_scenario(scenario):
     if scenario in [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31]:
@@ -22,7 +26,7 @@ def find_scenario(scenario):
     elif scenario in [19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]:
         users_per_beam = 10
     elif scenario in [31, 32, 33]:
-        users_per_beam = 1000
+        users_per_beam = 100
     else:
         users_per_beam = False
 
@@ -38,35 +42,36 @@ def find_scenario(scenario):
 
     return beamwidth_deg, users_per_beam, Penalty, Clustered
 
+
 scenario = int(input('Scenario?'))
 # scenario = 1
 beamwidth_deg, users_per_beam, Penalty, Clustered = find_scenario(scenario)
 
 pi = math.pi
 bs_of_interest = 10
-radius = 50  # for triangular grid
+radius = 100  # for triangular grid
 
-xmin, xmax = 0, 200
+xmin, xmax = 0, 400
 ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 3
 
 xDelta = xmax - xmin
 yDelta = ymax - ymin
 
-beamwidth_u = math.radians(5)
+beamwidth_u = 5
 
-beamwidth_b = math.radians(int(beamwidth_deg))
+beamwidth_b = beamwidth_deg
 
-W = 400 # in MHz  # bandwidth
+W = 200  # in MHz  # bandwidth
 
 if Penalty:
-    M = 100  # penalty on having disconnected users
+    M = 10000  # penalty on having disconnected users
 else:
     M = 0
 
 # users_per_beam = 2  # amount of users in a beam
 # users_per_beam = int(input("Users per beam?"))
 
-transmission_power = 10 ** 2.0 / (360 / beamwidth_deg)  # 20 dB
+transmission_power = (10 ** 2.0) / (360 / beamwidth_deg)  # 30 dB
 noise_figure = 7.8
 noise_power_db = -174 + 10 * math.log10(W * 10 ** 9) + noise_figure
 noise = 10 ** (noise_power_db / 10)
@@ -78,8 +83,8 @@ propagation_velocity = 3e8
 
 SINR_min = 10 ** (5 / 10)
 
-directions_bs = range(int(2 * pi / beamwidth_b))
-directions_u = range(int(2 * pi / beamwidth_u))
+directions_bs = range(int(360 / beamwidth_b))
+directions_u = range(int(360 / beamwidth_u))
 
 
 def initialise_graph_triangular(radius, xDelta, yDelta):
@@ -97,30 +102,28 @@ x_bs, y_bs = initialise_graph_triangular(radius, xDelta, yDelta)
 number_of_bs = len(x_bs)
 
 # iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
-iterations = {50: 1, 100: 1000, 300: 334, 500: 200, 750: 133, 1000: 100}
-# iterations = {50: 1, 100: 2, 300: 100, 500: 100, 750: 100, 1000: 100}
-# iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 5000, 1000: 500}
+# iterations = {10: 1, 100: 1000, 300: 334, 500: 200, 750: 133, 1000: 100}
+iterations = {10: 1, 100: 500, 300: 167, 500: 100, 750: 67, 1000: 50}
 
-if beamwidth_b == math.radians(5):
+if beamwidth_b == 5:
     misalignment_user = {100: 1.9682613988252613, 300: 1.6317848174368959, 500: 1.4866377613013804,
                          750: 1.3799530202862103, 1000: 1.323930882575973}
-    misalignment = {100: 1.9682901318737915, 300: 1.6317848174368959, 500: 1.4866377613013806, 750: 1.37995302028621,
-                    1000: 1.3239308825759728}
-
-
-elif beamwidth_b == math.radians(10):
+    misalignment = {100: 1.7978591490918066, 300: 1.5154215815359937, 500: 1.4241427700486784, 750: 1.4186055061944516,
+                    1000: 1.464193454288574}
+elif beamwidth_b == 10:
     misalignment_user = {100: 2.2548903653685985, 300: 1.89158710623207, 500: 1.7428086785910102,
                          750: 1.6359443972910936, 1000: 1.580973055880226}
-    misalignment = {100: 4.451325451195153, 300: 3.4969666028903545, 500: 3.1416792050136673, 750: 2.9252529292993095,
-                    1000: 2.828113847807499}
-
-elif beamwidth_b == math.radians(15):
+    misalignment = {100: 4.187376059234487, 300: 3.8289200695591163, 500: 4.216834770614373, 750: 3.891268871542944,
+                    1000: 3.761022356923003}
+elif beamwidth_b == 15:
     misalignment_user = {100: 2.0109692232489222, 300: 1.7373935226648738, 500: 1.6415092020650677,
                          750: 1.56259471487693, 1000: 1.5111786912896545}
-    misalignment = {100: 6.5556635104205, 300: 5.669497851627616, 500: 5.27959005241458, 750: 5.0055696949132304,
-                    1000: 4.827306485617996}
+    misalignment = {100: 6.504912519832856, 300: 6.445718985322907, 500: 6.17355550220003, 750: 5.797139628366702,
+                    1000: 5.6074995569936625}
 
 RateRequirement = True
-user_rate = 300 # mbps
+user_rate = 100  # mbps
 
 Torus = True
+
+fading = np.random.normal(0, 4, (1000, number_of_bs))

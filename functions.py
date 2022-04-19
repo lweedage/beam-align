@@ -23,6 +23,7 @@ def find_distance_list(user, xbs, ybs):
     return np.sqrt(x ** 2 + y ** 2)
 
 def find_beam_number(radians, beamwidth):
+    beamwidth = np.radians(beamwidth)
     angles = [beamwidth * i for i in range(int(-pi/beamwidth), int(pi/beamwidth))]
     min = math.inf
     for i in range(int(2*pi/beamwidth)):
@@ -32,23 +33,25 @@ def find_beam_number(radians, beamwidth):
     return preferred_angle
 
 def find_gain(bore_1, bore_2, geo_1, geo_2, beamwidth_ml):
+    #beamwidth in degrees
     bore = find_bore(bore_1, bore_2, beamwidth_ml)
     geo = find_geo(geo_1, geo_2)
     alpha = math.degrees(abs(bore-geo))
     if alpha > 180:
         alpha = alpha - 360
-    beamwidth_ml = math.degrees(beamwidth_ml)
     w = beamwidth_ml / 2.58
     G0 = 20 * math.log10(1.62 / math.sin(math.radians(w / 2)))
 
     if 0 <= abs(alpha) <= beamwidth_ml / 2:
         return 10 ** ((G0 - 3.01 * (2 * alpha / w) ** 2)/10)
     else:
-        return 10**((-0.4111 * math.log(math.degrees(w)) - 10.579)/10)
+        return 10**((-0.4111 * math.log(w) - 10.579)/10)
 
 def find_bore(coord_1, coord_2, beamwidth):
+    # beamwidth in degrees
     radians = find_geo(coord_1, coord_2)
     angle = find_beam(radians, beamwidth)
+    # return radians
     return angle
 
 def find_geo(coord_1, coord_2):
@@ -108,6 +111,7 @@ def plot_modified_coords(coord_1, coord_2):
     return (x_1, y_1), (x_2, y_2), (x_1e, y_1e), (x_2e, y_2e),
 
 def find_beam(radians, beamwidth):
+    beamwidth = np.radians(beamwidth)
     angles = [beamwidth * i for i in range(int(-pi/beamwidth), int(pi/beamwidth))]
     min = math.inf
     for angle in angles:
@@ -119,14 +123,14 @@ def find_beam(radians, beamwidth):
 def find_misalignment(coord_1, coord_2, beamwidth):
     return np.degrees(find_geo(coord_1, coord_2) - find_bore(coord_1, coord_2, beamwidth))
 
-def find_path_loss(user, bs, Blocked = None):
-    r = find_distance_3D(user, bs)
+def find_path_loss(user, bs, user_coords, bs_coords, Blocked = None):
+    r = find_distance_3D(user_coords, bs_coords)
     breakpoint_distance = 4 * (BS_height - 1) * (user_height - 1) * centre_frequency / propagation_velocity
     if Blocked:
         SF = np.random.normal(0, 7.8)
-        PL_nlos = find_path_loss_nlos(user, bs, SF)
+        PL_nlos = find_path_loss_nlos(user_coords, bs_coords, SF)
     else:
-        SF = np.random.normal(0, 4)
+        SF = fading[user, bs]
 
     if r <= breakpoint_distance:
         path_loss_db = 32.4 + 21 * math.log10(r) + 20 * math.log10(centre_frequency / 1e9) + SF
@@ -299,19 +303,20 @@ def find_capacity_per_user(opt_x, x_user, y_user, blocked_connections = None):
                 coords_j = bs_coords(bs)
                 gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
                 gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
-                path_loss = find_path_loss(coords_i, coords_j, blocked_connections[u,bs])
+                path_loss = find_path_loss(u, bs, coords_i, coords_j, blocked_connections[u,bs])
                 capacity[u] += W / users_per_beam * opt_x[u,bs] * math.log2(1 + transmission_power * gain_bs * gain_user / (path_loss * noise))
     return capacity
 
-def find_snr(user, bs, x_user, y_user, Fading = False):
+def find_snr(user, bs, x_user, y_user, blocked = None):
     coords_i = user_coords(user, x_user, y_user)
     coords_j = bs_coords(bs)
     gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
     gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
-    path_loss = find_path_loss(coords_i, coords_j, Fading)
+    path_loss = find_path_loss(user, bs, coords_i, coords_j, blocked)
     return (transmission_power * gain_user * gain_bs / path_loss ) / (noise)
 
 def plot_BSs(x_user, y_user, opt_x, s = 1):
+    division = users_per_beam
     for i in range(len(x_user)):
         for j in range(len(x_bs)):
             if opt_x[i,j] >= 0.5:
@@ -320,10 +325,10 @@ def plot_BSs(x_user, y_user, opt_x, s = 1):
                 user, bs, user2, bs2 = plot_modified_coords(user, bs)
 
                 if user != user2 or bs != bs2:
-                    plt.plot([user2[0], bs2[0]], [user2[1], bs2[1]], '--', color = colors[j], linewidth = opt_x[i,j]/10)
-                    plt.plot([user[0], bs[0]], [user[1], bs[1]], '--', color=colors[j], linewidth =opt_x[i,j]/10)
+                    plt.plot([user2[0], bs2[0]], [user2[1], bs2[1]], '--', color = colors[j], linewidth = opt_x[i,j]/division)
+                    plt.plot([user[0], bs[0]], [user[1], bs[1]], '--', color=colors[j], linewidth =opt_x[i,j]/division)
                 else:
-                    plt.plot([user[0], bs[0]], [user[1], bs[1]], color=colors[j], linewidth = opt_x[i,j]/10)
+                    plt.plot([user[0], bs[0]], [user[1], bs[1]], color=colors[j], linewidth = opt_x[i,j]/division)
 
     plt.scatter(x_user, y_user, marker = '.', color = 'k', s = 1)
 
@@ -331,8 +336,8 @@ def plot_BSs(x_user, y_user, opt_x, s = 1):
     for b in range(len(x_bs)):
         plt.text(x_bs[b] + 2, y_bs[b] - 3, b, fontsize = 9)
 
-    # for u in range(len(x_user)):
-    #     plt.text(x_user[u] + 2, y_user[u] - 3, u, fontsize = 2)
+    for u in range(len(x_user)):
+        plt.text(x_user[u] + 2, y_user[u], u, fontsize = 9)
 
     bound = 0.1 * xDelta
     plt.xlim((xmin - bound, xmax + bound))
@@ -341,3 +346,6 @@ def plot_BSs(x_user, y_user, opt_x, s = 1):
     plt.savefig(f'BSs{s}.png', dpi=300)
 
     plt.show()
+
+if __name__ == '__main__':
+    find_beam_number(0.1, 5)
