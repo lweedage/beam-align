@@ -92,7 +92,7 @@ for number_of_users in [100, 300, 500, 750, 1000]:
 
             capacities = f.find_capacity_per_user(share, x_user, y_user)
             satisfied = np.ones(number_of_users)
-
+            print(capacities)
             for u in range(number_of_users):
                 if capacities[u] < user_rate:
                     satisfied[u] = capacities[u]/user_rate

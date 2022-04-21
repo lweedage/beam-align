@@ -22,6 +22,7 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
 # iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
 # iterations = {50: 1, 100: 1000, 300: 334, 500: 200, 750: 133, 1000: 100}
 iterations = {10: 1, 100: 500, 300: 167, 500: 100, 750: 67, 1000: 50}
+iterations = {10: 1, 100: 10, 300: 10, 500: 10, 750: 10, 1000: 10}
 
 Torus = True
 
@@ -159,7 +160,6 @@ def get_data(scenario, Heuristic = False, SNR_heuristic = False, k = 0, User_Heu
         mis[number_of_users] = np.std(misalignment_bs) * 2
         # mis_user[number_of_users] = np.degrees(np.std(misalignment_user)*2)
         sat[number_of_users] = np.sum(satisfaction) / (len(satisfaction) * len(satisfaction[0]))
-        print(sat[number_of_users])
         cap[number_of_users] = np.sum(capacity)/len(capacity)
         cap_blocked[number_of_users] = np.sum(blocked_capacity)/len(blocked_capacity)
         sat_blocked[number_of_users] = np.sum(satisfaction)/len(satisfaction)
@@ -194,10 +194,10 @@ def get_data(scenario, Heuristic = False, SNR_heuristic = False, k = 0, User_Heu
     print(scenario, mis)
 
 if __name__ == '__main__':
-    for scenario in [1, 2, 3, 7, 8, 9, 13, 14, 15]: #, 7, 8, 9, 13, 14, 15, 19, 20, 21, 31, 32, 22, 23 ,24]:  # range(25, 31):
+    for scenario in [13, 14, 15]:
         print(f'Scenario {scenario}')
         for k in [0]: #[1, 2, 3, 4, 5]:
-            Heuristic = True
+            Heuristic = False
             SNRHeuristic = False
             User_Heuristic = False
             GreedyRate = False

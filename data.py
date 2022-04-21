@@ -10,6 +10,7 @@ markers = ['o', 's' , 'v' , '*', 'p', 'P', '1', '+']
 
 # iterations = {50: 1, 100: 1000, 300: 334, 500: 200, 750: 133, 1000: 100}
 iterations = {10: 1, 100: 500, 300: 167, 500: 100, 750: 67, 1000: 50}
+iterations = {10: 1, 100: 10, 300: 10, 500: 10, 750: 10, 1000: 10}
 
 users = [100, 300, 500, 750, 1000]
 M = 10000
@@ -17,7 +18,7 @@ users_per_beam = 10
 beamwidth_deg = 15
 s = 5
 
-Shares = True
+Shares = False
 
 if Shares:
     x1 = pickle.load(open(str('Data/Processed/cap' + str(beamwidth_deg) + str(M) + str(1) + '.p'), 'rb')).values()
@@ -193,7 +194,7 @@ x = [1, 2, 5, 10, 20]
 
 # ---------------------------------------- HEURISTICS ------------------------------------------------
 
-beamwidth_deg = 5
+beamwidth_deg = 10
 s = 5
 
 x = pickle.load(open(str('Data/Processed/cap' + str(beamwidth_deg) + str(M) + str(s) + '.p'), 'rb')).values()

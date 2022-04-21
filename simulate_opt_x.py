@@ -20,7 +20,7 @@ for number_of_users in [100, 300, 500, 750, 1000]:
     iteration_min = 0
     iteration_max = iterations[number_of_users]
 
-    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(np.degrees(beamwidth_b)) + 'M=' + str(M) + 's=' + str(users_per_beam))
+    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(M) + 's=' + str(users_per_beam))
 
     if Clustered:
         name = str(name + '_clustered')
@@ -66,5 +66,5 @@ for number_of_users in [100, 300, 500, 750, 1000]:
         pickle.dump(ys, open(str('Data/ys' + name + '.p'),'wb'), protocol=4)
         pickle.dump(user_capacities, open(str('Data/capacity_per_user' + name + '.p'),'wb'), protocol=4)
         pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'),'wb'), protocol=4)
-
+        print(name)
     find_data.main(optimal, shares, xs, ys, user_capacities, satisfaction, Clustered = Clustered)

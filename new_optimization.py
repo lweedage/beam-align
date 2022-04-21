@@ -17,6 +17,7 @@ def number_of_connections(channel_capacity):
     connections_per_user = sum(connections.transpose())
     return connections, connections_per_bs, connections_per_user
 
+
 def optimization(x_user, y_user):
     number_of_users = len(x_user)
     users = range(number_of_users)
@@ -65,10 +66,10 @@ def optimization(x_user, y_user):
         for i in users:
             for j in base_stations:
                 x_user[i, j] = m.addVar(vtype=GRB.BINARY, name=f'x_user{i}{j}')
-                x[i, j] = m.addVar(vtype=GRB.INTEGER, lb = 0, name=f'x#{i}#{j}')
+                x[i, j] = m.addVar(vtype=GRB.INTEGER, lb=0, name=f'x#{i}#{j}')
 
             C_user[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'C_user#{i}')
-            disconnected[i] = m.addVar(vtype=GRB.CONTINUOUS, lb = 0, ub = 1, name=f'Disconnected_user#{i}')
+            disconnected[i] = m.addVar(vtype=GRB.CONTINUOUS, lb=0, ub=1, name=f'Disconnected_user#{i}')
 
         m.update()
 
@@ -82,19 +83,22 @@ def optimization(x_user, y_user):
         # Only 1 BS/User per angular direction
         for i in users:
             for d in range(len(directions_u)):
-                m.addConstr(quicksum(x_user[i, j] for j in base_stations if user_beamnumber[i, j] == d) <= 1, name=f'angle_u#{i}#{d}')
+                m.addConstr(quicksum(x_user[i, j] for j in base_stations if user_beamnumber[i, j] == d) <= 1,
+                            name=f'angle_u#{i}#{d}')
 
         # the total shares per beam could never exceed the number of users per beam
         for j in base_stations:
             for d in directions_bs:
-                m.addConstr(quicksum(x[i, j] for i in users if bs_beamnumber[i,j] == d) <= users_per_beam, name = f'shares_per_beam#{j}#{d}')
+                m.addConstr(quicksum(x[i, j] for i in users if bs_beamnumber[i, j] == d) <= users_per_beam,
+                            name=f'shares_per_beam#{j}#{d}')
 
         # if a user has at least one share, the user is connected to that base station
         epsilon = 0.1
         for i in users:
             for j in base_stations:
-                m.addConstr(x[i,j] <= 1 - epsilon + (users_per_beam - 1 + epsilon) * x_user[i,j], name = f'lower_bound{i}{j}')
-                m.addConstr(x[i,j] >= x_user[i,j], name = f'upper_bound{i}{j}')
+                m.addConstr(x[i, j] <= 1 - epsilon + (users_per_beam - 1 + epsilon) * x_user[i, j],
+                            name=f'lower_bound{i}{j}')
+                m.addConstr(x[i, j] >= x_user[i, j], name=f'upper_bound{i}{j}')
 
         # Minimum SNR
         for i in users:
@@ -104,7 +108,7 @@ def optimization(x_user, y_user):
         # at least 1 connection:
         # for i in users:
         #     m.addConstr(quicksum(x_user[i, j] for j in base_stations) >= 1 - disconnected[i], name=f'1_con_user#{i}')
-            # m.addConstr(quicksum(x[i, j] for j in base_stations) >= 1, name=f'1_con_user#{i}')
+        # m.addConstr(quicksum(x[i, j] for j in base_stations) >= 1, name=f'1_con_user#{i}')
 
         # find channel capacity
         for i in users:
@@ -114,8 +118,7 @@ def optimization(x_user, y_user):
         # rate requirement
         if RateRequirement:
             for i in users:
-                m.addConstr(C_user[i] >= user_rate * (1-disconnected[i]), name = f'rate_req{i}')
-
+                m.addConstr(C_user[i] >= user_rate * (1 - disconnected[i]), name=f'rate_req{i}')
 
         # --------------------- OPTIMIZE MODEL -------------------------
         # m.computeIIS()
@@ -146,7 +149,7 @@ def optimization(x_user, y_user):
             satisfied[i] = 1 - disconnected[i].X
             # print(disconnected[i].X)
             for j in base_stations:
-                links[i,j] = x[i,j].X
+                links[i, j] = x[i, j].X
 
         # for j in base_stations:
         #     for d in directions_bs:
