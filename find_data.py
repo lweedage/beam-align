@@ -19,7 +19,7 @@ Blocked = True
 Plotting = True
 
 
-def main(optimal, shares, xs, ys, capacities, satisfaction, Heuristic=False, k = 1, SNRHeuristic = False, Clustered = False, User_Heuristic = False, GreedyHeuristic = False, GreedyRate = False):
+def main(optimal, shares, xs, ys, capacities, satisfaction, Heuristic=False, k = 1, SNRHeuristic = False, Clustered = False, User_Heuristic = False, GreedyHeuristic = False, GreedyRate = False, Iterative = False):
     if Plotting:
         delta = 1
         x_max, y_max = int(np.ceil(xmax * delta)), int(np.ceil(ymax * delta))
@@ -45,7 +45,7 @@ def main(optimal, shares, xs, ys, capacities, satisfaction, Heuristic=False, k =
     if Blocked:
         channel_capacity_real = []
         channel_capacity_real_per_user = []
-        disconnected_blocked = []
+        satisfaction_blocked = []
 
     number_of_users = len(xs[0])
 
@@ -125,18 +125,22 @@ def main(optimal, shares, xs, ys, capacities, satisfaction, Heuristic=False, k =
             channel_capacity_per_user = f.find_capacity_per_user(share, x_user, y_user, blocked_connections = blocked_connections)
             channel_capacity_real_per_user.append(channel_capacity_per_user)
             channel_capacity_real.append(sum(channel_capacity_per_user))
-            disconnected_blocked.append(discon_blocked)
-
+            satisfied = np.ones(number_of_users)
+            for u in range(number_of_users):
+                if channel_capacity_per_user[u] < user_rate:
+                    satisfied[u] = channel_capacity_per_user[u]/user_rate
+            satisfaction_blocked.append(satisfied)
 
     bar.finish()
-    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(M) + 's=' + str(users_per_beam))
+    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
 
     if Heuristic:
         if User_Heuristic:
             name = str('beamwidth_user_heuristic' + name)
         else:
             name = str('beamwidth_heuristic' + name)
-
+        if Iterative:
+            name = str(name + '_Iterative')
     elif SNRHeuristic:
         name = str('SNR_k=' + str(k) + name)
 
@@ -172,7 +176,7 @@ def main(optimal, shares, xs, ys, capacities, satisfaction, Heuristic=False, k =
         pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'),'wb'), protocol=4)
 
     if Blocked:
-        pickle.dump(disconnected_blocked, open(str('Data/disconnected_blocked_users' + name + '.p'),'wb'), protocol=4)
+        pickle.dump(satisfaction_blocked, open(str('Data/satisfaction_blocked' + name + '.p'),'wb'), protocol=4)
         pickle.dump(channel_capacity_real, open(str('Data/blocked_capacity' + name + '.p'),'wb'), protocol=4)
         pickle.dump(channel_capacity_real_per_user, open(str('Data/blocked_capacity_per_user' + name + '.p'),'wb'), protocol=4)
 
@@ -184,6 +188,7 @@ if __name__ == '__main__':
         User_Heuristic = False
         GreedyRate = False
         GreedyHeuristic = False
+        Iterative = True
 
         beamwidth_b = np.radians(beamwidth_deg)
         for number_of_users in [100, 300, 500, 750, 1000]:
@@ -192,14 +197,17 @@ if __name__ == '__main__':
             else:
                 k = 1
             iteration_max = iterations[number_of_users]
-            name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
-                beamwidth_b) + 'M=' + str(M) + 's=' + str(users_per_beam))
+            name = str(
+                str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
+                    M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
 
             if Heuristic:
                 if User_Heuristic:
                     name = str('beamwidth_user_heuristic' + name)
                 else:
                     name = str('beamwidth_heuristic' + name)
+                if Iterative:
+                    name = str(name + '_Iterative')
 
             elif SNRHeuristic:
                 name = str('SNR_k=' + str(k) + name)
@@ -219,4 +227,4 @@ if __name__ == '__main__':
             capacities = pickle.load(open(str('Data/capacity_per_user' + name + '.p'),'rb'))
             satisfaction = pickle.load(open(str('Data/satisfaction' + name + '.p'),'rb'))
 
-            main(optimal, shares, xs, ys, capacities, satisfaction, Heuristic, k, SNRHeuristic, Clustered, User_Heuristic, GreedyHeuristic, GreedyRate)
+            main(optimal, shares, xs, ys, capacities, satisfaction, Heuristic, k, SNRHeuristic, Clustered, User_Heuristic, GreedyHeuristic, GreedyRate, Iterative)

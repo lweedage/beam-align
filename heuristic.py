@@ -6,8 +6,10 @@ import pickle
 import progressbar
 import os
 import matplotlib.pyplot as plt
+import get_data
 
 User_Heuristic = False
+Iterative = False
 
 def find_highest_snr(bs, x_user, y_user):
     snr = []
@@ -51,15 +53,28 @@ def find_shares(opt_x, occupied_beams):
                     bs, f.find_beam_number(f.find_geo(bs_coords, user_coords), beamwidth_b)]
     return share
 
+def find_occupied_beams(opt_x):
+    occupied_beams = np.zeros((number_of_bs, len(directions_bs)))
+    for bs in range(number_of_bs):
+        for user in range(number_of_users):
+            if opt_x[user, bs] > 0:
+                user_coords = f.user_coords(user, x_user, y_user)
+                bs_coords = f.bs_coords(bs)
+                geo = f.find_geo(bs_coords, user_coords)
+                beam_number = f.find_beam_number(geo, beamwidth_b)
+                occupied_beams[bs, beam_number] += 1
+    return occupied_beams
 
-for number_of_users in [100, 300, 500, 750, 1000]:
+for number_of_users in users:
     iteration_min, iteration_max = 0, iterations[number_of_users]
 
-    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(M) + 's=' + str(users_per_beam) + '_heuristic')
+    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
     if User_Heuristic:
         name = str(name + '_users')
+    if Iterative:
+        name = str(name + '_Iterative')
 
-    if os.path.exists(str('Data/assignment' + name + '.p')) and 3 == 2:
+    if os.path.exists(str('Data/assignment' + name + '.p')):
         print('Data is already there')
         optimal = pickle.load(open(str('Data/assignment' + name + '.p'), 'rb'))
         shares = pickle.load(open(str('Data/shares' + name + '.p'), 'rb'))
@@ -92,10 +107,20 @@ for number_of_users in [100, 300, 500, 750, 1000]:
 
             capacities = f.find_capacity_per_user(share, x_user, y_user)
             satisfied = np.ones(number_of_users)
-            print(capacities)
+
             for u in range(number_of_users):
-                if capacities[u] < user_rate:
-                    satisfied[u] = capacities[u]/user_rate
+                if Iterative:
+                    if capacities[u] < user_rate:
+                        opt_x[u,:] = 0
+                        satisfied[u] = 0
+                else:
+                    if capacities[u] < user_rate:
+                        satisfied[u] = capacities[u]/user_rate
+
+            if Iterative:
+                occupied_beams = find_occupied_beams(opt_x)
+                share = find_shares(opt_x, occupied_beams)
+                capacities = f.find_capacity_per_user(share, x_user, y_user)
 
             links_per_user = sum(np.transpose(opt_x))
 
@@ -115,5 +140,6 @@ for number_of_users in [100, 300, 500, 750, 1000]:
     pickle.dump(user_capacities, open(str('Data/capacity_per_user' + name + '.p'),'wb'), protocol=4)
     pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'),'wb'), protocol=4)
 
-    find_data.main(optimal, shares, xs, ys, user_capacities, satisfaction, Heuristic=True, Clustered=Clustered, User_Heuristic = User_Heuristic)
+    find_data.main(optimal, shares, xs, ys, user_capacities, satisfaction, Heuristic=True, Clustered=Clustered, User_Heuristic = User_Heuristic, Iterative = Iterative)
 
+get_data.get_data(scenario, user_rate, Heuristic = True, User_Heuristic = User_Heuristic,  Iterative = Iterative)

@@ -49,13 +49,15 @@ beamwidth_deg, users_per_beam, Penalty, Clustered = find_scenario(scenario)
 
 pi = math.pi
 bs_of_interest = 10
-radius = 100  # for triangular grid
+radius = 200  # for triangular grid
 
-xmin, xmax = 0, 400
+xmin, xmax = 0, 800
 ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 3
 
 xDelta = xmax - xmin
 yDelta = ymax - ymin
+
+users = [int(i / (xDelta/1000 * yDelta/1000)) for i in [50, 500, 2500]]
 
 beamwidth_u = 5
 
@@ -64,12 +66,10 @@ beamwidth_b = beamwidth_deg
 W = 200  # in MHz  # bandwidth
 
 if Penalty:
-    M = 10000  # penalty on having disconnected users
+    M = 100000  # penalty on having disconnected users
 else:
     M = 0
 
-# users_per_beam = 2  # amount of users in a beam
-# users_per_beam = int(input("Users per beam?"))
 
 transmission_power = (10 ** 2.0) / (360 / beamwidth_deg)  # 30 dB
 noise_figure = 7.8
@@ -104,27 +104,29 @@ number_of_bs = len(x_bs)
 # iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
 # iterations = {10: 1, 100: 1000, 300: 334, 500: 200, 750: 133, 1000: 100}
 iterations = {10: 1, 100: 500, 300: 167, 500: 100, 750: 67, 1000: 50}
-iterations = {10: 1, 100: 10, 300: 10, 500: 10, 750: 10, 1000: 10}
+# iterations = {10: 1, 100: 10, 300: 10, 500: 10, 750: 10, 1000: 10}
+iterations = {60: 1, 601: 1, 3007: 1}
 
 if beamwidth_b == 5:
     misalignment_user = {100: 1.9682613988252613, 300: 1.6317848174368959, 500: 1.4866377613013804,
                          750: 1.3799530202862103, 1000: 1.323930882575973}
-    misalignment = {100: 1.7978591490918066, 300: 1.5154215815359937, 500: 1.4241427700486784, 750: 1.4186055061944516,
-                    1000: 1.464193454288574}
+    misalignment = {60: 1.7454759076711075, 601: 1.380565147312798, 3007: 1.2268435392410608}
+
 elif beamwidth_b == 10:
     misalignment_user = {100: 2.2548903653685985, 300: 1.89158710623207, 500: 1.7428086785910102,
                          750: 1.6359443972910936, 1000: 1.580973055880226}
-    misalignment = {100: 4.187376059234487, 300: 3.8289200695591163, 500: 4.216834770614373, 750: 3.891268871542944,
-                    1000: 3.761022356923003}
+    misalignment = {60: 3.8995977190422626, 601: 2.875090051867872, 3007: 2.3221980422505157}
+
 elif beamwidth_b == 15:
     misalignment_user = {100: 2.0109692232489222, 300: 1.7373935226648738, 500: 1.6415092020650677,
                          750: 1.56259471487693, 1000: 1.5111786912896545}
-    misalignment = {100: 6.504912519832856, 300: 6.445718985322907, 500: 6.17355550220003, 750: 5.797139628366702,
-                    1000: 5.6074995569936625}
+    misalignment = {60: 7.033445388403012, 601: 5.779474061814272, 3007: 5.2600395821014105}
+
 
 RateRequirement = True
-user_rate = 1000  # Mbps
+user_rate = 800  # Mbps
 
 Torus = True
 
-fading = np.random.normal(0, 4, (1000, number_of_bs))
+fading = np.random.normal(0, 4, (7000, number_of_bs))
+

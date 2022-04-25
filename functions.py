@@ -22,7 +22,7 @@ def find_distance_list(user, xbs, ybs):
     y = (user[1] - np.array(ybs))
     return np.sqrt(x ** 2 + y ** 2)
 
-def find_beam_number(radians, beamwidth):
+def find_beam_number(radians, beamwidth): # beamwidth is in degrees
     beamwidth = np.radians(beamwidth)
     angles = [beamwidth * i for i in range(int(-pi/beamwidth), int(pi/beamwidth))]
     min = math.inf

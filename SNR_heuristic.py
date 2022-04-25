@@ -32,7 +32,7 @@ def find_closest_snr(user, x_user, y_user):
 
 # user = int(input('Number of users?'))
 for number_of_users in [100, 300, 500, 750, 1000]:
-    for k in [1, 2, 3, 4, 5]:
+    for k in [1, 5]:
         optimal = []
         xs = []
         ys = []
@@ -44,9 +44,9 @@ for number_of_users in [100, 300, 500, 750, 1000]:
 
         name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
             np.degrees(beamwidth_b)) + 'M=' + str(
-            M) + 's=' + str(users_per_beam) + '_SNRheuristick=' + str(k))
+            M) + 's=' + str(users_per_beam)+ 'rate=' + str(user_rate) + '_SNRheuristick=' + str(k))
 
-        if os.path.exists(str('Data/assignment' + name + '.p')) and 3 == 2:
+        if os.path.exists(str('Data/assignment' + name + '.p')):
             optimal = pickle.load(open(str('Data/assignment' + name + '.p'), 'rb'))
             shares = pickle.load(open(str('Data/shares' + name + '.p'), 'rb'))
             xs = pickle.load(open(str('Data/xs' + name + '.p'), 'rb'))

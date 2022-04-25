@@ -66,7 +66,7 @@ def optimization(x_user, y_user):
         for i in users:
             for j in base_stations:
                 x_user[i, j] = m.addVar(vtype=GRB.BINARY, name=f'x_user{i}{j}')
-                x[i, j] = m.addVar(vtype=GRB.INTEGER, lb=0, name=f'x#{i}#{j}')
+                x[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb=0, ub=1, name=f'x#{i}#{j}')
 
             C_user[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'C_user#{i}')
             disconnected[i] = m.addVar(vtype=GRB.CONTINUOUS, lb=0, ub=1, name=f'Disconnected_user#{i}')
@@ -87,16 +87,15 @@ def optimization(x_user, y_user):
         # the total shares per beam could never exceed the number of users per beam
         for j in base_stations:
             for d in directions_bs:
-                m.addConstr(quicksum(x[i, j] for i in users if bs_beamnumber[i, j] == d) <= users_per_beam,
+                m.addConstr(quicksum(x[i, j] for i in users if bs_beamnumber[i, j] == d) <= 1,
                             name=f'shares_per_beam#{j}#{d}')
 
         # if a user has at least one share, the user is connected to that base station
-        epsilon = 0.1
+        epsilon = 0.1 #TODO a user uses at least 1/10th of a beam
         for i in users:
             for j in base_stations:
-                m.addConstr(x[i, j] <= 1 - epsilon + (users_per_beam - 1 + epsilon) * x_user[i, j],
-                            name=f'lower_bound{i}{j}')
-                m.addConstr(x[i, j] >= x_user[i, j], name=f'upper_bound{i}{j}')
+                m.addConstr(x[i, j] >= epsilon * x_user[i,j], name=f'lower_bound{i}{j}')
+                m.addConstr(x[i, j] <= x_user[i, j], name=f'upper_bound{i}{j}')
 
         # Minimum SNR
         for i in users:
