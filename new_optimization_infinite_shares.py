@@ -1,10 +1,8 @@
 import sys
-
 import gurobipy as gp
 import numpy as np
 from gurobipy import GRB
 from gurobipy import quicksum
-
 import functions as f
 from parameters import *
 import time
@@ -52,8 +50,8 @@ def optimization(x_user, y_user):
     try:
         m = gp.Model("Model 1")
         # m.setParam('NonConvex', 2)
-        m.Params.LogToConsole = 0
-        m.Params.OutputFlag = 0
+        # m.Params.LogToConsole = 0
+        # m.Params.OutputFlag = 0
         # m.Params.Threads = 10
 
         # -------------- VARIABLES -----------------------------------
@@ -110,7 +108,7 @@ def optimization(x_user, y_user):
         # find channel capacity
         for i in users:
             m.addConstr(C_user[i] == quicksum(
-                (W / users_per_beam) * x[i, j] * spectral_efficiency[i, j] for j in base_stations), name=f'C_user#{i}')
+                W  * x[i, j] * spectral_efficiency[i, j] for j in base_stations), name=f'C_user#{i}')
 
         # rate requirement
         if RateRequirement:

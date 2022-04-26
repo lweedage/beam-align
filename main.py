@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import new_optimization
+import new_optimization_infinite_shares as new_optimization
+# import new_optimization as new_optimization
 import functions as f
 from parameters import *
 import pickle
@@ -8,7 +9,7 @@ import pickle
 fig, ax = plt.subplots()
 
 iteration = 0
-for number_of_users in [500]:
+for number_of_users in [1000]:
     np.random.seed(iteration)
     x_user, y_user = f.find_coordinates(number_of_users)
     opt_x, links, capacity_per_user, satisfaction = new_optimization.optimization(x_user, y_user)
