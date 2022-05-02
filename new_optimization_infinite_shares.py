@@ -50,8 +50,8 @@ def optimization(x_user, y_user):
     try:
         m = gp.Model("Model 1")
         # m.setParam('NonConvex', 2)
-        # m.Params.LogToConsole = 0
-        # m.Params.OutputFlag = 0
+        m.Params.LogToConsole = 0
+        m.Params.OutputFlag = 0
         # m.Params.Threads = 10
 
         # -------------- VARIABLES -----------------------------------
@@ -89,10 +89,10 @@ def optimization(x_user, y_user):
                             name=f'shares_per_beam#{j}#{d}')
 
         # if a user has at least one share, the user is connected to that base station
-        epsilon = 0.1 #TODO a user uses at least 1/10th of a beam
+        epsilon = 1 / users_per_beam  # TODO a user uses at least 1/10th of a beam
         for i in users:
             for j in base_stations:
-                m.addConstr(x[i, j] >= epsilon * x_user[i,j], name=f'lower_bound{i}{j}')
+                m.addConstr(x[i, j] >= epsilon * x_user[i, j], name=f'lower_bound{i}{j}')
                 m.addConstr(x[i, j] <= x_user[i, j], name=f'upper_bound{i}{j}')
 
         # Minimum SNR
@@ -108,7 +108,7 @@ def optimization(x_user, y_user):
         # find channel capacity
         for i in users:
             m.addConstr(C_user[i] == quicksum(
-                W  * x[i, j] * spectral_efficiency[i, j] for j in base_stations), name=f'C_user#{i}')
+                W * x[i, j] * spectral_efficiency[i, j] for j in base_stations), name=f'C_user#{i}')
 
         # rate requirement
         if RateRequirement:

@@ -20,33 +20,32 @@ Plotting = True
 
 
 def main(optimal, shares, xs, ys, capacities, satisfaction, Heuristic=False, k = 1, SNRHeuristic = False, Clustered = False, User_Heuristic = False, GreedyHeuristic = False, GreedyRate = False, Iterative = False):
-    if Plotting:
-        delta = 1
-        x_max, y_max = int(np.ceil(xmax * delta)), int(np.ceil(ymax * delta))
-        grid_sc = np.zeros((y_max, x_max))
-        grid_mc = np.zeros((y_max, x_max))
-        total_visits = np.zeros((y_max, x_max))
-        misalignment_user = []
-        misalignment_bs = []
-        misalignment_mc = []
-        misalignment_sc = []
-        distances = []
-        distances_sc = []
-        distances_mc = []
 
-        grid_bs = np.zeros((y_max, x_max))
+    delta = 1
+    x_max, y_max = int(np.ceil(xmax * delta)), int(np.ceil(ymax * delta))
+    grid_sc = np.zeros((y_max, x_max))
+    grid_mc = np.zeros((y_max, x_max))
+    total_visits = np.zeros((y_max, x_max))
+    misalignment_user = []
+    misalignment_bs = []
+    misalignment_mc = []
+    misalignment_sc = []
+    distances = []
+    distances_sc = []
+    distances_mc = []
 
-    if Optimal:
-        disconnected = []
-        total_links_per_user = np.array([])
-        channel_capacity = []
-        cap_per_user = []
+    grid_bs = np.zeros((y_max, x_max))
 
-    if Blocked:
-        channel_capacity_real = []
-        channel_capacity_real_per_user = []
-        satisfaction_blocked = []
+    disconnected = []
+    total_links_per_user = np.array([])
+    channel_capacity = []
+    cap_per_user = []
 
+    channel_capacity_real = []
+    channel_capacity_real_per_user = []
+    satisfaction_blocked = []
+
+    channel_capacity_SINR = []
     number_of_users = len(xs[0])
 
     iteration_min = 0
@@ -66,13 +65,11 @@ def main(optimal, shares, xs, ys, capacities, satisfaction, Heuristic=False, k =
         links_per_user = sum(np.transpose(opt_x))
         discon = 0
 
-        if Optimal:
-            total_links_per_user = np.append(total_links_per_user, links_per_user)
-            capacity_per_user = f.find_capacity_per_user(share, x_user, y_user)
+        total_links_per_user = np.append(total_links_per_user, links_per_user)
+        capacity_per_user = f.find_capacity_per_user(share, x_user, y_user)
 
-        if Blocked:
-            blocked_connections = simulate_blockers.find_blocked_connections(opt_x, x_user, y_user, number_of_users)
-            discon_blocked = 0
+        blocked_connections = simulate_blockers.find_blocked_connections(opt_x, x_user, y_user, number_of_users)
+        discon_blocked = 0
 
         for user in range(number_of_users):
             u = f.user_coords(user, x_user, y_user)
@@ -87,49 +84,48 @@ def main(optimal, shares, xs, ys, capacities, satisfaction, Heuristic=False, k =
                 grid_mc[int(u[1]*delta), int(u[0]*delta)] += 1
             total_visits[int(u[1]*delta), int(u[0]*delta)] += 1
 
-            for b in range(number_of_bs):
-                if opt_x[user, b] == 1:
-                    b_coords = f.bs_coords(b)
-
-                    if Plotting:
-                        x = f.find_misalignment(b_coords, u, beamwidth_b)
-                        dist = f.find_distance(u, b_coords)
-
-                        misalignment_user.append(f.find_misalignment(u, b_coords, beamwidth_u))
-                        misalignment_bs.append(x)
-
-                        distances.append(dist)
-                        if links_per_user[user] == 1:
-                            misalignment_sc.append(x)
-                            distances_sc.append(dist)
-                        else:
-                            misalignment_mc.append(x)
-                            distances_mc.append(dist)
-
-                    if Blocked and f.find_snr(user, b, x_user, y_user, blocked_connections[user, b]) < SINR_min:
-                        opt_x[user, b] = 0
-
-        if Blocked:
-            links_per_user = sum(np.transpose(opt_x))
-            for user in range(number_of_users):
-                if links_per_user[user] == 0:
-                    discon_blocked += 1
-
-        if Optimal:
+            # SINR_capacity_per_user = f.SINR_capacity_per_user(share, x_user, y_user)
+            # channel_capacity_SINR.append(SINR_capacity_per_user)
             capacity = sum(capacities[iteration])
             channel_capacity.append(capacity)
             disconnected.append(discon)
             cap_per_user.append(capacity_per_user)
 
-        if Blocked:
-            channel_capacity_per_user = f.find_capacity_per_user(share, x_user, y_user, blocked_connections = blocked_connections)
-            channel_capacity_real_per_user.append(channel_capacity_per_user)
-            channel_capacity_real.append(sum(channel_capacity_per_user))
-            satisfied = np.ones(number_of_users)
-            for u in range(number_of_users):
-                if channel_capacity_per_user[u] < user_rate:
-                    satisfied[u] = channel_capacity_per_user[u]/user_rate
-            satisfaction_blocked.append(satisfied)
+            for b in range(number_of_bs):
+                if opt_x[user, b] == 1:
+                    b_coords = f.bs_coords(b)
+
+                    x = f.find_misalignment(b_coords, u, beamwidth_b)
+                    dist = f.find_distance(u, b_coords)
+
+                    misalignment_user.append(f.find_misalignment(u, b_coords, beamwidth_u))
+                    misalignment_bs.append(x)
+
+                    distances.append(dist)
+                    if links_per_user[user] == 1:
+                        misalignment_sc.append(x)
+                        distances_sc.append(dist)
+                    else:
+                        misalignment_mc.append(x)
+                        distances_mc.append(dist)
+
+                    if f.find_snr(user, b, x_user, y_user, blocked_connections[user, b]) < SINR_min:
+                        opt_x[user, b] = 0
+
+        links_per_user = sum(np.transpose(opt_x))
+        for user in range(number_of_users):
+            if links_per_user[user] == 0:
+                discon_blocked += 1
+
+        channel_capacity_per_user = f.find_capacity_per_user(share, x_user, y_user, blocked_connections = blocked_connections)
+        channel_capacity_real_per_user.append(channel_capacity_per_user)
+        channel_capacity_real.append(sum(channel_capacity_per_user))
+        satisfied = np.ones(number_of_users)
+        for u in range(number_of_users):
+            if channel_capacity_per_user[u] < user_rate:
+                satisfied[u] = channel_capacity_per_user[u]/user_rate
+        satisfaction_blocked.append(satisfied)
+
 
     bar.finish()
     name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
@@ -152,33 +148,26 @@ def main(optimal, shares, xs, ys, capacities, satisfaction, Heuristic=False, k =
     if Clustered:
         name = str(name + '_clustered')
 
+    pickle.dump(grid_mc, open(str('Data/grid_mc_' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(grid_bs, open(str('Data/grid_bs_' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(total_visits, open(str('Data/grid_total_visits_' + name + '.p'), 'wb'), protocol=4)
 
-    if Plotting:
-        pickle.dump(grid_mc, open(str('Data/grid_mc_' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(grid_sc, open(str('Data/grid_sc_' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(grid_bs, open(str('Data/grid_bs_' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(total_visits, open(str('Data/grid_total_visits_' + name + '.p'), 'wb'), protocol=4)
+    pickle.dump(misalignment_user, open(str('Data/grid_misalignment_user' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(misalignment_bs, open(str('Data/grid_misalignment_bs' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(misalignment_mc, open(str('Data/grid_misalignment_mc' + name + '.p'),'wb'), protocol=4)
 
-        pickle.dump(misalignment_user, open(str('Data/grid_misalignment_user' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(misalignment_bs, open(str('Data/grid_misalignment_bs' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(misalignment_mc, open(str('Data/grid_misalignment_mc' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(misalignment_sc, open(str('Data/grid_misalignment_sc' + name + '.p'),'wb'), protocol=4)
+    # pickle.dump(distances, open(str('Data/distances' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(channel_capacity, open(str('Data/channel_capacity' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(channel_capacity_SINR, open(str('Data/channel_capacity_SINR' + name + '.p'),'wb'), protocol=4)
 
-        pickle.dump(distances, open(str('Data/distances' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(distances_mc, open(str('Data/distances_mc' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(distances_sc, open(str('Data/distances_sc' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(cap_per_user, open(str('Data/capacity_per_user' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(disconnected, open(str('Data/disconnected_users' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'),'wb'), protocol=4)
 
-    if Optimal:
-        pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(channel_capacity, open(str('Data/channel_capacity' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(cap_per_user, open(str('Data/channel_capacity_per_user' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(disconnected, open(str('Data/disconnected_users' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'),'wb'), protocol=4)
-
-    if Blocked:
-        pickle.dump(satisfaction_blocked, open(str('Data/satisfaction_blocked' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(channel_capacity_real, open(str('Data/blocked_capacity' + name + '.p'),'wb'), protocol=4)
-        pickle.dump(channel_capacity_real_per_user, open(str('Data/blocked_capacity_per_user' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(satisfaction_blocked, open(str('Data/satisfaction_blocked' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(channel_capacity_real, open(str('Data/blocked_capacity' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(channel_capacity_real_per_user, open(str('Data/blocked_capacity_per_user' + name + '.p'),'wb'), protocol=4)
 
 if __name__ == '__main__':
     for scenario in [7, 8, 9]: #range(1, 24):

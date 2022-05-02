@@ -26,7 +26,7 @@ def find_scenario(scenario):
     elif scenario in [19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]:
         users_per_beam = 10
     elif scenario in [31, 32, 33]:
-        users_per_beam = 100
+        users_per_beam = 1000
     else:
         users_per_beam = False
 
@@ -57,19 +57,18 @@ ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 3
 xDelta = xmax - xmin
 yDelta = ymax - ymin
 
-users = [int(i / (xDelta/1000 * yDelta/1000)) for i in [50, 500, 2500]]
+# users = [int(i / (xDelta / 1000 * yDelta / 1000)) for i in [100, 250, 500, 750, 1000]]
+users = [120, 300, 600, 900, 1200]
 
 beamwidth_u = 5
-
 beamwidth_b = beamwidth_deg
 
 W = 200  # in MHz  # bandwidth
 
 if Penalty:
-    M = 100000  # penalty on having disconnected users
+    M = 10000  # penalty on having disconnected users
 else:
     M = 0
-
 
 transmission_power = (10 ** 2.0) / (360 / beamwidth_deg)  # 30 dB
 noise_figure = 7.8
@@ -101,32 +100,28 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
 x_bs, y_bs = initialise_graph_triangular(radius, xDelta, yDelta)
 number_of_bs = len(x_bs)
 
-# iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
-# iterations = {10: 1, 100: 1000, 300: 334, 500: 200, 750: 133, 1000: 100}
-iterations = {10: 1, 100: 500, 300: 167, 500: 100, 750: 67, 1000: 50}
-# iterations = {10: 1, 100: 10, 300: 10, 500: 10, 750: 10, 1000: 10}
-iterations = {60: 1, 601: 1, 3007: 1}
+iterations = {120: 10, 300: 10, 600: 10, 900: 10, 1200: 10}
 
 if beamwidth_b == 5:
-    misalignment_user = {100: 1.9682613988252613, 300: 1.6317848174368959, 500: 1.4866377613013804,
-                         750: 1.3799530202862103, 1000: 1.323930882575973}
-    misalignment = {60: 1.7454759076711075, 601: 1.380565147312798, 3007: 1.2268435392410608}
+    misalignment_user = {120: 1.6954438876808926, 300: 1.5701307680072651, 600: 1.3879042182645298, 900: 1.2993768076164862, 1200: 1.3226491038698536}
+    misalignment = {120: 1.6954438876808926, 300: 1.5701307680072651, 600: 1.3879042182645298, 900: 1.2993768076164862, 1200: 1.3226491038698536}
+
+
 
 elif beamwidth_b == 10:
-    misalignment_user = {100: 2.2548903653685985, 300: 1.89158710623207, 500: 1.7428086785910102,
-                         750: 1.6359443972910936, 1000: 1.580973055880226}
-    misalignment = {60: 3.8995977190422626, 601: 2.875090051867872, 3007: 2.3221980422505157}
+    misalignment_user = {120: 1.983301431779446, 300: 1.8487323553512567, 600: 1.6725556449244827, 900: 1.5969519971850155, 1200: 1.5526005066403505}
+    misalignment = {120: 2.0910422029605362, 300: 1.9471764082347576, 600: 1.682219442073332, 900: 1.6078089333689214, 1200: 1.552600506640351}
+
 
 elif beamwidth_b == 15:
-    misalignment_user = {100: 2.0109692232489222, 300: 1.7373935226648738, 500: 1.6415092020650677,
-                         750: 1.56259471487693, 1000: 1.5111786912896545}
-    misalignment = {60: 7.033445388403012, 601: 5.779474061814272, 3007: 5.2600395821014105}
+    misalignment_user = {120: 1.886641564397087, 300: 1.7230666266682544, 600: 1.7193806593953058, 900: 1.71620737231353, 1200: 1.6750856613277922}
+    misalignment = {120: 5.695593258318874, 300: 5.367271166181774, 600: 4.964976488363763, 900: 4.972467823106814, 1200: 4.3530105659089084}
+
 
 
 RateRequirement = True
-user_rate = 800  # Mbps
+user_rate = 500  # Mbps
 
 Torus = True
 
-fading = np.random.normal(0, 4, (7000, number_of_bs))
-
+fading = np.random.normal(0, 4, (3007, number_of_bs))

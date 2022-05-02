@@ -9,7 +9,7 @@ import pickle
 fig, ax = plt.subplots()
 
 iteration = 0
-for number_of_users in [1000]:
+for number_of_users in [1202]:
     np.random.seed(iteration)
     x_user, y_user = f.find_coordinates(number_of_users)
     opt_x, links, capacity_per_user, satisfaction = new_optimization.optimization(x_user, y_user)
@@ -20,12 +20,12 @@ for number_of_users in [1000]:
     n_bins = 50
     plt.hist(capacity_per_user, n_bins, density=True, histtype='step',
              cumulative=True, label=f'{number_of_users} users')
-    print(sum(satisfaction)/len(satisfaction))
     snrs = []
     for user in range(number_of_users):
         for bs in range(number_of_bs):
             if opt_x[user, bs] > 0.5:
                 snrs.append(10 * math.log10(f.find_snr(user, bs, x_user, y_user)))
+
     print(min(snrs), max(snrs))
     # fig, ax = plt.subplots()
     # plt.hist(snrs)

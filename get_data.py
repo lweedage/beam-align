@@ -18,12 +18,8 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
     return xbs, ybs
 
 
-
-# iterations = {50: 1, 100: 5000, 300: 1667, 500: 1000, 750: 667, 1000: 500}
-# iterations = {50: 1, 100: 1000, 300: 334, 500: 200, 750: 133, 1000: 100}
-# iterations = {10: 1, 100: 500, 300: 167, 500: 100, 750: 67, 1000: 50}
-# iterations = {10: 1, 100: 10, 300: 10, 500: 10, 750: 10, 1000: 10}
-iterations = {60: 1, 601: 1, 3007: 1}
+iterations = {120: 10, 300: 10, 600: 10, 900: 10, 1200: 10}
+users = [120, 300, 600, 900, 1200]
 
 Torus = True
 
@@ -36,9 +32,6 @@ ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 3
 
 xDelta = xmax - xmin
 yDelta = ymax - ymin
-
-users = [int(i / (xDelta / 1000 * yDelta / 1000)) for i in [50, 500, 2500]]
-print(users)
 
 x_bs, y_bs = initialise_graph_triangular(radius, xDelta, yDelta)
 number_of_bs = len(x_bs)
@@ -82,15 +75,13 @@ def fairness(x):
     noemer = len(x) * sum([i**2 for i in x])
     return teller/noemer
 
-
-
-def get_data(scenario, user_rate, Heuristic = False, SNRHeuristic = False, k = 0, User_Heuristic = False, GreedyHeuristic = False, GreedyRate = False, Iterative = False):
+def get_data(scenario, user_rate, Heuristic = False, SNRHeuristic = False, k = 0, User_Heuristic = False, GreedyHeuristic = False, GreedyRate = False, Iterative = False, Clustered = False):
     print('Getting data...')
     beamwidth_deg, users_per_beam, Penalty, Clustered = find_scenario(scenario)
     beamwidth_b = beamwidth_deg
 
     if Penalty:
-        M = 100000  # penalty on having disconnected users
+        M = 10000  # penalty on having disconnected users
     else:
         M = 0
 
@@ -99,6 +90,7 @@ def get_data(scenario, user_rate, Heuristic = False, SNRHeuristic = False, k = 0
 
     sat = dict()
     deg = dict()
+    usercap = dict()
     cap = dict()
     fair = dict()
     cap_blocked = dict()
@@ -141,7 +133,7 @@ def get_data(scenario, user_rate, Heuristic = False, SNRHeuristic = False, k = 0
         capacity = pickle.load(open(str('Data/channel_capacity' + name + '.p'), 'rb'))
         blocked_capacity = pickle.load(open(str('Data/blocked_capacity' + name + '.p'), 'rb' ))
         satisfaction_blocked = pickle.load( open(str('Data/satisfaction_blocked' + name + '.p'), 'rb'))
-        capacity_per_user = pickle.load(open(str('Data/channel_capacity_per_user' + name + '.p'), 'rb'))
+        capacity_per_user = pickle.load(open(str('Data/capacity_per_user' + name + '.p'), 'rb'))
         capacity_per_user_blocked = pickle.load(open(str('Data/blocked_capacity_per_user' + name + '.p'), 'rb'))
 
 
@@ -149,13 +141,14 @@ def get_data(scenario, user_rate, Heuristic = False, SNRHeuristic = False, k = 0
         fair_blocked[number_of_users] = fairness(capacity_per_user_blocked)
         deg[number_of_users] = sum(degrees) / len(degrees)
         mis[number_of_users] = np.std(misalignment_bs) * 2
-        # mis_user[number_of_users] = np.degrees(np.std(misalignment_user)*2)
+        mis_user[number_of_users] = np.std(misalignment_user)*2
         sat[number_of_users] = np.sum(satisfaction) / (len(satisfaction) * len(satisfaction[0]))
         cap[number_of_users] = np.sum(capacity)/len(capacity)
         cap_blocked[number_of_users] = np.sum(blocked_capacity)/len(blocked_capacity)
-        sat_blocked[number_of_users] = np.sum(satisfaction)/len(satisfaction)
+        sat_blocked[number_of_users] = np.sum(satisfaction_blocked)/len(satisfaction_blocked)
 
     print(mis)
+    print(mis_user)
     name = str(str(beamwidth_deg) + str(M) + str(users_per_beam) + str(user_rate))
     if Heuristic:
         if User_Heuristic:
@@ -185,17 +178,17 @@ def get_data(scenario, user_rate, Heuristic = False, SNRHeuristic = False, k = 0
     pickle.dump(cap_blocked, open(str('Data/Processed/cap_blocked' + name + '.p'),'wb'), protocol=4)
     pickle.dump(sat_blocked, open(str('Data/Processed/sat_blocked' + name + '.p'),'wb'), protocol=4)
     pickle.dump(fair_blocked, open(str('Data/Processed/fair_blocked' + name + '.p'),'wb'), protocol=4)
-    print(scenario, mis)
 
 if __name__ == '__main__':
-    for scenario in [19, 20, 21]:
+    user_rate = 500
+    for scenario in [1, 2, 3, 19, 20, 21, 31, 32, 33]:
         print(f'Scenario {scenario}')
         for k in [0]: #[1, 2, 3, 4, 5]:
-            Heuristic = False
+            Heuristic = True
             Iterative = False
             SNRHeuristic = False
             User_Heuristic = False
             GreedyRate = False
             GreedyHeuristic = False
 
-            get_data(scenario, Heuristic, SNRHeuristic, k, User_Heuristic, GreedyHeuristic, GreedyRate, Iterative)
+            get_data(scenario, user_rate, Heuristic, SNRHeuristic, k, User_Heuristic, GreedyHeuristic, GreedyRate, Iterative)

@@ -5,8 +5,7 @@ import find_data
 import progressbar
 import os
 import pickle
-# k = int(input('k ='))
-
+import get_data
 
 def find_sorted_users(bs, x_user, y_user):
     # on a torus
@@ -21,11 +20,11 @@ def find_closest_snr(user, x_user, y_user):
     return np.argsort(snr)
 
 
-GreedyHeuristic = True
+GreedyHeuristic = False
 GreedyRate = not GreedyHeuristic
 
 # user = int(input('Number of users?'))
-for number_of_users in [100, 300, 500, 750, 1000]:
+for number_of_users in users:
     optimal = []
     xs = []
     ys = []
@@ -57,7 +56,7 @@ for number_of_users in [100, 300, 500, 750, 1000]:
             bar.update(iteration)
             opt_x = np.zeros((number_of_users, number_of_bs))
             np.random.seed(iteration)
-            x_user, y_user = f.find_coordinates(number_of_users)
+            x_user, y_user = f.find_coordinates(number_of_users, Clustered)
 
             occupied_beams = np.zeros((number_of_bs, len(directions_bs)))
 
@@ -89,16 +88,15 @@ for number_of_users in [100, 300, 500, 750, 1000]:
                                 occupied_beams[bs, beam_number] += 1
 
 
-            if GreedyRate:
-                share = opt_x
-            elif GreedyHeuristic:
-                share = np.zeros((number_of_users, number_of_bs))
-                for user in range(number_of_users):
-                    user_coords = f.user_coords(user, x_user, y_user)
-                    for bs in range(number_of_bs):
+
+            share = np.zeros((number_of_users, number_of_bs))
+            for user in range(number_of_users):
+                user_coords = f.user_coords(user, x_user, y_user)
+                for bs in range(number_of_bs):
+                    if opt_x[user, bs] == 1:
                         bs_coords = f.bs_coords(bs)
                         share[user, bs] = users_per_beam / occupied_beams[bs, f.find_beam_number(f.find_geo(bs_coords, user_coords),
-                                                                        beamwidth_b)]
+                                                                    beamwidth_b)]
 
             links_per_user = sum(np.transpose(opt_x))
             capacity = f.find_capacity_per_user(share, x_user, y_user)
@@ -124,4 +122,5 @@ for number_of_users in [100, 300, 500, 750, 1000]:
         pickle.dump(ys, open(str('Data/ys' + name + '.p'),'wb'), protocol=4)
         pickle.dump(capacities, open(str('Data/capacity_per_user' + name + '.p'),'wb'), protocol=4)
 
-    find_data.main(optimal, shares,  xs, ys, capacities, satisfaction, GreedyHeuristic = GreedyHeuristic, GreedyRate = GreedyRate)
+    find_data.main(optimal, shares,  xs, ys, capacities, satisfaction, GreedyHeuristic = GreedyHeuristic, GreedyRate = GreedyRate, Clustered=Clustered)
+get_data.get_data(scenario, user_rate, GreedyHeuristic=GreedyHeuristic, GreedyRate=GreedyRate, Clustered=Clustered)

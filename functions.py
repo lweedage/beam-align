@@ -192,11 +192,12 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
 
 def find_coordinates(number_of_users, Clustered = False):
     # Matern point process, from H. Paul Keeler
+    # number_of_clusters = {120: 10, 300: }
     if Clustered:
         # Parameters for the parent and daughter point processes
-        lambdaParent = 10  # density of parent Poisson point process
-        lambdaDaughter = number_of_users//10  # mean number of points in each cluster
-        radiusCluster = 25  # radius of cluster disk (for daughter points)
+        lambdaParent = 30  # density of parent Poisson point process
+        lambdaDaughter = np.floor(number_of_users//30)  # mean number of points in each cluster
+        radiusCluster = 50  # radius of cluster disk (for daughter points)
 
         # Simulate Poisson point process for the parents
         xxParent = xmin + xDelta * np.random.uniform(0, 1, lambdaParent)
@@ -314,6 +315,44 @@ def find_snr(user, bs, x_user, y_user, blocked = None):
     gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
     path_loss = find_path_loss(user, bs, coords_i, coords_j, blocked)
     return (transmission_power * gain_user * gain_bs / path_loss ) / (noise)
+
+def SINR_capacity_per_user(opt_x, x_user, y_user):
+    number_of_users = len(x_user)
+    capacity = np.zeros(number_of_users)
+    for u in range(number_of_users):
+        for bs in range(number_of_bs):
+            if opt_x[u, bs] >= 0.5:
+                coords_i = user_coords(u, x_user, y_user)
+                coords_j = bs_coords(bs)
+                gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
+                gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
+                path_loss = find_path_loss(u, bs, coords_i, coords_j, 0)
+                interference = find_interference(opt_x, u, bs, x_user, y_user)
+                capacity[u] += W / users_per_beam * opt_x[u,bs] * math.log2(1 + transmission_power * gain_bs * gain_user / (path_loss * (noise + interference)))
+    return capacity
+
+def find_interference(opt_x, i, j, x_user, y_user):
+    interf = 0
+    coords_i = user_coords(i, x_user, y_user)
+    coords_j = bs_coords(j)
+
+    for u in range(len(x_user)):
+        for bs in find_closest_snr(i, x_user, y_user)[:1]:
+            coords_bs = bs_coords(bs)
+            if opt_x[u, bs] >= 0.5:
+                if u != i and bs != j:
+                    coords_u = user_coords(u, x_user, y_user)
+                    gain_user = find_gain(coords_i, coords_bs, coords_i, coords_j, beamwidth_u)
+                    gain_bs = find_gain(coords_bs, coords_u, coords_bs, coords_u, beamwidth_b)
+                    path_loss = find_path_loss(u, bs, coords_i, coords_bs, 0)
+                    interf += gain_user * gain_bs / path_loss
+    return interf * transmission_power
+
+def find_closest_snr(user, x_user, y_user):
+    snr = []
+    for bs in range(number_of_bs):
+        snr.append(-find_snr(user, bs, x_user, y_user))
+    return np.argsort(snr)
 
 def plot_BSs(x_user, y_user, opt_x, s = 1):
     division = users_per_beam

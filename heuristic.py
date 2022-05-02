@@ -11,16 +11,19 @@ import get_data
 User_Heuristic = False
 Iterative = False
 
+
 def find_highest_snr(bs, x_user, y_user):
     snr = []
     for user in range(number_of_users):
         snr.append(-f.find_snr(user, bs, x_user, y_user))
     return np.argsort(snr), sorted(snr)
 
+
 def find_distance(user, bs):
     x = np.minimum((user[0] - bs[0]) % xDelta, (bs[0] - user[0]) % xDelta)
     y = np.minimum((user[1] - bs[1]) % yDelta, (bs[1] - user[1]) % yDelta)
     return x ** 2 + y ** 2
+
 
 def find_initial_association():
     opt_x = np.zeros((number_of_users, number_of_bs))
@@ -29,17 +32,19 @@ def find_initial_association():
     for bs in range(number_of_bs):
         users, snrs = find_highest_snr(bs, x_user, y_user)
         for user in users:
-            user_coords = f.user_coords(user, x_user, y_user)
             snr = -snrs.pop(0)
-            if snr > SINR_min:
-                bs_coords = f.bs_coords(bs)
-                geo = f.find_geo(bs_coords, user_coords)
-                beam_number = f.find_beam_number(geo, beamwidth_b)
-                if occupied_beams[bs, beam_number] < users_per_beam and abs(
-                        f.find_misalignment(bs_coords, user_coords, beamwidth_b)) <= mis_threshold:
-                    opt_x[user, bs] = 1
-                    occupied_beams[bs, beam_number] += 1
+            if sum(opt_x[user, :]) < 1000:
+                user_coords = f.user_coords(user, x_user, y_user)
+                if snr > SINR_min:
+                    bs_coords = f.bs_coords(bs)
+                    geo = f.find_geo(bs_coords, user_coords)
+                    beam_number = f.find_beam_number(geo, beamwidth_b)
+                    if occupied_beams[bs, beam_number] < users_per_beam and abs(
+                            f.find_misalignment(bs_coords, user_coords, beamwidth_b)) <= mis_threshold:
+                        opt_x[user, bs] = 1
+                        occupied_beams[bs, beam_number] += 1
     return opt_x, occupied_beams
+
 
 def find_shares(opt_x, occupied_beams):
     share = np.zeros((number_of_users, number_of_bs))
@@ -53,6 +58,7 @@ def find_shares(opt_x, occupied_beams):
                     bs, f.find_beam_number(f.find_geo(bs_coords, user_coords), beamwidth_b)]
     return share
 
+
 def find_occupied_beams(opt_x):
     occupied_beams = np.zeros((number_of_bs, len(directions_bs)))
     for bs in range(number_of_bs):
@@ -65,16 +71,18 @@ def find_occupied_beams(opt_x):
                 occupied_beams[bs, beam_number] += 1
     return occupied_beams
 
+
 for number_of_users in users:
     iteration_min, iteration_max = 0, iterations[number_of_users]
 
-    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
+    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
+        M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
     if User_Heuristic:
         name = str(name + '_users')
     if Iterative:
         name = str(name + '_Iterative')
 
-    if os.path.exists(str('Data/assignment' + name + '.p')):
+    if os.path.exists(str('Data/assignment' + name + '.p')) and 3 == 2:
         print('Data is already there')
         optimal = pickle.load(open(str('Data/assignment' + name + '.p'), 'rb'))
         shares = pickle.load(open(str('Data/shares' + name + '.p'), 'rb'))
@@ -93,14 +101,16 @@ for number_of_users in users:
         user_capacities = []
         satisfaction = []
 
-        bar = progressbar.ProgressBar(maxval=iteration_max, widgets=[progressbar.Bar('=', f'Scenario: {scenario}, #users: {number_of_users} [', ']'), ' ', progressbar.Percentage(), ' ', progressbar.ETA()])
+        bar = progressbar.ProgressBar(maxval=iteration_max, widgets=[
+            progressbar.Bar('=', f'Scenario: {scenario}, #users: {number_of_users} [', ']'), ' ',
+            progressbar.Percentage(), ' ', progressbar.ETA()])
         bar.start()
 
         for iteration in range(iteration_min, iteration_max):
             bar.update(iteration)
             np.random.seed(iteration)
 
-            x_user, y_user = f.find_coordinates(number_of_users)
+            x_user, y_user = f.find_coordinates(number_of_users, Clustered)
 
             opt_x, occupied_beams = find_initial_association()
             share = find_shares(opt_x, occupied_beams)
@@ -111,11 +121,11 @@ for number_of_users in users:
             for u in range(number_of_users):
                 if Iterative:
                     if capacities[u] < user_rate:
-                        opt_x[u,:] = 0
+                        opt_x[u, :] = 0
                         satisfied[u] = 0
                 else:
                     if capacities[u] < user_rate:
-                        satisfied[u] = capacities[u]/user_rate
+                        satisfied[u] = capacities[u] / user_rate
 
             if Iterative:
                 occupied_beams = find_occupied_beams(opt_x)
@@ -133,13 +143,14 @@ for number_of_users in users:
 
         bar.finish()
 
-    pickle.dump(optimal, open(str('Data/assignment' + name  + '.p'),'wb'), protocol=4)
-    pickle.dump(shares, open(str('Data/shares' + name  + '.p'),'wb'), protocol=4)
-    pickle.dump(xs, open(str('Data/xs' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(ys, open(str('Data/ys' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(user_capacities, open(str('Data/capacity_per_user' + name + '.p'),'wb'), protocol=4)
-    pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'),'wb'), protocol=4)
+    pickle.dump(optimal, open(str('Data/assignment' + name + '.p'), 'wb'), protocol=4)
+    pickle.dump(shares, open(str('Data/shares' + name + '.p'), 'wb'), protocol=4)
+    pickle.dump(xs, open(str('Data/xs' + name + '.p'), 'wb'), protocol=4)
+    pickle.dump(ys, open(str('Data/ys' + name + '.p'), 'wb'), protocol=4)
+    pickle.dump(user_capacities, open(str('Data/capacity_per_user' + name + '.p'), 'wb'), protocol=4)
+    pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'), 'wb'), protocol=4)
 
-    find_data.main(optimal, shares, xs, ys, user_capacities, satisfaction, Heuristic=True, Clustered=Clustered, User_Heuristic = User_Heuristic, Iterative = Iterative)
+    find_data.main(optimal, shares, xs, ys, user_capacities, satisfaction, Heuristic=True, Clustered=Clustered,
+                   User_Heuristic=User_Heuristic, Iterative=Iterative)
 
-get_data.get_data(scenario, user_rate, Heuristic = True, User_Heuristic = User_Heuristic,  Iterative = Iterative)
+get_data.get_data(scenario, user_rate, Heuristic=True, User_Heuristic=User_Heuristic, Iterative=Iterative, Clustered=Clustered)
