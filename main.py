@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import new_optimization_infinite_shares as new_optimization
 # import new_optimization as new_optimization
 import functions as f
+import geopandas
+import scipy
 from parameters import *
 import pickle
 

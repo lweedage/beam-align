@@ -6,46 +6,40 @@ import numpy as np
 matplotlib.rcParams['axes.prop_cycle'] = cycler('color',
                                                 ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen',
                                                  'OrangeRed'])
-colors = ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen', 'OrangeRed', 'grey'] * 100
+colors = ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen', 'OrangeRed', 'grey'] * 1000
 
 
 def find_scenario(scenario):
-    if scenario in [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31]:
+    if scenario in [1]:
         beamwidth_deg = 5
-    elif scenario in [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32]:
-        beamwidth_deg = 10
-    else:
+    elif scenario in [3]:
         beamwidth_deg = 15
+    else:
+        beamwidth_deg = 10
 
-    if scenario in [1, 2, 3, 4, 5, 6]:
+    if scenario in [1, 2, 3]:
         users_per_beam = 1
-    elif scenario in [7, 8, 9, 10, 11, 12]:
+    elif scenario in [4, 8, 9, 10, 11]:
         users_per_beam = 2
-    elif scenario in [13, 14, 15, 16, 17, 18]:
+    elif scenario in [5]:
         users_per_beam = 5
-    elif scenario in [19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]:
+    elif scenario in [6]:
         users_per_beam = 10
-    elif scenario in [31, 32, 33]:
+    elif scenario in [7]:
         users_per_beam = 1000
     else:
         users_per_beam = False
 
-    if scenario in [1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21, 25, 26, 27, 31, 32, 33]:
-        Penalty = True
-    else:
-        Penalty = False
-
-    if scenario in [25, 26, 27, 28, 29, 30]:
+    if scenario in [8]:
         Clustered = True
     else:
         Clustered = False
 
-    return beamwidth_deg, users_per_beam, Penalty, Clustered
+    return beamwidth_deg, users_per_beam, Clustered
 
 
 scenario = int(input('Scenario?'))
-# scenario = 1
-beamwidth_deg, users_per_beam, Penalty, Clustered = find_scenario(scenario)
+beamwidth_deg, users_per_beam, Clustered = find_scenario(scenario)
 
 pi = math.pi
 bs_of_interest = 10
@@ -57,20 +51,15 @@ ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 3
 xDelta = xmax - xmin
 yDelta = ymax - ymin
 
-# users = [int(i / (xDelta / 1000 * yDelta / 1000)) for i in [100, 250, 500, 750, 1000]]
 users = [120, 300, 600, 900, 1200]
 
 beamwidth_u = 5
 beamwidth_b = beamwidth_deg
 
 W = 200  # in MHz  # bandwidth
+M = 10000  # penalty on having disconnected users
 
-if Penalty:
-    M = 10000  # penalty on having disconnected users
-else:
-    M = 0
-
-transmission_power = (10 ** 2.0) / (360 / beamwidth_deg)  # 30 dB
+transmission_power = (10 ** 2.0) / (360 / beamwidth_deg)  # 20 dB
 noise_figure = 7.8
 noise_power_db = -174 + 10 * math.log10(W * 10 ** 9) + noise_figure
 noise = 10 ** (noise_power_db / 10)
@@ -100,23 +89,22 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
 x_bs, y_bs = initialise_graph_triangular(radius, xDelta, yDelta)
 number_of_bs = len(x_bs)
 
-iterations = {120: 10, 300: 10, 600: 10, 900: 10, 1200: 10}
+iterations = {120: 1000, 300: 400, 600: 200, 900: 134, 1200: 100}
+# iterations = {120: 100, 300: 40, 600: 20, 900: 14, 1200: 10}
+# iterations = {120: 1, 300: 1, 600: 1, 900: 1, 1200: 1}
+
 
 if beamwidth_b == 5:
-    misalignment_user = {120: 1.6954438876808926, 300: 1.5701307680072651, 600: 1.3879042182645298, 900: 1.2993768076164862, 1200: 1.3226491038698536}
-    misalignment = {120: 1.6954438876808926, 300: 1.5701307680072651, 600: 1.3879042182645298, 900: 1.2993768076164862, 1200: 1.3226491038698536}
-
-
+    misalignment_user = {120: 1.7174853459795385, 300: 1.5533509411672755, 600: 1.3843984679093195, 900: 1.302217312979267, 1200: 1.286268959981136}
+    misalignment = {120: 1.7174853459795385, 300: 1.5533509411672755, 600: 1.3843984679093195, 900: 1.302217312979267, 1200: 1.286268959981136}
 
 elif beamwidth_b == 10:
-    misalignment_user = {120: 1.983301431779446, 300: 1.8487323553512567, 600: 1.6725556449244827, 900: 1.5969519971850155, 1200: 1.5526005066403505}
-    misalignment = {120: 2.0910422029605362, 300: 1.9471764082347576, 600: 1.682219442073332, 900: 1.6078089333689214, 1200: 1.552600506640351}
-
+    misalignment_user = {120: 2.069725379632131, 300: 1.8942287559336388, 600: 1.7859018235801447, 900: 1.7984282555607853, 1200: 1.7000609251251997}
+    misalignment = {120: 3.6618244862232197, 300: 3.163133966123575, 600: 2.844711481564295, 900: 2.9766376097585443, 1200: 2.650084523533067}
 
 elif beamwidth_b == 15:
-    misalignment_user = {120: 1.886641564397087, 300: 1.7230666266682544, 600: 1.7193806593953058, 900: 1.71620737231353, 1200: 1.6750856613277922}
-    misalignment = {120: 5.695593258318874, 300: 5.367271166181774, 600: 4.964976488363763, 900: 4.972467823106814, 1200: 4.3530105659089084}
-
+    misalignment_user = {120: 1.9346621561117616, 300: 1.826887458419739, 600: 1.8254471763677291, 900: 1.7422006282203961, 1200: 1.712191390117882}
+    misalignment = {120: 6.219147302411779, 300: 5.710565966733396, 600: 5.824994344858849, 900: 5.372455264470386, 1200: 5.315660665127901}
 
 
 RateRequirement = True
@@ -125,3 +113,40 @@ user_rate = 500  # Mbps
 Torus = True
 
 fading = np.random.normal(0, 4, (3007, number_of_bs))
+
+overhead_factor = 0.75
+
+def find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, GreedyRate, k):
+    name = str(
+        str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
+            M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
+
+    if Heuristic:
+        name = str('beamwidth_heuristic' + name)
+
+    elif SNRHeuristic:
+        name = str('SNR_k=' + str(k) + name)
+
+    elif GreedyRate:
+        name = str(name + 'GreedyRate')
+
+    if Clustered:
+        name = str(name + '_clustered')
+
+    return name
+
+def find_name_data(Heuristic, SNRHeuristic, k, GreedyRate):
+    name = str(str(beamwidth_deg) + str(M) + str(users_per_beam) + str(user_rate))
+    if Heuristic:
+        name = str('beamwidth_heuristic' + name)
+
+    elif SNRHeuristic:
+        name = str('SNR_k=' + str(k) + name)
+
+    elif GreedyRate:
+        name = str(name + 'GreedyRate')
+
+    if Clustered:
+        name = str(name + '_clustered')
+
+    return name

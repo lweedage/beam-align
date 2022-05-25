@@ -7,3 +7,4 @@ shapely
 descartes
 seaborn
 progressbar2
+svgpath2mpl

@@ -30,8 +30,9 @@ def find_closest_snr(user, x_user, y_user):
         snr.append(-f.find_snr(user, bs, x_user, y_user))
     return np.argsort(snr)
 
+
 # for k in np.arange(1, 16, 1):
-for k in [1, 5]:
+for k in [1, 3]:
     for number_of_users in users:
         optimal = []
         xs = []
@@ -39,12 +40,17 @@ for k in [1, 5]:
         satisfaction = []
         capacities = []
         shares = []
+        total_links_per_user = []
 
         iteration_min, iteration_max = 0, iterations[number_of_users]
 
         name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
-            np.degrees(beamwidth_b)) + 'M=' + str(
-            M) + 's=' + str(users_per_beam)+ 'rate=' + str(user_rate) + '_SNRheuristick=' + str(k))
+            beamwidth_b) + 'M=' + str(
+            M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate) + '_SNRheuristick=' + str(k))
+
+        if Clustered:
+            name = str(name + '_clustered')
+
 
         if os.path.exists(str('Data/assignment' + name + '.p')) and 3 == 2:
             optimal = pickle.load(open(str('Data/assignment' + name + '.p'), 'rb'))
@@ -52,6 +58,7 @@ for k in [1, 5]:
             xs = pickle.load(open(str('Data/xs' + name + '.p'), 'rb'))
             ys = pickle.load(open(str('Data/ys' + name + '.p'), 'rb'))
             capacities = pickle.load(open(str('Data/capacity_per_user' + name + '.p'), 'rb'))
+            total_links_per_user = pickle.load(open(str('Data/total_links_per_user' + name + '.p'), 'rb'))
         else:
             bar = progressbar.ProgressBar(maxval=iteration_max, widgets=[
                 progressbar.Bar('=', f'Scenario: {scenario}, #users: {number_of_users} [', ']'), ' ',
@@ -105,14 +112,17 @@ for k in [1, 5]:
                 capacities.append(capacity)
                 shares.append(share)
                 satisfaction.append(satisfied)
+                total_links_per_user.append(links_per_user)
 
             bar.finish()
-            #
-            # pickle.dump(optimal, open(str('Data/assignment' + name + '.p'), 'wb'), protocol=4)
-            # pickle.dump(shares, open(str('Data/shares' + name + '.p'), 'wb'), protocol=4)
-            # pickle.dump(xs, open(str('Data/xs' + name + '.p'), 'wb'), protocol=4)
-            # pickle.dump(ys, open(str('Data/ys' + name + '.p'), 'wb'), protocol=4)
-            # pickle.dump(capacities, open(str('Data/capacity_per_user' + name + '.p'), 'wb'), protocol=4)
 
-        find_data.main(optimal, shares, xs, ys, capacities, satisfaction, SNRHeuristic=True, k=k, Clustered=Clustered)
-    get_data.get_data(scenario, user_rate, SNRHeuristic=True, k = k, Clustered=Clustered)
+            pickle.dump(optimal, open(str('Data/assignment' + name + '.p'), 'wb'), protocol=4)
+            pickle.dump(shares, open(str('Data/shares' + name + '.p'), 'wb'), protocol=4)
+            pickle.dump(xs, open(str('Data/xs' + name + '.p'), 'wb'), protocol=4)
+            pickle.dump(ys, open(str('Data/ys' + name + '.p'), 'wb'), protocol=4)
+            pickle.dump(capacities, open(str('Data/capacity_per_user' + name + '.p'), 'wb'), protocol=4)
+            pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'), 'wb'), protocol=4)
+            pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'), 'wb'), protocol=4)
+            print(name)
+        find_data.main(optimal, shares, xs, ys, satisfaction, Heuristic=False, k = k, SNRHeuristic = True, GreedyRate = False)
+    get_data.get_data(scenario, Heuristic=False, SNRHeuristic=True, k=k, GreedyRate=False)

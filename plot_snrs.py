@@ -26,7 +26,7 @@ maximum = 16
 # ---------------------------------------- HEURISTICS ------------------------------------------------
 user_rate = 500
 beamwidth_deg = 10
-s = 1000
+s =10
 fig, ax = plt.subplots()
 y120, y300, y600, y900, y1200 = [], [], [], [], []
 for k in np.arange(1, maximum, 1):
@@ -42,11 +42,11 @@ for k in np.arange(1, maximum, 1):
 
     maxima = [np.argmax(i) + 1for i in [y120, y300, y600, y900, y1200]]
 
-plt.plot(np.arange(1, maximum, 1), y120, label = '$\lambda_U = 100$')
-plt.plot(np.arange(1, maximum, 1), y300, label = '$\lambda_U = 250$')
-plt.plot(np.arange(1, maximum, 1), y600, label = '$\lambda_U = 500$')
-plt.plot(np.arange(1, maximum, 1), y900, label = '$\lambda_U = 750$')
-plt.plot(np.arange(1, maximum, 1), y1200, label = '$\lambda_U = 1000$')
+plt.plot(np.arange(1, maximum, 1), y120, label = '$\lambda_U = 100$', color = colors[0])
+plt.plot(np.arange(1, maximum, 1), y300, label = '$\lambda_U = 250$', color = colors[1])
+plt.plot(np.arange(1, maximum, 1), y600, label = '$\lambda_U = 500$', color = colors[2])
+plt.plot(np.arange(1, maximum, 1), y900, label = '$\lambda_U = 750$', color = colors[3])
+plt.plot(np.arange(1, maximum, 1), y1200, label = '$\lambda_U = 1000$', color = colors[4])
 
 plt.plot(maxima, [max(i) for i in [y120, y300, y600, y900, y1200]], '--', marker = markers[0], color = colors[6], label = 'Maximum')
 

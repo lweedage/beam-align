@@ -33,16 +33,16 @@ def find_initial_association():
         users, snrs = find_highest_snr(bs, x_user, y_user)
         for user in users:
             snr = -snrs.pop(0)
-            if sum(opt_x[user, :]) < 1000:
-                user_coords = f.user_coords(user, x_user, y_user)
-                if snr > SINR_min:
-                    bs_coords = f.bs_coords(bs)
-                    geo = f.find_geo(bs_coords, user_coords)
-                    beam_number = f.find_beam_number(geo, beamwidth_b)
-                    if occupied_beams[bs, beam_number] < users_per_beam and abs(
-                            f.find_misalignment(bs_coords, user_coords, beamwidth_b)) <= mis_threshold:
-                        opt_x[user, bs] = 1
-                        occupied_beams[bs, beam_number] += 1
+            user_coords = f.user_coords(user, x_user, y_user)
+            if snr > SINR_min:
+                bs_coords = f.bs_coords(bs)
+                geo = f.find_geo(bs_coords, user_coords)
+                beam_number = f.find_beam_number(geo, beamwidth_b)
+                if occupied_beams[bs, beam_number] < users_per_beam and abs(
+                        f.find_misalignment(bs_coords, user_coords, beamwidth_b)) <= mis_threshold and abs(
+                        f.find_misalignment(user_coords, bs_coords, beamwidth_u)) <= user_threshold:
+                    opt_x[user, bs] = 1
+                    occupied_beams[bs, beam_number] += 1
     return opt_x, occupied_beams
 
 
@@ -75,14 +75,14 @@ def find_occupied_beams(opt_x):
 for number_of_users in users:
     iteration_min, iteration_max = 0, iterations[number_of_users]
 
-    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
+    name = str('beamwidth_heuristic' + str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
         M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
-    if User_Heuristic:
-        name = str(name + '_users')
-    if Iterative:
-        name = str(name + '_Iterative')
 
-    if os.path.exists(str('Data/assignment' + name + '.p')) and 3 == 2:
+    if Clustered:
+        name = str(name + '_clustered')
+
+
+    if os.path.exists(str('Data/assignment' + name + '.p')):
         print('Data is already there')
         optimal = pickle.load(open(str('Data/assignment' + name + '.p'), 'rb'))
         shares = pickle.load(open(str('Data/shares' + name + '.p'), 'rb'))
@@ -90,9 +90,11 @@ for number_of_users in users:
         ys = pickle.load(open(str('Data/ys' + name + '.p'), 'rb'))
         user_capacities = pickle.load(open(str('Data/capacity_per_user' + name + '.p'), 'rb'))
         satisfaction = pickle.load(open(str('Data/satisfaction' + name + '.p'), 'rb'))
+        total_links_per_user = pickle.load(open(str('Data/total_links_per_user' + name + '.p'), 'rb'))
 
     else:
         mis_threshold = misalignment[number_of_users]
+        user_threshold = misalignment_user[number_of_users]
 
         optimal = []
         xs = []
@@ -100,6 +102,7 @@ for number_of_users in users:
         shares = []
         user_capacities = []
         satisfaction = []
+        total_links_per_user = []
 
         bar = progressbar.ProgressBar(maxval=iteration_max, widgets=[
             progressbar.Bar('=', f'Scenario: {scenario}, #users: {number_of_users} [', ']'), ' ',
@@ -119,18 +122,8 @@ for number_of_users in users:
             satisfied = np.ones(number_of_users)
 
             for u in range(number_of_users):
-                if Iterative:
-                    if capacities[u] < user_rate:
-                        opt_x[u, :] = 0
-                        satisfied[u] = 0
-                else:
-                    if capacities[u] < user_rate:
-                        satisfied[u] = capacities[u] / user_rate
-
-            if Iterative:
-                occupied_beams = find_occupied_beams(opt_x)
-                share = find_shares(opt_x, occupied_beams)
-                capacities = f.find_capacity_per_user(share, x_user, y_user)
+                if capacities[u] < user_rate:
+                    satisfied[u] = capacities[u] / user_rate
 
             links_per_user = sum(np.transpose(opt_x))
 
@@ -140,6 +133,7 @@ for number_of_users in users:
             satisfaction.append(satisfied)
             shares.append(share)
             user_capacities.append(capacities)
+            total_links_per_user.append(links_per_user)
 
         bar.finish()
 
@@ -149,8 +143,9 @@ for number_of_users in users:
     pickle.dump(ys, open(str('Data/ys' + name + '.p'), 'wb'), protocol=4)
     pickle.dump(user_capacities, open(str('Data/capacity_per_user' + name + '.p'), 'wb'), protocol=4)
     pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'), 'wb'), protocol=4)
+    pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'), 'wb'), protocol=4)
 
-    find_data.main(optimal, shares, xs, ys, user_capacities, satisfaction, Heuristic=True, Clustered=Clustered,
-                   User_Heuristic=User_Heuristic, Iterative=Iterative)
+    find_data.main(optimal, shares, xs, ys, satisfaction, Heuristic=True, k = 0, SNRHeuristic = False, GreedyRate = False)
 
-get_data.get_data(scenario, user_rate, Heuristic=True, User_Heuristic=User_Heuristic, Iterative=Iterative, Clustered=Clustered)
+
+get_data.get_data(scenario, Heuristic=True)

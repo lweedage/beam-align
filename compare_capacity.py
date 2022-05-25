@@ -46,14 +46,14 @@ for beamwidth_b in beamwidths:
         # name_M1003 = name + 'M=100s=3' + '.p'
         # name_M1003 = name + 'M=100s=10' + '.p'
 
-        disconnected_users_heuristic[beamwidth_b].append(pickle.load(open(
-            str('Data/disconnected_users' 'beamwidth_heuristic' + name_M0), 'rb')))
-
-        heuristic_beamwidth_capacity[beamwidth_b].append(pickle.load(open(
-            str('Data/channel_capacity' + 'beamwidth_heuristic' + name_M0), 'rb')))
-
-        heuristic_beamwidth_capacitylos[beamwidth_b].append(pickle.load(open(
-            str('Data/channel_capacity_with_los' + 'beamwidth_heuristic' + name_M0), 'rb')))
+        # disconnected_users_heuristic[beamwidth_b].append(pickle.load(open(
+        #     str('Data/disconnected_users' 'beamwidth_heuristic' + name_M0), 'rb')))
+        #
+        # heuristic_beamwidth_capacity[beamwidth_b].append(pickle.load(open(
+        #     str('Data/channel_capacity' + 'beamwidth_heuristic' + name_M0), 'rb')))
+        #
+        # heuristic_beamwidth_capacitylos[beamwidth_b].append(pickle.load(open(
+        #     str('Data/channel_capacity_with_los' + 'beamwidth_heuristic' + name_M0), 'rb')))
 
         capacity[beamwidth_b].append(pickle.load(open(
             str('Data/channel_capacity' + name_M100), 'rb')))
@@ -70,14 +70,14 @@ for beamwidth_b in beamwidths:
         disconnected_users[beamwidth_b].append(pickle.load(open(
             str('Data/disconnected_users' + name_M100), 'rb')))
 
-        capacity_nopenalty[beamwidth_b].append(pickle.load(open(
-            str('Data/channel_capacity' + name_M0), 'rb')))
-
-        capacitylos_nopenalty[beamwidth_b].append(pickle.load(open(
-            str('Data/channel_capacity_with_los' + name_M0), 'rb')))
-
-        disconnected_users_nopenalty[beamwidth_b].append(pickle.load(open(
-            str('Data/disconnected_users' + name_M0), 'rb')))
+        # capacity_nopenalty[beamwidth_b].append(pickle.load(open(
+        #     str('Data/channel_capacity' + name_M0), 'rb')))
+        #
+        # capacitylos_nopenalty[beamwidth_b].append(pickle.load(open(
+        #     str('Data/channel_capacity_with_los' + name_M0), 'rb')))
+        #
+        # disconnected_users_nopenalty[beamwidth_b].append(pickle.load(open(
+        #     str('Data/disconnected_users' + name_M0), 'rb')))
 
         # for k in [1, 2, 3, 4, 5, 24]:
         #     MC_SNR_heuristic_capacity[beamwidth_b][k].append(pickle.load(

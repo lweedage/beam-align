@@ -15,12 +15,10 @@ def from_data(name):
     else:
         return None
 
-# for number_of_users in users:
-for number_of_users in [900]:
+for number_of_users in users:
 
     iteration_min = 0
     iteration_max = iterations[number_of_users]
-    iteration_max = 1000 #iterations[number_of_users]
 
     name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
         M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
@@ -34,10 +32,9 @@ for number_of_users in [900]:
     ys = from_data(str('Data/ys' + name + '.p'))
     user_capacities = from_data(str('Data/capacity_per_user' + name + '.p'))
     satisfaction = from_data(str('Data/satisfaction' + name + '.p'))
-    average_distance = from_data(str('Data/average_distance' + name + '.p'))
 
 
-    if optimal == None or 3 == 3:
+    if optimal == None:
         optimal = []
         xs, ys = [], []
         shares = []
@@ -45,6 +42,7 @@ for number_of_users in [900]:
         user_capacities = []
         satisfaction = []
         average_distance = []
+        total_links_per_user = []
 
         start = time.time()
         bar = progressbar.ProgressBar(maxval=iteration_max, widgets=[
@@ -56,7 +54,6 @@ for number_of_users in [900]:
             np.random.seed(iteration)
             x_user, y_user = f.find_coordinates(number_of_users, Clustered=Clustered)
             opt_x, s, user_capacity, satisfied = new_optimization.optimization(x_user, y_user)
-            avg_distance = np.zeros(number_of_users)
             for user in range(number_of_users):
                 user_coords = f.user_coords(user, x_user, y_user)
                 distances = list()
@@ -64,7 +61,6 @@ for number_of_users in [900]:
                     if opt_x[user, bs] > 0.5:
                         bs_coords = f.bs_coords(bs)
                         distances.append(f.find_distance(user_coords, bs_coords))
-                avg_distance[user] = sum(distances)/max(1, len(distances))
 
             start = time.time()
             optimal.append(opt_x)
@@ -73,16 +69,17 @@ for number_of_users in [900]:
             ys.append(y_user)
             user_capacities.append(user_capacity)
             satisfaction.append(satisfied)
-            average_distance.append(avg_distance)
+            total_links_per_user.append(sum(np.transpose(opt_x)))
 
         bar.finish()
-        # pickle.dump(average_distance, open(str('Data/average_distance' + name + '.p'), 'wb'), protocol=4)
-        # pickle.dump(optimal, open(str('Data/assignment' + name + '.p'), 'wb'), protocol=4)
-        # pickle.dump(shares, open(str('Data/shares' + name + '.p'), 'wb'), protocol=4)
-        # pickle.dump(xs, open(str('Data/xs' + name + '.p'), 'wb'), protocol=4)
-        # pickle.dump(ys, open(str('Data/ys' + name + '.p'), 'wb'), protocol=4)
-        # pickle.dump(user_capacities, open(str('Data/capacity_per_user' + name + '.p'), 'wb'), protocol=4)
-        # pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'), 'wb'), protocol=4)
-    find_data.main(optimal, shares, xs, ys, user_capacities, satisfaction, Clustered=Clustered)
+        pickle.dump(optimal, open(str('Data/assignment' + name + '.p'), 'wb'), protocol=4)
+        pickle.dump(shares, open(str('Data/shares' + name + '.p'), 'wb'), protocol=4)
+        pickle.dump(xs, open(str('Data/xs' + name + '.p'), 'wb'), protocol=4)
+        pickle.dump(ys, open(str('Data/ys' + name + '.p'), 'wb'), protocol=4)
+        pickle.dump(user_capacities, open(str('Data/capacity_per_user' + name + '.p'), 'wb'), protocol=4)
+        pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'), 'wb'), protocol=4)
+        pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'), 'wb'), protocol=4)
 
-get_data.get_data(scenario, user_rate, Clustered = Clustered)
+    find_data.main(optimal, shares, xs, ys, satisfaction)
+
+get_data.get_data(scenario)

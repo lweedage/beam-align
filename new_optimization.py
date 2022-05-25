@@ -139,7 +139,7 @@ def optimization(x_user, y_user):
 
     if m.status == 2:
         for i in users:
-            total_C[i] = C_user[i].X
+            total_C[i] = overhead_factor * C_user[i].X
             for j in base_stations:
                 a[i, j] = x_user[i, j].X
 
