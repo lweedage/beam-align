@@ -5,7 +5,14 @@ import matplotlib.pyplot as plt
 import scipy.stats as stats
 from parameters import *
 import seaborn as sns
-
+import matplotlib.pylab as pylab
+params = {'legend.fontsize': 'large',
+         'axes.labelsize': 'large',
+         'axes.titlesize':'large',
+         'xtick.labelsize':'large',
+         'ytick.labelsize':'large',
+          'figure.autolayout': True}
+pylab.rcParams.update(params)
 # colors = sns.color_palette("ch:s=-.2,r=.6")
 
 
@@ -21,37 +28,24 @@ for number_of_users in users:
     iteration_max = iterations[number_of_users]
 
     Heuristic = False
-    SNRHeuristic = False
-    User_Heuristic = False
-    GreedyRate = False
-    GreedyHeuristic = False
+    SNRHeuristic = True
 
-    k = 0
+    k = 3
 
     name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
         M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
 
     if Heuristic:
-        if User_Heuristic:
-            name = str('beamwidth_user_heuristic' + name)
-        else:
-            name = str('beamwidth_heuristic' + name)
+        name = str('beamwidth_heuristic' + name)
 
     elif SNRHeuristic:
         name = str('SNR_k=' + str(k) + name)
-
-    elif GreedyRate:
-        name = str(name + 'GreedyRate')
-    elif GreedyHeuristic:
-        name = str(name + 'GreedyHeuristic')
 
     if Clustered:
         name = str(name + '_clustered')
 
 
-
     misalignment = pickle.load(open(str('Data/grid_misalignment_bs' + name + '.p'), 'rb'))
-
     satisfaction = pickle.load(open(str('Data/satisfaction' + name + '.p'), 'rb'))
     mis_bs[number_of_users] = np.std(misalignment) * 2
     degrees = pickle.load(open(str('Data/total_links_per_user' + name + '.p'), 'rb'))
@@ -61,6 +55,8 @@ for number_of_users in users:
     name = str(beamwidth_b) + 'b_' + str(number_of_users) + '_users_M=' + str(M) + 's='  + str(users_per_beam)
     if Heuristic:
         name = str('heuristic_' + name)
+    if Clustered:
+        name = str(name + '_clustered')
 
     fig, ax = plt.subplots()
     data1 = misalignment

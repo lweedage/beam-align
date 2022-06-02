@@ -58,6 +58,7 @@ beamwidth_b = beamwidth_deg
 
 W = 200  # in MHz  # bandwidth
 M = 10000  # penalty on having disconnected users
+# M = 0
 
 transmission_power = (10 ** 2.0) / (360 / beamwidth_deg)  # 20 dB
 noise_figure = 7.8

@@ -396,4 +396,7 @@ if __name__ == '__main__':
     fig, ax = plt.subplots()
     plt.scatter(x_user, y_user, color = colors[1], s = 10, label = 'Offspring')
     plt.scatter(xp, yp, marker = '*', color = colors[0], s = 60, label = 'Parent')
+    plt.xticks([])
+    plt.yticks([])
+
     plt.show()

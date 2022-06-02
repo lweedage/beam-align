@@ -307,7 +307,7 @@ if __name__ == '__main__':
     i = 0
     k = 0
     for (x1, y1), (x2, y2) in blockers.blockers:
-        plt.plot([x1 * 10, x2 * 10], [y1 * 10, y2 * 10], color=colors[k])
+        plt.plot([x1 * 10, x2 * 10], [y1 * 10, y2 * 10], color=colors[5])
         i += 1
         if i % 4 == 0:
             k += 1

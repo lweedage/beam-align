@@ -4,6 +4,14 @@ import numpy as np
 import pickle
 import seaborn as sns
 import math
+import matplotlib.pylab as pylab
+params = {'legend.fontsize': 'large',
+         'axes.labelsize': 'large',
+         'axes.titlesize':'large',
+         'xtick.labelsize':'large',
+         'ytick.labelsize':'large',
+          'figure.autolayout': True}
+pylab.rcParams.update(params)
 
 colors = ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen', 'OrangeRed', 'grey'] * 100
 markers = ['o', 's' , 'v' , '*', 'p', 'P', '1', '+']
