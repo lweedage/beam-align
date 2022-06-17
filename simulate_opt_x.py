@@ -32,6 +32,7 @@ for number_of_users in users:
     ys = from_data(str('Data/ys' + name + '.p'))
     user_capacities = from_data(str('Data/capacity_per_user' + name + '.p'))
     satisfaction = from_data(str('Data/satisfaction' + name + '.p'))
+    total_links_per_user = from_data(str('Data/total_links_per_user' + name + '.p'))
 
 
     if optimal == None:

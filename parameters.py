@@ -2,11 +2,14 @@ import math
 from cycler import cycler
 import matplotlib
 import numpy as np
+import seaborn as sns
 
-matplotlib.rcParams['axes.prop_cycle'] = cycler('color',
-                                                ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen',
-                                                 'OrangeRed'])
-colors = ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen', 'OrangeRed', 'grey'] * 1000
+
+colors = ['#904C77', '#E49AB0', '#ECB8A5',  '#96ACB7',  '#957D95'] * 100
+markers = ['o', 'X', 'v' , 's', '*', 'P', '1', '+']
+
+
+Greedy = False
 
 
 def find_scenario(scenario):
@@ -19,7 +22,7 @@ def find_scenario(scenario):
 
     if scenario in [1, 2, 3]:
         users_per_beam = 1
-    elif scenario in [4, 8, 9, 10, 11]:
+    elif scenario in [4, 8, 9]:
         users_per_beam = 2
     elif scenario in [5]:
         users_per_beam = 5
@@ -35,11 +38,16 @@ def find_scenario(scenario):
     else:
         Clustered = False
 
-    return beamwidth_deg, users_per_beam, Clustered
+    if scenario in [9]:
+        M = 0
+    else:
+        M = 10000
+
+    return beamwidth_deg, users_per_beam, Clustered, M
 
 
 scenario = int(input('Scenario?'))
-beamwidth_deg, users_per_beam, Clustered = find_scenario(scenario)
+beamwidth_deg, users_per_beam, Clustered, M = find_scenario(scenario)
 
 pi = math.pi
 bs_of_interest = 10
@@ -57,8 +65,7 @@ beamwidth_u = 5
 beamwidth_b = beamwidth_deg
 
 W = 200  # in MHz  # bandwidth
-M = 10000  # penalty on having disconnected users
-# M = 0
+
 
 transmission_power = (10 ** 2.0) / (360 / beamwidth_deg)  # 20 dB
 noise_figure = 7.8
@@ -92,7 +99,7 @@ number_of_bs = len(x_bs)
 
 iterations = {120: 1000, 300: 400, 600: 200, 900: 134, 1200: 100}
 # iterations = {120: 100, 300: 40, 600: 20, 900: 14, 1200: 10}
-# iterations = {120: 1, 300: 1, 600: 1, 900: 1, 1200: 1}
+# iterations = {120: 2, 300: 2, 600: 2, 900: 2, 1200: 2}
 
 
 if beamwidth_b == 5:
@@ -108,7 +115,6 @@ elif beamwidth_b == 15:
     misalignment = {120: 6.219147302411779, 300: 5.710565966733396, 600: 5.824994344858849, 900: 5.372455264470386, 1200: 5.315660665127901}
 
 
-RateRequirement = True
 user_rate = 500  # Mbps
 
 Torus = True
@@ -117,7 +123,7 @@ fading = np.random.normal(0, 4, (3007, number_of_bs))
 
 overhead_factor = 0.75
 
-def find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, GreedyRate, k):
+def find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, k, Clustered, M, Greedy = False):
     name = str(
         str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
             M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
@@ -128,15 +134,14 @@ def find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, GreedyRat
     elif SNRHeuristic:
         name = str('SNR_k=' + str(k) + name)
 
-    elif GreedyRate:
-        name = str(name + 'GreedyRate')
-
     if Clustered:
         name = str(name + '_clustered')
 
+    if Greedy and Heuristic:
+        name = str(name + '_greedy')
     return name
 
-def find_name_data(Heuristic, SNRHeuristic, k, GreedyRate):
+def find_name_data(Heuristic, SNRHeuristic, k, Clustered, M, Greedy = False):
     name = str(str(beamwidth_deg) + str(M) + str(users_per_beam) + str(user_rate))
     if Heuristic:
         name = str('beamwidth_heuristic' + name)
@@ -144,10 +149,10 @@ def find_name_data(Heuristic, SNRHeuristic, k, GreedyRate):
     elif SNRHeuristic:
         name = str('SNR_k=' + str(k) + name)
 
-    elif GreedyRate:
-        name = str(name + 'GreedyRate')
-
     if Clustered:
         name = str(name + '_clustered')
+
+    if Greedy and Heuristic:
+        name = str(name + '_greedy')
 
     return name

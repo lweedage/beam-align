@@ -4,9 +4,9 @@ import matplotlib
 import numpy as np
 import pickle
 
+Greedy = False
 
-def find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, GreedyRate, k, beamwidth_b, users_per_beam, Clustered):
-    M = 10000
+def find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, k, beamwidth_b, users_per_beam, Clustered, M, Greedy):
     user_rate = 500
     name = str(
         str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
@@ -18,16 +18,15 @@ def find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, GreedyRat
     elif SNRHeuristic:
         name = str('SNR_k=' + str(k) + name)
 
-    elif GreedyRate:
-        name = str(name + 'GreedyRate')
-
     if Clustered:
         name = str(name + '_clustered')
 
+    if Greedy and Heuristic:
+        name = str(name + '_greedy')
+
     return name
 
-def find_name_data(Heuristic, SNRHeuristic, k, GreedyRate, beamwidth_deg, users_per_beam, Clustered):
-    M = 10000
+def find_name_data(Heuristic, SNRHeuristic, k, beamwidth_deg, users_per_beam, Clustered, M, Greedy):
     user_rate = 500
     name = str(str(beamwidth_deg) + str(M) + str(users_per_beam) + str(user_rate))
     if Heuristic:
@@ -36,12 +35,11 @@ def find_name_data(Heuristic, SNRHeuristic, k, GreedyRate, beamwidth_deg, users_
     elif SNRHeuristic:
         name = str('SNR_k=' + str(k) + name)
 
-    elif GreedyRate:
-        name = str(name + 'GreedyRate')
-
     if Clustered:
         name = str(name + '_clustered')
 
+    if Greedy and Heuristic:
+        name = str(name + '_greedy')
     return name
 
 matplotlib.rcParams['axes.prop_cycle'] = cycler('color',
@@ -63,7 +61,7 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
 
 iterations = {120: 1000, 300: 400, 600: 200, 900: 134, 1200: 100}
 # iterations = {120: 100, 300: 40, 600: 20, 900: 14, 1200: 10}
-# iterations = {120: 1, 300: 1, 600: 1, 900: 1, 1200: 1}
+# iterations = {120: 2, 300: 2, 600: 2, 900: 2, 1200: 2}
 
 
 users = [120, 300, 600, 900, 1200]
@@ -85,8 +83,6 @@ number_of_bs = len(x_bs)
 
 
 def find_scenario(scenario):
-    AT = False
-    rain_rate = 0
     if scenario in [1]:
         beamwidth_deg = 5
     elif scenario in [3]:
@@ -96,7 +92,7 @@ def find_scenario(scenario):
 
     if scenario in [1, 2, 3]:
         users_per_beam = 1
-    elif scenario in [4, 8, 9, 10, 11]:
+    elif scenario in [4, 8, 9]:
         users_per_beam = 2
     elif scenario in [5]:
         users_per_beam = 5
@@ -112,7 +108,12 @@ def find_scenario(scenario):
     else:
         Clustered = False
 
-    return beamwidth_deg, users_per_beam, Clustered
+    if scenario in [9]:
+        M = 0
+    else:
+        M = 10000
+
+    return beamwidth_deg, users_per_beam, Clustered, M
 
 
 def fairness(x):
@@ -121,12 +122,10 @@ def fairness(x):
     return teller / noemer
 
 
-def get_data(scenario, Heuristic=False, SNRHeuristic=False, k=0, GreedyRate=False):
+def get_data(scenario, Heuristic=False, SNRHeuristic=False, k=0, Greedy = False):
     print('Getting data...')
-    beamwidth_deg, users_per_beam, Clustered = find_scenario(scenario)
+    beamwidth_deg, users_per_beam, Clustered, M = find_scenario(scenario)
     beamwidth_b = beamwidth_deg
-
-    M = 10000  # penalty on having disconnected users
 
     mis = dict()
     mis_user = dict()
@@ -154,10 +153,8 @@ def get_data(scenario, Heuristic=False, SNRHeuristic=False, k=0, GreedyRate=Fals
 
     for number_of_users in users:
         iteration_max = iterations[number_of_users]
-
-        # print(iteration_max)
-        name = find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, GreedyRate, k, beamwidth_b, users_per_beam, Clustered)
-
+        name = find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, k, beamwidth_b, users_per_beam, Clustered, M, Greedy)
+        print(name)
         degrees = pickle.load(open(str('Data/total_links_per_user' + name + '.p'), 'rb'))
         misalignment_bs = pickle.load(open(str('Data/grid_misalignment_bs' + name + '.p'), 'rb'))
         misalignment_user = pickle.load(open(str('Data/grid_misalignment_user' + name + '.p'), 'rb'))
@@ -201,8 +198,10 @@ def get_data(scenario, Heuristic=False, SNRHeuristic=False, k=0, GreedyRate=Fals
     print(mis)
     print(mis_user)
 
-    name = find_name_data(Heuristic, SNRHeuristic, k, GreedyRate, beamwidth_deg, users_per_beam, Clustered)
+    print(sat)
 
+    name = find_name_data(Heuristic, SNRHeuristic, k, beamwidth_deg, users_per_beam, Clustered, M, Greedy)
+    print(name)
     pickle.dump(deg, open(str('Data/Processed/deg' + name + '.p'), 'wb'), protocol=4)
     pickle.dump(mis, open(str('Data/Processed/mis' + name + '.p'), 'wb'), protocol=4)
     pickle.dump(sat, open(str('Data/Processed/sat' + name + '.p'), 'wb'), protocol=4)

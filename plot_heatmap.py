@@ -15,7 +15,7 @@ delta = 0.5
 
 for number_of_users in [900]:
     iteration_min = 0
-    iteration_max = 1 #iterations[number_of_users]
+    iteration_max = 1000#iterations[number_of_users]
 
     Heuristic = False
     SNRHeuristic = False

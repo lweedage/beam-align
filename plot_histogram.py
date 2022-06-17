@@ -6,15 +6,17 @@ import scipy.stats as stats
 from parameters import *
 import seaborn as sns
 import matplotlib.pylab as pylab
-params = {'legend.fontsize': 'large',
-         'axes.labelsize': 'large',
-         'axes.titlesize':'large',
-         'xtick.labelsize':'large',
-         'ytick.labelsize':'large',
+params = {'legend.fontsize': 'x-large',
+         'axes.labelsize': 'x-large',
+         'axes.titlesize':'x-large',
+         'xtick.labelsize':'x-large',
+         'ytick.labelsize':'x-large',
+        'lines.markersize': 8,
           'figure.autolayout': True}
 pylab.rcParams.update(params)
-# colors = sns.color_palette("ch:s=-.2,r=.6")
 
+colors = ['#904C77', '#E49AB0', '#ECB8A5',  '#96ACB7',  '#957D95'] * 100
+markers = ['o', 'X', 'v' , 's', '*', 'P', '1', '+']
 
 mis = dict()
 dis = dict()
@@ -28,7 +30,7 @@ for number_of_users in users:
     iteration_max = iterations[number_of_users]
 
     Heuristic = False
-    SNRHeuristic = True
+    SNRHeuristic = False
 
     k = 3
 
@@ -62,6 +64,8 @@ for number_of_users in users:
     data1 = misalignment
     plt.hist(data1, density=True, bins=np.arange(-(beamwidth_b / 2), (beamwidth_b / 2) + 0.1, 0.1),
              alpha=0.3)
+    plt.axvline(x=2*np.std(np.abs(data1)), color='r', label='$\\sigma(\\theta^b)$')
+    plt.axvline(x=-2*np.std(np.abs(data1)), color='r')
     plt.xlabel('Misalignment in degrees')
     # plt.legend()
     plt.savefig(str('Figures/' + name + '_misalignment.png'), dpi = 300)

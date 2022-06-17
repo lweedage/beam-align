@@ -32,7 +32,7 @@ def find_closest_snr(user, x_user, y_user):
 
 
 # for k in np.arange(1, 16, 1):
-for k in [1, 3]:
+for k in [1, 3, 24]:
     for number_of_users in users:
         optimal = []
         xs = []
@@ -124,5 +124,5 @@ for k in [1, 3]:
             pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'), 'wb'), protocol=4)
             pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'), 'wb'), protocol=4)
             print(name)
-        find_data.main(optimal, shares, xs, ys, satisfaction, Heuristic=False, k = k, SNRHeuristic = True, GreedyRate = False)
-    get_data.get_data(scenario, Heuristic=False, SNRHeuristic=True, k=k, GreedyRate=False)
+        find_data.main(optimal, shares, xs, ys, satisfaction, Heuristic=False, k = k, SNRHeuristic = True)
+    get_data.get_data(scenario, Heuristic=False, SNRHeuristic=True, k=k)

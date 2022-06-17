@@ -31,7 +31,6 @@ def optimization(x_user, y_user):
 
     user_beamnumber = np.zeros((number_of_users, number_of_bs))
     bs_beamnumber = np.zeros((number_of_users, number_of_bs))
-
     # calculating the gain, path_loss and interference for every user-bs pair
     for i in users:
         coords_i = f.user_coords(i, x_user, y_user)
@@ -114,9 +113,8 @@ def optimization(x_user, y_user):
                 (W / users_per_beam) * x[i, j] * spectral_efficiency[i, j] for j in base_stations), name=f'C_user#{i}')
 
         # rate requirement
-        if RateRequirement:
-            for i in users:
-                m.addConstr(C_user[i] >= user_rate * (1 - disconnected[i]), name=f'rate_req{i}')
+        for i in users:
+            m.addConstr(C_user[i] >= user_rate * (1 - disconnected[i]), name=f'rate_req{i}')
 
         # --------------------- OPTIMIZE MODEL -------------------------
         # m.computeIIS()
@@ -144,7 +142,7 @@ def optimization(x_user, y_user):
                 a[i, j] = x_user[i, j].X
 
         for i in users:
-            satisfied[i] = 1 - disconnected[i].X
+            satisfied[i] = min(1, C_user[i].X/user_rate)
             # print(disconnected[i].X)
             for j in base_stations:
                 links[i, j] = x[i, j].X

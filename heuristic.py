@@ -8,13 +8,17 @@ import os
 import matplotlib.pyplot as plt
 import get_data
 
-User_Heuristic = False
-Iterative = False
-
+Greedy = False
 
 def find_highest_snr(bs, x_user, y_user):
     snr = []
     for user in range(number_of_users):
+        snr.append(-f.find_snr(user, bs, x_user, y_user))
+    return np.argsort(snr), sorted(snr)
+
+def find_highest_snr_user(user, x_user, y_user):
+    snr = []
+    for bs in range(number_of_bs):
         snr.append(-f.find_snr(user, bs, x_user, y_user))
     return np.argsort(snr), sorted(snr)
 
@@ -39,8 +43,7 @@ def find_initial_association():
                 geo = f.find_geo(bs_coords, user_coords)
                 beam_number = f.find_beam_number(geo, beamwidth_b)
                 if occupied_beams[bs, beam_number] < users_per_beam and abs(
-                        f.find_misalignment(bs_coords, user_coords, beamwidth_b)) <= mis_threshold and abs(
-                        f.find_misalignment(user_coords, bs_coords, beamwidth_u)) <= user_threshold:
+                        f.find_misalignment(bs_coords, user_coords, beamwidth_b)) <= mis_threshold: # and abs(                        f.find_misalignment(user_coords, bs_coords, beamwidth_u)) <= user_threshold:
                     opt_x[user, bs] = 1
                     occupied_beams[bs, beam_number] += 1
     return opt_x, occupied_beams
@@ -81,8 +84,7 @@ for number_of_users in users:
     if Clustered:
         name = str(name + '_clustered')
 
-
-    if os.path.exists(str('Data/assignment' + name + '.p')):
+    if os.path.exists(str('Data/assignment' + name + '.p')) and 3 == 2:
         print('Data is already there')
         optimal = pickle.load(open(str('Data/assignment' + name + '.p'), 'rb'))
         shares = pickle.load(open(str('Data/shares' + name + '.p'), 'rb'))
@@ -118,8 +120,25 @@ for number_of_users in users:
             opt_x, occupied_beams = find_initial_association()
             share = find_shares(opt_x, occupied_beams)
 
+            if Greedy:
+                links_per_user = sum(np.transpose(opt_x))
+                for i in range(number_of_users):
+                    user_coords = f.user_coords(i, x_user, y_user)
+                    if links_per_user[i] == 0:
+                        bss, snrs = find_highest_snr_user(i, x_user, y_user)
+                        bss = list(bss)
+                        while len(bss) > 0 and sum(np.transpose(opt_x))[i] == 0:
+                            bs = bss.pop(0)
+                            bs_coords = f.bs_coords(bs)
+                            geo = f.find_geo(bs_coords, user_coords)
+                            beam_number = f.find_beam_number(geo, beamwidth_b)
+                            if occupied_beams[bs, beam_number] < users_per_beam:
+                                opt_x[i, bs] += 1
+
+
             capacities = f.find_capacity_per_user(share, x_user, y_user)
             satisfied = np.ones(number_of_users)
+
 
             for u in range(number_of_users):
                 if capacities[u] < user_rate:
@@ -145,7 +164,6 @@ for number_of_users in users:
     pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'), 'wb'), protocol=4)
     pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'), 'wb'), protocol=4)
 
-    find_data.main(optimal, shares, xs, ys, satisfaction, Heuristic=True, k = 0, SNRHeuristic = False, GreedyRate = False)
+    find_data.main(optimal, shares, xs, ys, satisfaction, Heuristic=True, Greedy = Greedy)
 
-
-get_data.get_data(scenario, Heuristic=True)
+get_data.get_data(scenario, Heuristic=True, Greedy = Greedy)

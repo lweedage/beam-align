@@ -109,6 +109,6 @@ for number_of_users in users:
         pickle.dump(ys, open(str('Data/ys' + name + '.p'), 'wb'), protocol=4)
         pickle.dump(capacities, open(str('Data/capacity_per_user' + name + '.p'), 'wb'), protocol=4)
 
-    find_data.main(optimal, shares, xs, ys, capacities, satisfaction, GreedyRate=True, Clustered=Clustered, AT=AT,
+    find_data.main(optimal, shares, xs, ys, capacities, satisfaction, Clustered=Clustered, AT=AT,
                    rain_rate=rain_rate)
 get_data.get_data(scenario, user_rate, GreedyRate=True)

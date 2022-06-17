@@ -307,7 +307,7 @@ if __name__ == '__main__':
     i = 0
     k = 0
     for (x1, y1), (x2, y2) in blockers.blockers:
-        plt.plot([x1 * 10, x2 * 10], [y1 * 10, y2 * 10], color=colors[5])
+        plt.plot([x1 * 10, x2 * 10], [y1 * 10, y2 * 10], color=colors[3])
         i += 1
         if i % 4 == 0:
             k += 1
@@ -315,8 +315,9 @@ if __name__ == '__main__':
     opt_x = optimal[0]
 
     plt.axis('off')
-    # plt.xlim((200, 600))
-    # plt.ylim((0, 200))
+    # print(min(x_bs), max(x_bs), min(y_bs), max(y_bs))
+    plt.xlim((1900, 5300))
+    plt.ylim((-500, 2200))
     plt.savefig('blocker_segmentation.png', dpi = 300)
     plt.show()
     np.random.seed(1)

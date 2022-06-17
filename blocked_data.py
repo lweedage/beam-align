@@ -5,17 +5,18 @@ import pickle
 import seaborn as sns
 import math
 import matplotlib.pylab as pylab
-params = {'legend.fontsize': 'large',
-         'axes.labelsize': 'large',
-         'axes.titlesize':'large',
-         'xtick.labelsize':'large',
-         'ytick.labelsize':'large',
+params = {'legend.fontsize': 'x-large',
+         'axes.labelsize': 'x-large',
+         'axes.titlesize':'x-large',
+         'xtick.labelsize':'x-large',
+         'ytick.labelsize':'x-large',
+        'lines.markersize': 8,
           'figure.autolayout': True}
 pylab.rcParams.update(params)
 
 
-colors = ['DeepSkyBlue', 'DarkMagenta', 'LightPink', 'Orange', 'LimeGreen', 'OrangeRed', 'grey'] * 100
-markers = ['o', 's', 'v', '*', 'p', 'P', '1', '+']
+colors = ['#904C77', '#E49AB0', '#ECB8A5',  '#96ACB7',  '#957D95'] * 100
+markers = ['o', 'X', 'v' , 's', '*', 'P', '1', '+']
 
 iterations = {120: 1000, 300: 400, 600: 200, 900: 134, 1200: 100}
 
@@ -49,7 +50,7 @@ x = pickle.load(
 xh = pickle.load(
     open(str('Data/Processed/capbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
          'rb')).values()
-xs5 = pickle.load(open(str('Data/Processed/capSNR_k=3' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
+xs5 = pickle.load(open(str('Data/Processed/capSNR_k=24' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
                        'rb')).values()
 
 xb = pickle.load(open(str('Data/Processed/cap_blocked' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
@@ -58,7 +59,7 @@ xhb = pickle.load(open(
     str('Data/Processed/cap_blockedbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
     'rb')).values()
 xs5b = pickle.load(
-    open(str('Data/Processed/cap_blockedSNR_k=3' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
+    open(str('Data/Processed/cap_blockedSNR_k=24' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
          'rb')).values()
 
 xc = pickle.load(
@@ -69,7 +70,7 @@ xhc = pickle.load(open(
         user_rate) + '_clustered.p'),
     'rb')).values()
 xs5c = pickle.load(
-    open(str('Data/Processed/capSNR_k=3' + str(beamwidth_deg) + str(M) + str(s) + str(
+    open(str('Data/Processed/capSNR_k=24' + str(beamwidth_deg) + str(M) + str(s) + str(
         user_rate) + '_clustered.p'),
          'rb')).values()
 
@@ -91,7 +92,7 @@ x = pickle.load(
 xh = pickle.load(
     open(str('Data/Processed/satbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
          'rb')).values()
-xs5 = pickle.load(open(str('Data/Processed/satSNR_k=3' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
+xs5 = pickle.load(open(str('Data/Processed/satSNR_k=24' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
                        'rb')).values()
 
 xb = pickle.load(open(str('Data/Processed/sat_blocked' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
@@ -100,7 +101,7 @@ xhb = pickle.load(open(
     str('Data/Processed/sat_blockedbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
     'rb')).values()
 xs5b = pickle.load(
-    open(str('Data/Processed/sat_blockedSNR_k=3' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
+    open(str('Data/Processed/sat_blockedSNR_k=24' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
          'rb')).values()
 
 xc = pickle.load(
@@ -111,7 +112,7 @@ xhc = pickle.load(open(
         user_rate) + '_clustered.p'),
     'rb')).values()
 xs5c = pickle.load(
-    open(str('Data/Processed/satSNR_k=3' + str(beamwidth_deg) + str(M) + str(s) + str(
+    open(str('Data/Processed/satSNR_k=24' + str(beamwidth_deg) + str(M) + str(s) + str(
         user_rate) + '_clustered.p'),
          'rb')).values()
 
@@ -135,7 +136,7 @@ xh = pickle.load(
     open(str('Data/Processed/cap2_5beamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
          'rb')).values()
 xs5 = pickle.load(open(
-    str('Data/Processed/cap2_5SNR_k=3' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'), 'rb')).values()
+    str('Data/Processed/cap2_5SNR_k=24' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'), 'rb')).values()
 
 xb = pickle.load(open(
     str('Data/Processed/cap25' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'), 'rb')).values()
@@ -143,7 +144,7 @@ xhb = pickle.load(open(
     str('Data/Processed/cap25beamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
     'rb')).values()
 xs5b = pickle.load(
-    open(str('Data/Processed/cap25SNR_k=3' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
+    open(str('Data/Processed/cap25SNR_k=24' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
          'rb')).values()
 
 xc = pickle.load(
@@ -152,7 +153,7 @@ xhc = pickle.load(open(
     str('Data/Processed/cap150beamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(s) + str(
         user_rate) + '.p'), 'rb')).values()
 xs5c = pickle.load(
-    open(str('Data/Processed/cap150SNR_k=3' + str(beamwidth_deg) + str(M) + str(s) + str(
+    open(str('Data/Processed/cap150SNR_k=24' + str(beamwidth_deg) + str(M) + str(s) + str(
         user_rate) + '.p'), 'rb')).values()
 
 optimal_rain2_5 = [i for i, j in zip(x, users)][index]
@@ -174,7 +175,7 @@ xh = pickle.load(
     open(str('Data/Processed/sat2_5beamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
          'rb')).values()
 xs5 = pickle.load(open(
-    str('Data/Processed/sat2_5SNR_k=3' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'), 'rb')).values()
+    str('Data/Processed/sat2_5SNR_k=24' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'), 'rb')).values()
 
 xb = pickle.load(
     open(str('Data/Processed/sat25' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'), 'rb')).values()
@@ -182,7 +183,7 @@ xhb = pickle.load(open(
     str('Data/Processed/sat25beamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
     'rb')).values()
 xs5b = pickle.load(
-    open(str('Data/Processed/sat25SNR_k=3' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
+    open(str('Data/Processed/sat25SNR_k=24' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
          'rb')).values()
 
 xc = pickle.load(
@@ -191,7 +192,7 @@ xhc = pickle.load(open(
     str('Data/Processed/sat150beamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
     'rb')).values()
 xs5c = pickle.load(
-    open(str('Data/Processed/sat150SNR_k=3' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
+    open(str('Data/Processed/sat150SNR_k=24' + str(beamwidth_deg) + str(M) + str(s) + str(user_rate) + '.p'),
          'rb')).values()
 
 
@@ -214,12 +215,13 @@ sat_beam_align = [sat_beam_rain_150, sat_beam_rain_25, sat_beam_rain_2_5, sat_be
 sat_snr = [sat_snr_rain_150, sat_snr_rain_25, sat_snr_rain_2_5, sat_snr_clustered, sat_snr_blocked, sat_snr_opt]
 
 y = range(6)
-
+print('Difference with optimal:', [(i - j) / i * 100 for i, j in zip(optimal, beam_align)])
+print('Difference with optimal:', [(i - j) / i * 100 for i, j in zip(sat_optimal, sat_beam_align)])
 
 fig, ax = plt.subplots()
-plt.scatter(optimal, y, label = 'Optimal', color = colors[0], s = 100)
-plt.scatter(beam_align, y, label = 'ʙᴇᴀᴍ-ᴀʟɪɢɴ', color = colors[1], s = 100)
-plt.scatter(snr, y, label = 'SNR-3', color = colors[2], s = 100)
+plt.scatter(optimal, y, label = 'Optimal', color = colors[0], s = 100, marker = markers[0])
+plt.scatter(beam_align, y, label = 'ʙᴇᴀᴍ-ᴀʟɪɢɴ', color = colors[1], s = 100, marker = markers[1])
+plt.scatter(snr, y, label = 'SNR-dynamic', color = colors[2], s = 100, marker = markers[2])
 
 plt.yticks(y, ['$R=150$', '$R=25$', '$R=2.5$', 'Clustered', 'Blocked', 'Normal'])
 plt.xlabel('Per-user capacity in Mbps')
@@ -228,12 +230,15 @@ plt.savefig('Figures/capacity_comparison.png')
 plt.show()
 
 fig, ax = plt.subplots()
-plt.scatter(sat_optimal, y, label = 'Optimal', color = colors[0], s = 100)
-plt.scatter(sat_beam_align, y, label = 'ʙᴇᴀᴍ-ᴀʟɪɢɴ', color = colors[1], s = 100)
-plt.scatter(sat_snr, y, label = 'SNR-3', color = colors[2], s = 100)
+plt.scatter(np.divide(sat_optimal,100), y, label = 'Optimal', color = colors[0], s = 100, marker = markers[0])
+plt.scatter(np.divide(sat_beam_align,100), y, label = 'ʙᴇᴀᴍ-ᴀʟɪɢɴ', color = colors[1], s = 100, marker = markers[1])
+plt.scatter(np.divide(sat_snr,100), y, label = 'SNR-dynamic', color = colors[2], s = 100, marker = markers[2])
 
 plt.yticks(y, ['$R=150$', '$R=25$', '$R=2.5$', 'Clustered', 'Blocked', 'Normal'])
-plt.xlabel('Satisfaction level (%)')
+plt.xlabel('Satisfaction level')
 plt.legend()
+ax.legend(bbox_to_anchor = (0.5, 0.5))
 plt.savefig('Figures/satisfaction_comparison.png')
 plt.show()
+
+print(sat_beam_align)

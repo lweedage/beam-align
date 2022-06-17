@@ -46,7 +46,7 @@ def find_measures(optimal, number_of_users, x_user, y_user, blocked_connections,
     return capacity, satisfaction
 
 
-def main(optimal, shares, xs, ys, satisfaction, Heuristic=False, k=1, SNRHeuristic=False, GreedyRate=False):
+def main(optimal, shares, xs, ys, satisfaction, Heuristic=False, k=1, SNRHeuristic=False, Greedy = False):
     misalignment_user = []
     misalignment_bs = []
 
@@ -117,7 +117,8 @@ def main(optimal, shares, xs, ys, satisfaction, Heuristic=False, k=1, SNRHeurist
         satisfaction_150.append(sat_150)
 
     bar.finish()
-    name = find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, GreedyRate, k)
+    name = find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, k, Clustered, M, Greedy)
+    print(name)
 
     pickle.dump(misalignment_bs, open(str('Data/grid_misalignment_bs' + name + '.p'), 'wb'), protocol=4)
     pickle.dump(misalignment_user, open(str('Data/grid_misalignment_user' + name + '.p'), 'wb'), protocol=4)
