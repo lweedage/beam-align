@@ -32,7 +32,7 @@ def find_closest_snr(user, x_user, y_user):
 
 
 # for k in np.arange(1, 16, 1):
-for k in [1, 3, 24]:
+for k in [24]:
     for number_of_users in users:
         optimal = []
         xs = []

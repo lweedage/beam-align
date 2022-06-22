@@ -18,43 +18,20 @@ import progressbar
 # plt.plot(distances, [find_rain(r, 150) for r in distances], label='150')
 # plt.legend()
 # plt.show()
-users = [900]
-k = 1
+# users = [900]
+k = 24
 
 def find_closest(user):
     x = np.minimum((x_bs - user[0]) % xDelta, (user[0] - x_bs) % xDelta)
     y = np.minimum((y_bs - user[1]) % yDelta, (user[1] - y_bs) % yDelta)
     return np.argsort(x ** 2 + y ** 2)[:k]
 
-misalignments = []
 for number_of_users in users:
-    iteration_min, iteration_max = 0, 1000 #iterations[number_of_users]
+    iteration_max = iterations[number_of_users]
+    Heuristic = False
+    SNRHeuristic = False
 
-    bar = progressbar.ProgressBar(maxval=iteration_max, widgets=[
-        progressbar.Bar('=', f'Scenario: {scenario}, #users: {number_of_users} [', ']'), ' ',
-        progressbar.Percentage(), ' ', progressbar.ETA()])
-    bar.start()
+    name = find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, k, Clustered, M, Greedy)
 
-    for iteration in range(iteration_min, iteration_max):
-        bar.update(iteration)
-        opt_x = np.zeros((number_of_users, number_of_bs))
-        np.random.seed(iteration)
-        x_user, y_user = f.find_coordinates(number_of_users, Clustered)
-
-        occupied_beams = np.zeros((number_of_bs, len(directions_bs)))
-
-        for u in range(number_of_users):
-            user_coords = f.user_coords(u, x_user, y_user)
-            bs = list(find_closest(user_coords))
-            number_of_links = 0
-            bs = bs[0]
-            bs_coords = f.bs_coords(bs)
-            geo = f.find_geo(bs_coords, user_coords)
-            beam_number = f.find_beam_number(geo, beamwidth_b)
-            if occupied_beams[bs, beam_number] < users_per_beam:
-                misalignments.append(f.find_misalignment(bs_coords, user_coords, beamwidth_b))
-
-fig, ax = plt.subplots()
-plt.hist(misalignments, density = True, bins = 20)
-plt.xlim([-5, 5])
-plt.show()
+    total_links_per_user = pickle.load(open(str('Data/total_links_per_user' + name + '.p'), 'rb'))
+    print(f'{number_of_users} users, disconnected users: {len([i for i in total_links_per_user if i == 0])/len(total_links_per_user)}')

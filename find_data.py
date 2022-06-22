@@ -38,12 +38,14 @@ def find_measures(optimal, number_of_users, x_user, y_user, blocked_connections,
 
     capacity = f.find_capacity_per_user(share, x_user, y_user, blocked_connections, AT, rain_rate)
     satisfaction = np.ones(number_of_users)
-
+    disconnected = 0
     for u in range(number_of_users):
         if capacity[u] < user_rate:
             satisfaction[u] = capacity[u] / user_rate
+        if capacity[u] < 1:
+            disconnected += 1
 
-    return capacity, satisfaction
+    return capacity, satisfaction, disconnected
 
 
 def main(optimal, shares, xs, ys, satisfaction, Heuristic=False, k=1, SNRHeuristic=False, Greedy = False):
@@ -67,6 +69,11 @@ def main(optimal, shares, xs, ys, satisfaction, Heuristic=False, k=1, SNRHeurist
 
     # channel_capacity_SINR = []
     number_of_users = len(xs[0])
+
+    disconnected_blocked = 0
+    disconnected_2_5 = 0
+    disconnected_25 = 0
+    disconnected_150 = 0
 
     iteration_min = 0
     iteration_max = iterations[number_of_users]
@@ -97,14 +104,14 @@ def main(optimal, shares, xs, ys, satisfaction, Heuristic=False, k=1, SNRHeurist
                     misalignment_bs.append(f.find_misalignment(b_coords, u, beamwidth_b))
 
         blocked_connections = simulate_blockers.find_blocked_connections(opt_x, x_user, y_user, number_of_users)
-        cap_blocked, sat_blocked = find_measures(opt_x, number_of_users, x_user, y_user, blocked_connections, AT=False,
+        cap_blocked, sat_blocked, dis_blocked = find_measures(opt_x, number_of_users, x_user, y_user, blocked_connections, AT=False,
                                                  rain_rate=0)
         blocked_connections = np.zeros((number_of_users, number_of_bs))
-        cap_2_5, sat_2_5 = find_measures(opt_x, number_of_users, x_user, y_user, blocked_connections, AT=True,
+        cap_2_5, sat_2_5, dis_2_5 = find_measures(opt_x, number_of_users, x_user, y_user, blocked_connections, AT=True,
                                          rain_rate=2.5)
-        cap_25, sat_25 = find_measures(opt_x, number_of_users, x_user, y_user, blocked_connections, AT=True,
+        cap_25, sat_25, dis_25 = find_measures(opt_x, number_of_users, x_user, y_user, blocked_connections, AT=True,
                                        rain_rate=25)
-        cap_150, sat_150 = find_measures(opt_x, number_of_users, x_user, y_user, blocked_connections, AT=True,
+        cap_150, sat_150, dis_150 = find_measures(opt_x, number_of_users, x_user, y_user, blocked_connections, AT=True,
                                          rain_rate=150)
 
         capacity_blocked = np.append(capacity_blocked, cap_blocked)
@@ -116,9 +123,18 @@ def main(optimal, shares, xs, ys, satisfaction, Heuristic=False, k=1, SNRHeurist
         capacity_150 = np.append(capacity_150, cap_150)
         satisfaction_150.append(sat_150)
 
+        disconnected_blocked += dis_blocked
+        disconnected_2_5 += dis_2_5
+        disconnected_25 += dis_25
+        disconnected_150 += dis_150
+
     bar.finish()
     name = find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, k, Clustered, M, Greedy)
     print(name)
+    print(f'Blocked:', disconnected_blocked / (iteration_max * number_of_users))
+    print(f'Rain 2.5:', disconnected_2_5 / (iteration_max * number_of_users))
+    print(f'Rain 25:', disconnected_25 / (iteration_max * number_of_users))
+    print(f'Rain 150:', disconnected_150 / (iteration_max * number_of_users))
 
     pickle.dump(misalignment_bs, open(str('Data/grid_misalignment_bs' + name + '.p'), 'wb'), protocol=4)
     pickle.dump(misalignment_user, open(str('Data/grid_misalignment_user' + name + '.p'), 'wb'), protocol=4)

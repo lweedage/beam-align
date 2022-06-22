@@ -60,6 +60,7 @@ xDelta = xmax - xmin
 yDelta = ymax - ymin
 
 users = [120, 300, 600, 900, 1200]
+users = [900]
 
 beamwidth_u = 5
 beamwidth_b = beamwidth_deg

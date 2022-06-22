@@ -94,7 +94,7 @@ else:
     x1 = pickle.load(open(str('Data/Processed/sat' + str(5) + str(M) + str(s) + str(user_rate) + '.p'), 'rb')).values()
     x2 = pickle.load(open(str('Data/Processed/sat' + str(10) + str(M) + str(s) + str(user_rate) + '.p'), 'rb')).values()
     x3 = pickle.load(open(str('Data/Processed/sat' + str(15) + str(M) + str(s) + str(user_rate) + '.p'), 'rb')).values()
-
+    print(x2, x3)
     plt.plot(user_density, x1, '--', marker=markers[0], label='$\\theta^b = 5\\degree$', color=colors[0])
     plt.plot(user_density, x2, '--', marker=markers[1], label='$\\theta^b = 10\\degree$', color=colors[1])
     plt.plot(user_density, x3, '--', marker=markers[2], label='$\\theta^b = 15\\degree$', color=colors[2])
@@ -103,4 +103,3 @@ plt.xlabel('Users per km$^2$')
 plt.ylabel('Average satisfaction (per user)')
 plt.legend()
 plt.show()
-
