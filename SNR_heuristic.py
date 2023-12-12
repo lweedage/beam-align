@@ -1,14 +1,33 @@
-import numpy as np
-from parameters import *
-import functions as f
-import find_data
-import progressbar
 import os
-import get_data
 import pickle
+
+import progressbar
+
+import find_data
+import functions as f
+import get_data
+from parameters import *
 
 
 # k = int(input('k ='))
+def find_highest_snr(bs, x_user, y_user):
+    snr = []
+    for user in range(number_of_users):
+        snr.append(-f.find_snr(user, bs, x_user, y_user))
+    return np.argsort(snr), sorted(snr)
+
+
+def find_shares(opt_x, occupied_beams):
+    share = np.zeros((number_of_users, number_of_bs))
+
+    for user in range(number_of_users):
+        for bs in range(number_of_bs):
+            if opt_x[user, bs] == 1:
+                bs_coords = f.bs_coords(bs)
+                user_coords = f.user_coords(user, x_user, y_user)
+                share[user, bs] = 1 / occupied_beams[
+                    bs, f.find_beam_number(f.find_geo(bs_coords, user_coords), beamwidth_b)]
+    return share
 
 
 def find_sorted_users(bs, x_user, y_user):
@@ -32,97 +51,92 @@ def find_closest_snr(user, x_user, y_user):
 
 
 # for k in np.arange(1, 16, 1):
-for k in [24]:
-    for number_of_users in users:
-        optimal = []
-        xs = []
-        ys = []
-        satisfaction = []
-        capacities = []
-        shares = []
-        total_links_per_user = []
+for number_of_users in users:
+    optimal = []
+    xs = []
+    ys = []
+    satisfaction = []
+    capacities = []
+    shares = []
+    total_links_per_user = []
 
-        iteration_min, iteration_max = 0, iterations[number_of_users]
+    iteration_min, iteration_max = 0, iterations[number_of_users]
 
-        name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
-            beamwidth_b) + 'M=' + str(
-            M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate) + '_SNRheuristick=' + str(k))
+    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(
+        beamwidth_b) + 'M=' + str(M) + 'k=' + str(max_connections) + 'active_beams=' + str(
+        number_of_active_beams) + '_SNRheuristic')
 
-        if Clustered:
-            name = str(name + '_clustered')
+    if Clustered:
+        name = str(name + '_clustered')
 
+    if os.path.exists(str('Data/capacity_per_user' + name + '.p')):
+        print('Data is already there')
+        optimal = pickle.load(open(str('Data/assignment' + name + '.p'), 'rb'))
+        shares = pickle.load(open(str('Data/shares' + name + '.p'), 'rb'))
+        xs = pickle.load(open(str('Data/xs' + name + '.p'), 'rb'))
+        ys = pickle.load(open(str('Data/ys' + name + '.p'), 'rb'))
+        capacities = pickle.load(open(str('Data/capacity_per_user' + name + '.p'), 'rb'))
+        satisfaction = pickle.load(open(str('Data/satisfaction' + name + '.p'), 'rb'))
+        total_links_per_user = pickle.load(open(str('Data/total_links_per_user' + name + '.p'), 'rb'))
+        print(name)
+    else:
+        bar = progressbar.ProgressBar(maxval=iteration_max, widgets=[
+            progressbar.Bar('=', f'Scenario: {scenario}, #users: {number_of_users} [', ']'), ' ',
+            progressbar.Percentage(), ' ', progressbar.ETA()])
+        bar.start()
+        for iteration in range(iteration_min, iteration_max):
+            bar.update(iteration)
+            opt_x = np.zeros((number_of_users, number_of_bs))
+            np.random.seed(iteration)
+            x_user, y_user = f.find_coordinates(number_of_users, Clustered)
 
-        if os.path.exists(str('Data/assignment' + name + '.p')) and 3 == 2:
-            optimal = pickle.load(open(str('Data/assignment' + name + '.p'), 'rb'))
-            shares = pickle.load(open(str('Data/shares' + name + '.p'), 'rb'))
-            xs = pickle.load(open(str('Data/xs' + name + '.p'), 'rb'))
-            ys = pickle.load(open(str('Data/ys' + name + '.p'), 'rb'))
-            capacities = pickle.load(open(str('Data/capacity_per_user' + name + '.p'), 'rb'))
-            total_links_per_user = pickle.load(open(str('Data/total_links_per_user' + name + '.p'), 'rb'))
-        else:
-            bar = progressbar.ProgressBar(maxval=iteration_max, widgets=[
-                progressbar.Bar('=', f'Scenario: {scenario}, #users: {number_of_users} [', ']'), ' ',
-                progressbar.Percentage(), ' ', progressbar.ETA()])
-            bar.start()
-            for iteration in range(iteration_min, iteration_max):
-                bar.update(iteration)
-                opt_x = np.zeros((number_of_users, number_of_bs))
-                np.random.seed(iteration)
-                x_user, y_user = f.find_coordinates(number_of_users, Clustered)
+            occupied_beams = np.zeros((number_of_bs, len(directions_bs)))
+            active_beams = {b: set() for b in range(number_of_bs)}
+            connections = np.zeros(number_of_users)
 
-                occupied_beams = np.zeros((number_of_bs, len(directions_bs)))
+            for user in range(number_of_users):
+                bss = list(find_closest_snr(user, x_user, y_user))
+                while connections[user] < max_connections and len(bss) > 0:
+                    bs = bss.pop(0)
+                    snr = f.find_snr(user, bs, x_user, y_user)
+                    if snr > SINR_min:
+                        bs_coords = f.bs_coords(bs)
+                        user_coords = f.user_coords(user, x_user, y_user)
+                        geo = f.find_geo(bs_coords, user_coords)
+                        beam_number = f.find_beam_number(geo, beamwidth_b)
+                        if connections[user] < max_connections and len(active_beams[bs] | {beam_number}) <= number_of_active_beams:
+                            opt_x[user, bs] = 1
+                            active_beams[bs].add(beam_number)
+                            occupied_beams[bs, beam_number] += 1
+                            connections[user] += 1
 
-                for u in range(number_of_users):
-                    user_coords = f.user_coords(u, x_user, y_user)
-                    bs = list(find_closest_snr(u, x_user, y_user))
-                    number_of_links = 0
-                    while number_of_links < k and len(bs) > 0:
-                        b = bs.pop(0)
-                        snr = f.find_snr(u, b, x_user, y_user)
-                        if snr > SINR_min:
-                            bs_coords = f.bs_coords(b)
-                            geo = f.find_geo(bs_coords, user_coords)
-                            beam_number = f.find_beam_number(geo, beamwidth_b)
-                            if occupied_beams[b, beam_number] < users_per_beam:
-                                opt_x[u, b] = 1
-                                occupied_beams[b, beam_number] += 1
-                                number_of_links += 1
+            share = find_shares(opt_x, occupied_beams)
 
-                share = np.zeros((number_of_users, number_of_bs))
-                for user in range(number_of_users):
-                    user_coords = f.user_coords(user, x_user, y_user)
-                    for bs in range(number_of_bs):
-                        if opt_x[user, bs] == 1:
-                            bs_coords = f.bs_coords(bs)
-                            share[user, bs] = users_per_beam / occupied_beams[
-                                bs, f.find_beam_number(f.find_geo(bs_coords, user_coords), beamwidth_b)]
-                links_per_user = sum(np.transpose(opt_x))
+            capacity = f.find_capacity_per_user(share, x_user, y_user)
+            satisfied = np.ones(number_of_users)
 
-                capacity = f.find_capacity_per_user(share, x_user, y_user)
+            for u in range(number_of_users):
+                if capacity[u] < user_rate:
+                    satisfied[u] = capacity[u] / user_rate
 
-                satisfied = np.ones(number_of_users)
+            links_per_user = sum(np.transpose(opt_x))
 
-                for u in range(number_of_users):
-                    if capacity[u] < user_rate:
-                        satisfied[u] = capacity[u] / user_rate
+            optimal.append(opt_x)
+            xs.append(x_user)
+            ys.append(y_user)
+            capacities.append(capacity)
+            shares.append(share)
+            satisfaction.append(satisfied)
+            total_links_per_user.append(links_per_user)
 
-                optimal.append(opt_x)
-                xs.append(x_user)
-                ys.append(y_user)
-                capacities.append(capacity)
-                shares.append(share)
-                satisfaction.append(satisfied)
-                total_links_per_user.append(links_per_user)
-
-            bar.finish()
-
-            pickle.dump(optimal, open(str('Data/assignment' + name + '.p'), 'wb'), protocol=4)
-            pickle.dump(shares, open(str('Data/shares' + name + '.p'), 'wb'), protocol=4)
-            pickle.dump(xs, open(str('Data/xs' + name + '.p'), 'wb'), protocol=4)
-            pickle.dump(ys, open(str('Data/ys' + name + '.p'), 'wb'), protocol=4)
-            pickle.dump(capacities, open(str('Data/capacity_per_user' + name + '.p'), 'wb'), protocol=4)
-            pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'), 'wb'), protocol=4)
-            pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'), 'wb'), protocol=4)
-            print(name)
-        find_data.main(optimal, shares, xs, ys, satisfaction, Heuristic=False, k = k, SNRHeuristic = True)
-    get_data.get_data(scenario, Heuristic=False, SNRHeuristic=True, k=k)
+        bar.finish()
+        pickle.dump(optimal, open(str('Data/assignment' + name + '.p'), 'wb'), protocol=4)
+        pickle.dump(shares, open(str('Data/shares' + name + '.p'), 'wb'), protocol=4)
+        pickle.dump(xs, open(str('Data/xs' + name + '.p'), 'wb'), protocol=4)
+        pickle.dump(ys, open(str('Data/ys' + name + '.p'), 'wb'), protocol=4)
+        pickle.dump(capacities, open(str('Data/capacity_per_user' + name + '.p'), 'wb'), protocol=4)
+        pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'), 'wb'), protocol=4)
+        pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'), 'wb'), protocol=4)
+        print(name)
+    find_data.main(optimal, shares, xs, ys, satisfaction, Heuristic=False, SNRHeuristic=True)
+get_data.get_data(scenario, Heuristic=False, SNRHeuristic=True)

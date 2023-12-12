@@ -1,13 +1,15 @@
-import numpy as np
-from parameters import *
-import new_optimization as new_optimization
-import functions as f
-import time
-import find_data
-import pickle
-import progressbar
 import os
-import get_data
+import pickle
+import time
+
+import matplotlib.pyplot as plt
+import progressbar
+
+import find_data
+import functions as f
+import new_optimization as new_optimization
+from parameters import *
+
 
 def from_data(name):
     if os.path.exists(name):
@@ -15,13 +17,14 @@ def from_data(name):
     else:
         return None
 
+
 for number_of_users in users:
 
     iteration_min = 0
     iteration_max = iterations[number_of_users]
 
-    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
-        M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
+    name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' +
+               str(M) + 'k=' + str(max_connections) + 'active_beams=' + str(number_of_active_beams))
 
     if Clustered:
         name = str(name + '_clustered')
@@ -34,7 +37,7 @@ for number_of_users in users:
     satisfaction = from_data(str('Data/satisfaction' + name + '.p'))
     total_links_per_user = from_data(str('Data/total_links_per_user' + name + '.p'))
 
-
+    # optimal = None
     if optimal == None:
         optimal = []
         xs, ys = [], []
@@ -54,7 +57,10 @@ for number_of_users in users:
             bar.update(iteration)
             np.random.seed(iteration)
             x_user, y_user = f.find_coordinates(number_of_users, Clustered=Clustered)
+
             opt_x, s, user_capacity, satisfied = new_optimization.optimization(x_user, y_user)
+            if number_of_users in [208, 312]:
+                print(np.sum(satisfied))
             for user in range(number_of_users):
                 user_coords = f.user_coords(user, x_user, y_user)
                 distances = list()
@@ -72,6 +78,12 @@ for number_of_users in users:
             satisfaction.append(satisfied)
             total_links_per_user.append(sum(np.transpose(opt_x)))
 
+            # G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x,
+            #                                                                    number_of_users)
+            # fig, ax = plt.subplots()
+            # f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, 'k', edgecolor)
+            # plt.show()
+
         bar.finish()
         pickle.dump(optimal, open(str('Data/assignment' + name + '.p'), 'wb'), protocol=4)
         pickle.dump(shares, open(str('Data/shares' + name + '.p'), 'wb'), protocol=4)
@@ -83,4 +95,4 @@ for number_of_users in users:
 
     find_data.main(optimal, shares, xs, ys, satisfaction)
 
-get_data.get_data(scenario)
+# get_data.get_data(scenario)

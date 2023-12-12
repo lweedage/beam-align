@@ -38,7 +38,7 @@ for number_of_users in users:
     k = 3
 
     name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
-        M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
+        M) + 'k=' + str(max_connections) + 'active_beams=' + str(number_of_active_beams))
 
     if Heuristic:
         name = str('beamwidth_heuristic' + name)
@@ -55,7 +55,7 @@ for number_of_users in users:
     degrees = pickle.load(open(str('Data/total_links_per_user' + name + '.p'), 'rb'))
     capacity = pickle.load(open(str('Data/capacity_per_user' + name + '.p'), 'rb'))
 
-    name = str(beamwidth_b) + 'b_' + str(number_of_users) + '_users_M=' + str(M) + 's=' + str(users_per_beam)
+    name = str(beamwidth_b) + 'b_' + str(number_of_users) + '_users_M=' + str(M) + 'k=' + str(max_connections)
     if Heuristic:
         name = str('heuristic_' + name)
     if Clustered:
@@ -72,6 +72,8 @@ for number_of_users in users:
     plt.savefig(str('Figures/' + name + '_misalignment.png'), dpi=300)
     plt.show()
 
+print(mis_bs)
+
 for number_of_users in users:
     iteration_min = 0
     iteration_max = iterations[number_of_users]
@@ -82,8 +84,7 @@ for number_of_users in users:
     k = 3
 
     name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
-        M) + 's=' + str(users_per_beam) + 'rate=' + str(user_rate))
-
+        M) + 'k=' + str(max_connections) + 'active_beams=' + str(number_of_active_beams))
     if Heuristic:
         name = str('beamwidth_heuristic' + name)
 
@@ -116,3 +117,4 @@ for number_of_users in users:
     # plt.legend()
     plt.savefig(str('Figures/' + name + '_distances.png'), dpi=300)
     plt.show()
+
