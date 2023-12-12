@@ -13,3 +13,5 @@ Next to that, there are some helper functions: `functions.py` is a collection of
 
 ### Scenario's
 We defined different scenario's, based on different beamwidths, number of connections per user and whether we simulate a clustered user setting. 
+
+[1] Jin, K., Cai, X., Du, J., Park, H., & Tang, Z. (2022). Toward energy efficient and balanced user associations and power allocations in multiconnectivity-enabled mmWave networks. IEEE Transactions on Green Communications and Networking, 6(4), 1917-1931.
