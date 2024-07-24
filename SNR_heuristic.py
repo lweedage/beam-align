@@ -10,10 +10,10 @@ from parameters import *
 
 
 # k = int(input('k ='))
-def find_highest_snr(bs, x_user, y_user):
+def find_highest_snr(bs, x_user, y_user, NonBlocked):
     snr = []
     for user in range(number_of_users):
-        snr.append(-f.find_snr(user, bs, x_user, y_user))
+        snr.append(-f.find_snr(user, bs, x_user, y_user, NonBlocked=NonBlocked))
     return np.argsort(snr), sorted(snr)
 
 
@@ -43,10 +43,10 @@ def find_closest(user):
     return np.argsort(x ** 2 + y ** 2)[:k]
 
 
-def find_closest_snr(user, x_user, y_user):
+def find_closest_snr(user, x_user, y_user, NonBlocked):
     snr = []
     for bs in range(number_of_bs):
-        snr.append(-f.find_snr(user, bs, x_user, y_user))
+        snr.append(-f.find_snr(user, bs, x_user, y_user, NonBlocked=NonBlocked))
     return np.argsort(snr)
 
 
@@ -68,6 +68,8 @@ for number_of_users in users:
 
     if Clustered:
         name = str(name + '_clustered')
+    if NonBlocked:
+        name = str(name + '_noblockage')
 
     if os.path.exists(str('Data/capacity_per_user' + name + '.p')):
         print('Data is already there')
@@ -78,7 +80,6 @@ for number_of_users in users:
         capacities = pickle.load(open(str('Data/capacity_per_user' + name + '.p'), 'rb'))
         satisfaction = pickle.load(open(str('Data/satisfaction' + name + '.p'), 'rb'))
         total_links_per_user = pickle.load(open(str('Data/total_links_per_user' + name + '.p'), 'rb'))
-        print(name)
     else:
         bar = progressbar.ProgressBar(maxval=iteration_max, widgets=[
             progressbar.Bar('=', f'Scenario: {scenario}, #users: {number_of_users} [', ']'), ' ',
@@ -95,16 +96,17 @@ for number_of_users in users:
             connections = np.zeros(number_of_users)
 
             for user in range(number_of_users):
-                bss = list(find_closest_snr(user, x_user, y_user))
+                bss = list(find_closest_snr(user, x_user, y_user, NonBlocked))
                 while connections[user] < max_connections and len(bss) > 0:
                     bs = bss.pop(0)
-                    snr = f.find_snr(user, bs, x_user, y_user)
+                    snr = f.find_snr(user, bs, x_user, y_user, NonBlocked=NonBlocked)
                     if snr > SINR_min:
                         bs_coords = f.bs_coords(bs)
                         user_coords = f.user_coords(user, x_user, y_user)
                         geo = f.find_geo(bs_coords, user_coords)
                         beam_number = f.find_beam_number(geo, beamwidth_b)
-                        if connections[user] < max_connections and len(active_beams[bs] | {beam_number}) <= number_of_active_beams:
+                        if connections[user] < max_connections and len(
+                                active_beams[bs] | {beam_number}) <= number_of_active_beams:
                             opt_x[user, bs] = 1
                             active_beams[bs].add(beam_number)
                             occupied_beams[bs, beam_number] += 1
@@ -112,7 +114,7 @@ for number_of_users in users:
 
             share = find_shares(opt_x, occupied_beams)
 
-            capacity = f.find_capacity_per_user(share, x_user, y_user)
+            capacity = f.find_capacity_per_user(share, x_user, y_user, NonBlocked=NonBlocked)
             satisfied = np.ones(number_of_users)
 
             for u in range(number_of_users):
@@ -138,5 +140,5 @@ for number_of_users in users:
         pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'), 'wb'), protocol=4)
         pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'), 'wb'), protocol=4)
         print(name)
-    find_data.main(optimal, shares, xs, ys, satisfaction, Heuristic=False, SNRHeuristic=True)
+    find_data.main(optimal, shares, xs, ys, satisfaction, Heuristic=False, SNRHeuristic=True, NonBlocked=NonBlocked)
 get_data.get_data(scenario, Heuristic=False, SNRHeuristic=True)

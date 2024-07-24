@@ -1,37 +1,26 @@
-import math
 # from parameters import *
 import pickle
 
-import matplotlib.pylab as pylab
+import matplotlib
 import matplotlib.pyplot as plt
 
-import get_data
-
-params = {'legend.fontsize': 'xx-large',
-          'axes.labelsize': 'xx-large',
-          'axes.titlesize': 'xx-large',
-          'xtick.labelsize': 'xx-large',
-          'ytick.labelsize': 'xx-large',
-          'lines.markersize': 8,
-          'figure.autolayout': True}
-pylab.rcParams.update(params)
+matplotlib.rcParams['font.size'] = 20
+matplotlib.rcParams['legend.fontsize'] = 18  # using a size in points
+matplotlib.rcParams['text.usetex'] = True
+# matplotlib.rcParams['axes.grid'] = True
+matplotlib.rcParams['lines.markersize'] = 7
+matplotlib.rcParams['figure.autolayout'] = True
+plt.rcParams['text.latex.preamble'] = " \\usepackage{amsmath} \\usepackage{gensymb} "
 
 colors = ['#904C77', '#E49AB0', '#ECB8A5', '#96ACB7', '#957D95'] * 100
 markers = ['o', 'X', 'v', 's', '*', 'P', '1', '+']
-
-radius = 200  # for triangular grid
-
-xmin, xmax = 0, 600
-ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 2
-
-xDelta = xmax - xmin
-yDelta = ymax - ymin
 
 users = [21, 41, 104, 208, 312]
 
 user_density = [50, 100, 250, 500, 750]
 
 M = 750
+M = 1000
 beamwidth_deg = 10
 user_rate = 500
 
@@ -68,6 +57,7 @@ plt.xlabel('Users per km$^2$')
 plt.ylabel('Per-user capacity (Mbps)')
 plt.xticks(([100, 250, 500, 750]))
 plt.legend()
+plt.savefig('capacity_beamwidth.pdf')
 plt.show()
 
 x1 = pickle.load(open(str('Data/Processed/sat' + str(5) + str(M) + str(max_connections) + '.p'), 'rb')).values()
@@ -82,9 +72,8 @@ plt.xlabel('Users per km$^2$')
 plt.ylabel('Average satisfaction (per user)')
 plt.legend()
 plt.xticks(([100, 250, 500, 750]))
-
+plt.savefig('satisfaction_beamwidth.pdf')
 plt.show()
-
 
 x1 = pickle.load(open(str('Data/Processed/sat' + str(10) + str(M) + str(1) + '.p'), 'rb')).values()
 x2 = pickle.load(open(str('Data/Processed/sat' + str(10) + str(M) + str(2) + '.p'), 'rb')).values()
@@ -97,7 +86,7 @@ plt.xlabel('Users per km$^2$')
 plt.ylabel('Average satisfaction (per user)')
 plt.legend()
 plt.xticks(([100, 250, 500, 750]))
-
+plt.savefig('satisfaction_mc.pdf')
 plt.show()
 
 x1 = pickle.load(open(str('Data/Processed/cap' + str(10) + str(M) + str(1) + '.p'), 'rb')).values()
@@ -111,7 +100,6 @@ plt.xlabel('Users per km$^2$')
 plt.ylabel('Per-user capacity (Mbps)')
 plt.legend()
 plt.xticks(([100, 250, 500, 750]))
+plt.savefig('capacity_mc.pdf')
 
 plt.show()
-
-

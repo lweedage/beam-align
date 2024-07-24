@@ -1,22 +1,18 @@
 import pickle
-import time
-import numpy as np
-import matplotlib.pyplot as plt
-import scipy.stats as stats
 
-import functions
-from parameters import *
-import seaborn as sns
 import matplotlib.pylab as pylab
+import matplotlib.pyplot as plt
+import matplotlib
+from parameters import *
 
-params = {'legend.fontsize': 'x-large',
-          'axes.labelsize': 'x-large',
-          'axes.titlesize': 'x-large',
-          'xtick.labelsize': 'x-large',
-          'ytick.labelsize': 'x-large',
-          'lines.markersize': 8,
-          'figure.autolayout': True}
-pylab.rcParams.update(params)
+matplotlib.rcParams['font.size'] = 20
+matplotlib.rcParams['legend.fontsize'] = 18 # using a size in points
+matplotlib.rcParams['text.usetex'] = True
+# matplotlib.rcParams['axes.grid'] = True
+matplotlib.rcParams['lines.markersize'] = 7
+matplotlib.rcParams['figure.autolayout'] = True
+plt.rcParams['text.latex.preamble'] = " \\usepackage{amsmath} \\usepackage{gensymb} "
+markers = ['o', 's', 'p', 'd', '*']
 
 colors = ['#904C77', '#E49AB0', '#ECB8A5', '#96ACB7', '#957D95'] * 100
 markers = ['o', 'X', 'v', 's', '*', 'P', '1', '+']
@@ -63,13 +59,13 @@ for number_of_users in users:
 
     fig, ax = plt.subplots()
     data1 = misalignment
-    plt.hist(data1, density=True, bins=np.arange(-(beamwidth_b / 2), (beamwidth_b / 2) + 0.1, 0.1),
-             alpha=0.3)
+    plt.hist(data1, density=True, bins=np.arange(-(beamwidth_b / 2), (beamwidth_b / 2) + 0.1, 0.2),
+             alpha=0.6, color=colors[0])
     plt.axvline(x=2 * np.std(np.abs(data1)), color='r', label='$\\sigma(\\theta^b)$')
     plt.axvline(x=-2 * np.std(np.abs(data1)), color='r')
     plt.xlabel('Misalignment in degrees')
     # plt.legend()
-    plt.savefig(str('Figures/' + name + '_misalignment.png'), dpi=300)
+    plt.savefig(str('Figures/' + name + '_misalignment.pdf'), dpi=300)
     plt.show()
 
 print(mis_bs)
@@ -100,21 +96,20 @@ for number_of_users in users:
 
     distances = []
 
-    for iteration in range(iteration_max):
-        opt_x = optimal[iteration]
-        x_user, y_user = xs[iteration], ys[iteration]
-        for i in range(number_of_users):
-            for j in range(number_of_bs):
-                if opt_x[i, j] == 1:
-                    user_coords = functions.user_coords(i, x_user, y_user)
-                    bs_coords = functions.bs_coords(j)
-                    distances.append(functions.find_distance(user_coords, bs_coords))
-
-    fig, ax = plt.subplots()
-    plt.hist(distances, density=True, alpha=0.3)
-
-    plt.xlabel('Distance')
-    # plt.legend()
-    plt.savefig(str('Figures/' + name + '_distances.png'), dpi=300)
-    plt.show()
-
+    # for iteration in range(iteration_max):
+    #     opt_x = optimal[iteration]
+    #     x_user, y_user = xs[iteration], ys[iteration]
+    #     for i in range(number_of_users):
+    #         for j in range(number_of_bs):
+    #             if opt_x[i, j] == 1:
+    #                 user_coords = functions.user_coords(i, x_user, y_user)
+    #                 bs_coords = functions.bs_coords(j)
+    #                 distances.append(functions.find_distance(user_coords, bs_coords))
+    #
+    # fig, ax = plt.subplots()
+    # plt.hist(distances, density=True, alpha=0.3)
+    #
+    # plt.xlabel('Distance')
+    # # plt.legend()
+    # plt.savefig(str('Figures/' + name + '_distances.pdf'), dpi=300)
+    # plt.show()

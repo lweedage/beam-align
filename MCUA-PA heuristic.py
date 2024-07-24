@@ -33,7 +33,6 @@ def find_occupied_beams(opt_x):
                 occupied_beams[bs, beam_number] += 1
     return occupied_beams
 
-
 for number_of_users in users:
     iteration_min, iteration_max = 0, iterations[number_of_users]
 
@@ -42,6 +41,7 @@ for number_of_users in users:
 
     if Clustered:
         name = str(name + '_clustered')
+
 
     if os.path.exists(str('Data/assignment' + name + '.p')):
         print('Data is already there')
@@ -103,7 +103,6 @@ for number_of_users in users:
     pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'), 'wb'), protocol=4)
     pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'), 'wb'), protocol=4)
 
-    find_data.main(optimal, shares, xs, ys, satisfaction, Harris=True, Heuristic=False, Greedy=Greedy,
-                   power=powers)
+    find_data.main(optimal, shares, xs, ys, satisfaction, Harris=True, Heuristic=False,power=powers, NonBlocked=False)
 
 get_data.get_data(scenario, Harris=True)

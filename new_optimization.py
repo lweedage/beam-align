@@ -7,6 +7,10 @@ from gurobipy import quicksum
 import functions as f
 from parameters import *
 
+options = {'WLSACCESSID': '099fa0e8-d90b-4457-ae7b-588a1474ad47',
+           'WLSSECRET': 'c58aecf7-5bbe-47aa-a005-ca63afa8716d',
+           'LICENSEID': 2531335}
+
 
 def number_of_connections(channel_capacity):
     connections = channel_capacity > 0
@@ -30,13 +34,12 @@ def optimization(x_user, y_user):
 
     user_beamnumber = np.zeros((number_of_users, number_of_bs))
     bs_beamnumber = np.zeros((number_of_users, number_of_bs))
-
     # calculating the gain, path_loss and interference for every user-bs pair
     for i in users:
         coords_i = f.user_coords(i, x_user, y_user)
         for j in base_stations:
             coords_j = f.bs_coords(j)
-            path_loss[i, j] = f.find_path_loss(i, j, coords_i, coords_j)
+            path_loss[i, j] = f.find_path_loss(i, j, coords_i, coords_j, NonBlocked)
             gain_bs[i, j] = f.find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
             gain_user[i, j] = f.find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
             SNR[i, j] = transmission_power * gain_bs[i, j] * gain_user[i, j] / (path_loss[i, j] * noise)
@@ -47,19 +50,18 @@ def optimization(x_user, y_user):
             bs_beamnumber[i, j] = f.find_beam_number(
                 f.find_bore(coords_j, coords_i, beamwidth_b), beamwidth_b)
 
-    # ------------------------ Start of optimization program ------------------------------------
+            # ------------------------ Start of optimization program ------------------------------------
     try:
         m = gp.Model("Model 1")
         # m.setParam('NonConvex', 2)
         m.Params.LogToConsole = 0
         m.Params.OutputFlag = 0
-        m.Params.Threads = 4
+        # m.Params.Threads = 4
         m.Params.timeLimit = 300
-
 
         # -------------- VARIABLES -----------------------------------
         x = {}
-        x_user = {}
+        xuser = {}
         C_user = {}
         active_beam = {}
 
@@ -67,7 +69,7 @@ def optimization(x_user, y_user):
 
         for i in users:
             for j in base_stations:
-                x_user[i, j] = m.addVar(vtype=GRB.BINARY, name=f'x_user{i}{j}')
+                xuser[i, j] = m.addVar(vtype=GRB.BINARY, name=f'x_user{i}{j}')
                 x[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb=0, ub=1, name=f'x#{i}#{j}')
             C_user[i] = m.addVar(vtype=GRB.CONTINUOUS, name=f'C_user#{i}')
             disconnected[i] = m.addVar(vtype=GRB.CONTINUOUS, lb=0, ub=1, name=f'Disconnected_user#{i}')
@@ -78,14 +80,17 @@ def optimization(x_user, y_user):
         m.update()
 
         # ----------------- OBJECTIVE ----------------------------------
-        m.setObjective(quicksum(C_user[i] for i in users) - M * quicksum(disconnected[i] for i in users), GRB.MAXIMIZE)
+        m.setObjective(quicksum(C_user[i] for i in users) - M * quicksum(disconnected[i] for i in users),
+                       GRB.MAXIMIZE)
+
+        # m.setObjective(quicksum((C_user[i] - user_rate) ** 2 for i in users), GRB.MAXIMIZE)
 
         # --------------- CONSTRAINTS -----------------------------
 
         # Only 1 BS per angular direction per user
         for i in users:
             for d in range(len(directions_u)):
-                m.addConstr(quicksum(x_user[i, j] for j in base_stations if user_beamnumber[i, j] == d) <= 1,
+                m.addConstr(quicksum(xuser[i, j] for j in base_stations if user_beamnumber[i, j] == d) <= 1,
                             name=f'angle_u#{i}#{d}')
 
         # the total shares per beam could never exceed the number of users per beam
@@ -104,17 +109,17 @@ def optimization(x_user, y_user):
         for i in users:
             for j in base_stations:
                 # If x > 0, then x_user = 1, otherwise x_user = 0
-                m.addConstr(x[i, j] >= 0 + eps - M * (1 - x_user[i, j]), name="bigM_constr1")
-                m.addConstr(x[i, j] <= 0 + (1 + eps) * x_user[i, j], name="bigM_constr2")
+                m.addConstr(x[i, j] >= 0 + eps - M * (1 - xuser[i, j]), name="bigM_constr1")
+                m.addConstr(x[i, j] <= 0 + (1 + eps) * xuser[i, j], name="bigM_constr2")
 
         # Minimum SNR
         for i in users:
             for j in base_stations:
-                m.addConstr(x_user[i, j] * SINR_min <= SNR[i, j], name=f'minimum_SNR#{i}#{j}')
+                m.addConstr(xuser[i, j] * SINR_min <= SNR[i, j], name=f'minimum_SNR#{i}#{j}')
 
         # Multi-connectivity constraint
         for i in users:
-            m.addConstr(quicksum(x_user[i, j] for j in base_stations) <= max_connections, name=f'MC_user#{i}')
+            m.addConstr(quicksum(xuser[i, j] for j in base_stations) <= max_connections, name=f'MC_user#{i}')
 
         # find channel capacity
         for i in users:
@@ -148,7 +153,7 @@ def optimization(x_user, y_user):
         for i in users:
             total_C[i] = overhead_factor * C_user[i].X
             for j in base_stations:
-                a[i, j] = x_user[i, j].X
+                a[i, j] = xuser[i, j].X
 
         for i in users:
             satisfied[i] = min(1, C_user[i].X / user_rate)
@@ -204,7 +209,7 @@ def optimization_SINR(x_user, y_user):
 
         # -------------- VARIABLES -----------------------------------
         x = {}
-        x_user = {}
+        xuser = {}
         interference = {}
         inverse_interference = {}
         oneSINR = {}
@@ -220,7 +225,7 @@ def optimization_SINR(x_user, y_user):
             for j in base_stations:
                 SINR[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'SNR#{i}#{j}')
                 oneSINR[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'oneSNR#{i}#{j}')
-                x_user[i, j] = m.addVar(vtype=GRB.BINARY, name=f'x_user{i}{j}')
+                xuser[i, j] = m.addVar(vtype=GRB.BINARY, name=f'x_user{i}{j}')
                 x[i, j] = m.addVar(vtype=GRB.CONTINUOUS, lb=0, ub=1, name=f'x#{i}#{j}')
                 interference[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'interference#{i}#{j}')
                 inverse_interference[i, j] = m.addVar(vtype=GRB.CONTINUOUS, name=f'inv_interference#{i}#{j}')
@@ -241,7 +246,7 @@ def optimization_SINR(x_user, y_user):
         # Only 1 BS per angular direction per user
         for i in users:
             for d in range(len(directions_u)):
-                m.addConstr(quicksum(x_user[i, j] for j in base_stations if user_beamnumber[i, j] == d) <= 1,
+                m.addConstr(quicksum(xuser[i, j] for j in base_stations if user_beamnumber[i, j] == d) <= 1,
                             name=f'angle_u#{i}#{d}')
 
         # the total shares per beam could never exceed the number of users per beam
@@ -260,13 +265,13 @@ def optimization_SINR(x_user, y_user):
         for i in users:
             for j in base_stations:
                 # If x > 0, then x_user = 1, otherwise x_user = 0
-                m.addConstr(x[i, j] >= 0 + eps - M * (1 - x_user[i, j]), name="bigM_constr1")
-                m.addConstr(x[i, j] <= 0 + (1 + eps) * x_user[i, j], name="bigM_constr2")
+                m.addConstr(x[i, j] >= 0 + eps - M * (1 - xuser[i, j]), name="bigM_constr1")
+                m.addConstr(x[i, j] <= 0 + (1 + eps) * xuser[i, j], name="bigM_constr2")
 
         # Minimum SINR
         for i in users:
             for j in base_stations:
-                m.addConstr(x_user[i, j] * SINR_min <= SINR[i, j], name=f'minimum_SNR#{i}#{j}')
+                m.addConstr(xuser[i, j] * SINR_min <= SINR[i, j], name=f'minimum_SNR#{i}#{j}')
                 m.addConstr(SINR[i, j] == half_interf[i, j] * inverse_interference[i, j], f'definition_SNR#{i}#{j}')
                 m.addConstr(interference[i, j] == noise + quicksum(
                     half_interf[i, k] * active_beam[k, bs_beamnumber[i, k]] for k in base_stations if
@@ -276,7 +281,7 @@ def optimization_SINR(x_user, y_user):
 
         # Multi-connectivity constraint
         for i in users:
-            m.addConstr(quicksum(x_user[i, j] for j in base_stations) <= max_connections, name=f'MC_user#{i}')
+            m.addConstr(quicksum(xuser[i, j] for j in base_stations) <= max_connections, name=f'MC_user#{i}')
 
         for i in users:
             for j in base_stations:
@@ -314,7 +319,7 @@ def optimization_SINR(x_user, y_user):
         for i in users:
             total_C[i] = overhead_factor * C_user[i].X
             for j in base_stations:
-                a[i, j] = x_user[i, j].X
+                a[i, j] = xuser[i, j].X
 
         for i in users:
             satisfied[i] = min(1, C_user[i].X / user_rate)

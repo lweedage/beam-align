@@ -19,7 +19,7 @@ def find_measures(optimal, shares, number_of_users, x_user, y_user, blocked_conn
                 if f.find_snr(user, b, x_user, y_user, blocked_connections[user, b], AT, rain_rate) > SINR_min:
                     opt_x[user, b] = 1
                     occupied_beams[b, f.find_beam_number(f.find_geo(b_coords, u), beamwidth_b)] += 1
-    capacity = f.SINR_capacity_per_user(shares, x_user, y_user, AT, rain_rate, blocked = blocked_connections[user, b])
+    capacity = f.SINR_capacity_per_user(shares, x_user, y_user, AT, rain_rate, blocked=blocked_connections[user, b])
     satisfaction = np.ones(number_of_users)
     disconnected = 0
     for u in range(number_of_users):
@@ -31,8 +31,8 @@ def find_measures(optimal, shares, number_of_users, x_user, y_user, blocked_conn
     return capacity, satisfaction, disconnected
 
 
-def main(optimal, shares, xs, ys, satisfaction, Heuristic=False, SNRHeuristic=False, Greedy=False, Harris=False,
-         power=None):
+def main(optimal, shares, xs, ys, satisfaction, Heuristic=False, SNRHeuristic=False, Harris=False,
+         power=None, NonBlocked = False):
     misalignment_user = []
     misalignment_bs = []
 
@@ -82,10 +82,9 @@ def main(optimal, shares, xs, ys, satisfaction, Heuristic=False, SNRHeuristic=Fa
             P = None
 
         total_links_per_user.append(links_per_user)
-        capacity_per_user = np.append(capacity_per_user, f.find_capacity_per_user(share, x_user, y_user, power=P))
-        SINR_capacity_per_user = f.SINR_capacity_per_user(share, x_user, y_user, power=P)
+        capacity_per_user = np.append(capacity_per_user, f.find_capacity_per_user(share, x_user, y_user, power=P, NonBlocked=NonBlocked))
+        SINR_capacity_per_user = f.SINR_capacity_per_user(share, x_user, y_user, power=P, NonBlocked=NonBlocked)
         channel_capacity_SINR.append(SINR_capacity_per_user)
-
         beams = {b: set() for b in range(number_of_bs)}
         for user in range(number_of_users):
             u = f.user_coords(user, x_user, y_user)
@@ -132,7 +131,7 @@ def main(optimal, shares, xs, ys, satisfaction, Heuristic=False, SNRHeuristic=Fa
         energy.append(energy_usage)
 
     bar.finish()
-    name = find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, Clustered, M, Greedy, Harris)
+    name = find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, Clustered, M, Harris, NonBlocked)
     print('find data', name)
     # print(f'Blocked:', disconnected_blocked / (iteration_max * number_of_users))
     # print(f'Rain 2.5:', disconnected_2_5 / (iteration_max * number_of_users))

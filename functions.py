@@ -129,9 +129,24 @@ def find_misalignment(coord_1, coord_2, beamwidth):
     return np.degrees(find_geo(coord_1, coord_2) - find_bore(coord_1, coord_2, beamwidth))
 
 
-def find_path_loss(user, bs, user_coords, bs_coords, Blocked=None, AT=False, rain_rate=2.5):
+def find_plos(user, bs):
+    dist2D = find_distance(user, bs)
+    if dist2D <= 18:
+        return 1
+    else:
+        return 18 / dist2D + (1 - 18 / dist2D) * math.exp(-(dist2D / 36))
+
+
+def find_path_loss(user, bs, user_coords, bs_coords, Blocked=None, AT=False, rain_rate=2.5, NonBlocked=False):
     r = find_distance_3D(user_coords, bs_coords)
     breakpoint_distance = 4 * (BS_height - 1) * (user_height - 1) * centre_frequencies[bs] / propagation_velocity
+    plos = find_plos(user_coords, bs_coords)
+
+    if not NonBlocked:
+        if np.random.uniform(0, 1) > plos:
+            Blocked = True
+        else:
+            Blocked = False
     if Blocked:
         SF = np.random.normal(0, 7.8)
         PL_nlos = find_path_loss_nlos(user_coords, bs_coords, bs, SF)
@@ -212,11 +227,10 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
 
 def find_coordinates(number_of_users, Clustered=False):
     # Matern point process, from H. Paul Keeler
-    # number_of_clusters = {120: 10, 300: }
     if Clustered:
         # Parameters for the parent and daughter point processes
-        lambdaParent = 26  # density of parent Poisson point process
-        lambdaDaughter = np.floor(number_of_users // 26)  # mean number of points in each cluster
+        lambdaParent = number_of_users // 10  # density of parent Poisson point process
+        lambdaDaughter = 10  # mean number of points in each cluster
         radiusCluster = 50  # radius of cluster disk (for daughter points)
 
         # Simulate Poisson point process for the parents
@@ -225,13 +239,11 @@ def find_coordinates(number_of_users, Clustered=False):
 
         # Simulate Poisson point process for the daughters (ie final point process)
         # numbPointsDaughter = np.random.poisson(lambdaDaughter, lambdaParent)
-        # number_of_users = sum(numbPointsDaughter)  # total number of points   #it is now deterministic instead of random
+        # number_of_users = lambdaParent * 10  # total number of points   #it is now deterministic instead of random
 
-        # Generate the (relative) locations in polar coordinates by
-        # simulating independent variables.
-        theta = 2 * np.pi * np.random.uniform(0, 1, number_of_users)  # angular coordinates
-        rho = radiusCluster * np.sqrt(np.random.uniform(0, 1, number_of_users))  # radial coordinates
-
+        # Generate the (relative) locations in polar coordinates by simulating independent variables.
+        theta = 2 * np.pi * np.random.uniform(0, 1, lambdaParent * 10)  # angular coordinates
+        rho = radiusCluster * np.sqrt(np.random.uniform(0, 1, lambdaParent * 10))  # radial coordinates
 
         # Convert from polar to Cartesian coordinates
         xx0 = rho * np.cos(theta)
@@ -258,6 +270,10 @@ def find_coordinates(number_of_users, Clustered=False):
                 yy[i] += yDelta
             elif y >= ymax:
                 yy[i] -= yDelta
+
+        while len(xx) < number_of_users:
+            xx = np.append(xx, np.random.uniform(xmin, xmax))
+            yy = np.append(yy, np.random.uniform(ymin, ymax))
 
         x_user, y_user = xx, yy
     else:
@@ -318,7 +334,8 @@ def find_capacity(shares, x_user, y_user, blockers, power=None):
     return sum(per_user_capacity)
 
 
-def find_capacity_per_user(shares, x_user, y_user, blocked_connections=None, AT=False, rain_rate=2.5, power=None):
+def find_capacity_per_user(shares, x_user, y_user, blocked_connections=None, AT=False, rain_rate=2.5, power=None,
+                           NonBlocked=False):
     number_of_users = len(x_user)
 
     if power is None:
@@ -335,32 +352,33 @@ def find_capacity_per_user(shares, x_user, y_user, blocked_connections=None, AT=
                 coords_j = bs_coords(bs)
                 gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
                 gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
-                path_loss = find_path_loss(u, bs, coords_i, coords_j, blocked_connections[u, bs], AT, rain_rate)
+                path_loss = find_path_loss(u, bs, coords_i, coords_j, blocked_connections[u, bs], AT, rain_rate,
+                                           NonBlocked)
                 capacity[u] += overhead_factor * W * shares[u, bs] * math.log2(
                     1 + power[u, bs] * gain_bs * gain_user / (path_loss * noise))
     return capacity
 
 
-def find_snr(user, bs, x_user, y_user, blocked=None, AT=False, rain_rate=2.5):
+def find_snr(user, bs, x_user, y_user, blocked=None, AT=False, rain_rate=2.5, NonBlocked=False):
     coords_i = user_coords(user, x_user, y_user)
     coords_j = bs_coords(bs)
     gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
     gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
-    path_loss = find_path_loss(user, bs, coords_i, coords_j, blocked, AT, rain_rate)
+    path_loss = find_path_loss(user, bs, coords_i, coords_j, blocked, AT, rain_rate, NonBlocked)
     return (transmission_power * gain_user * gain_bs / path_loss) / (noise)
 
 
-def find_sinr(opt_x, user, bs, x_user, y_user, blocked=None, AT=False, rain_rate=2.5):
+def find_sinr(opt_x, user, bs, x_user, y_user, blocked=None, AT=False, rain_rate=2.5, NonBlocked=False):
     coords_i = user_coords(user, x_user, y_user)
     coords_j = bs_coords(bs)
     gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
     gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
-    path_loss = find_path_loss(user, bs, coords_i, coords_j, blocked, AT, rain_rate)
+    path_loss = find_path_loss(user, bs, coords_i, coords_j, blocked, AT, rain_rate, NonBlocked)
     interference = find_interference(opt_x, user, bs, x_user, y_user)
     return (transmission_power * gain_user * gain_bs / path_loss) / (noise + interference)
 
 
-def SINR_capacity_per_user(opt_x, x_user, y_user, AT=False, rain_rate=2.5, power=None, blocked = None):
+def SINR_capacity_per_user(opt_x, x_user, y_user, AT=False, rain_rate=2.5, power=None, blocked=None, NonBlocked=False):
     number_of_users = len(x_user)
     capacity = np.zeros(number_of_users)
     if power is None:
@@ -372,7 +390,7 @@ def SINR_capacity_per_user(opt_x, x_user, y_user, AT=False, rain_rate=2.5, power
                 coords_j = bs_coords(bs)
                 gain_user = find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
                 gain_bs = find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
-                path_loss = find_path_loss(u, bs, coords_i, coords_j, blocked, AT, rain_rate)
+                path_loss = find_path_loss(u, bs, coords_i, coords_j, blocked, AT, rain_rate, NonBlocked)
                 interference = find_interference(opt_x, u, bs, x_user, y_user, power)
                 capacity[u] += overhead_factor * W * opt_x[u, bs] * math.log2(
                     1 + power[u, bs] * gain_bs * gain_user / (path_loss * (noise + interference)))

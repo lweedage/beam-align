@@ -8,25 +8,26 @@ import functions as f
 import get_data
 from parameters import *
 
-def find_highest_snr(bs, x_user, y_user):
+
+def find_highest_snr(bs, x_user, y_user, NonBlocked=False):
     snr = []
     for user in range(number_of_users):
-        snr.append(-f.find_snr(user, bs, x_user, y_user))
+        snr.append(-f.find_snr(user, bs, x_user, y_user, NonBlocked=NonBlocked))
     return np.argsort(snr), sorted(snr)
 
 
-def find_highest_sinr(bs, x_user, y_user):
+def find_highest_sinr(bs, x_user, y_user, NonBlocked=False):
     opt_x = np.ones((number_of_users, number_of_bs))
     sinr = []
     for user in range(number_of_users):
-        sinr.append(-f.find_sinr(opt_x, user, bs, x_user, y_user))
+        sinr.append(-f.find_sinr(opt_x, user, bs, x_user, y_user, NonBlocked=NonBlocked))
     return np.argsort(sinr), sorted(sinr)
 
 
-def find_highest_snr_user(user, x_user, y_user):
+def find_highest_snr_user(user, x_user, y_user, NonBlocked=False):
     snr = []
     for bs in range(number_of_bs):
-        snr.append(-f.find_snr(user, bs, x_user, y_user))
+        snr.append(-f.find_snr(user, bs, x_user, y_user, NonBlocked=NonBlocked))
     return np.argsort(snr), sorted(snr)
 
 
@@ -43,7 +44,7 @@ def find_initial_association():
     connections = np.zeros(number_of_users)
 
     for bs in range(number_of_bs):
-        users, snrs = find_highest_snr(bs, x_user, y_user)
+        users, snrs = find_highest_snr(bs, x_user, y_user, NonBlocked)
         for user in users:
             snr = -snrs.pop(0)
             user_coords = f.user_coords(user, x_user, y_user)
@@ -51,7 +52,8 @@ def find_initial_association():
                 bs_coords = f.bs_coords(bs)
                 geo = f.find_geo(bs_coords, user_coords)
                 beam_number = f.find_beam_number(geo, beamwidth_b)
-                if (connections[user] < max_connections and len(active_beams[bs] | {beam_number}) <= number_of_active_beams
+                if (connections[user] < max_connections and len(
+                        active_beams[bs] | {beam_number}) <= number_of_active_beams
                         and abs(f.find_misalignment(bs_coords, user_coords, beamwidth_b)) <= mis_threshold):
                     opt_x[user, bs] = 1
                     active_beams[bs].add(beam_number)
@@ -94,8 +96,10 @@ for number_of_users in users:
 
     if Clustered:
         name = str(name + '_clustered')
+    if NonBlocked:
+        name = str(name + '_noblockage')
 
-    if os.path.exists(str('Data/assignment' + name + '.p')):
+    if 3 == 2 and os.path.exists(str('Data/assignment' + name + '.p')):
         print('Data is already there')
         optimal = pickle.load(open(str('Data/assignment' + name + '.p'), 'rb'))
         shares = pickle.load(open(str('Data/shares' + name + '.p'), 'rb'))
@@ -131,7 +135,7 @@ for number_of_users in users:
             opt_x, occupied_beams = find_initial_association()
             share = find_shares(opt_x, occupied_beams)
 
-            capacities = f.find_capacity_per_user(share, x_user, y_user)
+            capacities = f.find_capacity_per_user(share, x_user, y_user, NonBlocked=NonBlocked)
             satisfied = np.ones(number_of_users)
 
             for u in range(number_of_users):
@@ -158,6 +162,6 @@ for number_of_users in users:
     pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'), 'wb'), protocol=4)
     pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'), 'wb'), protocol=4)
 
-    find_data.main(optimal, shares, xs, ys, satisfaction, Heuristic=True)
+    find_data.main(optimal, shares, xs, ys, satisfaction, Heuristic=True, NonBlocked=NonBlocked)
 
 get_data.get_data(scenario, Heuristic=True)

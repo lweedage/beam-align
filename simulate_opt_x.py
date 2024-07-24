@@ -4,7 +4,7 @@ import time
 
 import matplotlib.pyplot as plt
 import progressbar
-
+import get_data
 import find_data
 import functions as f
 import new_optimization as new_optimization
@@ -17,6 +17,8 @@ def from_data(name):
     else:
         return None
 
+# users = [104]
+# iterations[104] = 1000
 
 for number_of_users in users:
 
@@ -28,6 +30,8 @@ for number_of_users in users:
 
     if Clustered:
         name = str(name + '_clustered')
+    if NonBlocked:
+        name = str(name + '_noblockage')
 
     optimal = from_data(str('Data/assignment' + name + '.p'))
     shares = from_data(str('Data/shares' + name + '.p'))
@@ -36,7 +40,6 @@ for number_of_users in users:
     user_capacities = from_data(str('Data/capacity_per_user' + name + '.p'))
     satisfaction = from_data(str('Data/satisfaction' + name + '.p'))
     total_links_per_user = from_data(str('Data/total_links_per_user' + name + '.p'))
-
     # optimal = None
     if optimal == None:
         optimal = []
@@ -57,7 +60,6 @@ for number_of_users in users:
             bar.update(iteration)
             np.random.seed(iteration)
             x_user, y_user = f.find_coordinates(number_of_users, Clustered=Clustered)
-
             opt_x, s, user_capacity, satisfied = new_optimization.optimization(x_user, y_user)
             if number_of_users in [208, 312]:
                 print(np.sum(satisfied))
@@ -78,11 +80,6 @@ for number_of_users in users:
             satisfaction.append(satisfied)
             total_links_per_user.append(sum(np.transpose(opt_x)))
 
-            # G, colorlist, nodesize, edgesize, labels, edgecolor = f.make_graph(x_bs, y_bs, x_user, y_user, opt_x,
-            #                                                                    number_of_users)
-            # fig, ax = plt.subplots()
-            # f.draw_graph(G, colorlist, nodesize, edgesize, labels, ax, 'k', edgecolor)
-            # plt.show()
 
         bar.finish()
         pickle.dump(optimal, open(str('Data/assignment' + name + '.p'), 'wb'), protocol=4)
@@ -93,6 +90,6 @@ for number_of_users in users:
         pickle.dump(satisfaction, open(str('Data/satisfaction' + name + '.p'), 'wb'), protocol=4)
         pickle.dump(total_links_per_user, open(str('Data/total_links_per_user' + name + '.p'), 'wb'), protocol=4)
 
-    find_data.main(optimal, shares, xs, ys, satisfaction)
+    find_data.main(optimal, shares, xs, ys, satisfaction, NonBlocked=NonBlocked)
 
-# get_data.get_data(scenario)
+get_data.get_data(scenario)

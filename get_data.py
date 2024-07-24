@@ -10,8 +10,7 @@ Greedy = False
 
 
 
-def find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, beamwidth_b, max_connections, Clustered, M,
-              Greedy, Harris):
+def find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, beamwidth_b, max_connections, Clustered, M, Harris, NonBlocked):
     name = str(
         str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
             M) + 'k=' + str(max_connections) + 'active_beams=' + str(10))
@@ -28,13 +27,13 @@ def find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, beamwidth
     if Clustered:
         name = str(name + '_clustered')
 
-    if Greedy and Heuristic:
-        name = str(name + '_greedy')
+    if NonBlocked:
+        name = str(name + '_noblockage')
 
     return name
 
 
-def find_name_data(Heuristic, SNRHeuristic, beamwidth_deg, max_connections, Clustered, M, Greedy, Harris):
+def find_name_data(Heuristic, SNRHeuristic, beamwidth_deg, max_connections, Clustered, M, Harris, NonBlocked):
     name = str(str(beamwidth_deg) + str(M) + str(max_connections))
     if Heuristic:
         name = str('beamwidth_heuristic' + name)
@@ -47,6 +46,9 @@ def find_name_data(Heuristic, SNRHeuristic, beamwidth_deg, max_connections, Clus
 
     if Clustered:
         name = str(name + '_clustered')
+
+    if NonBlocked:
+        name = str(name + '_noblockage')
 
     return name
 
@@ -68,10 +70,10 @@ def initialise_graph_triangular(radius, xDelta, yDelta):
     return xbs, ybs
 
 
-# iterations = {120: 1000, 300: 400, 600: 200, 900: 134, 1200: 100}
-# iterations = {120: 100, 300: 40, 600: 20, 900: 14, 1200: 10}
-# iterations = {30: 2, 60: 2, 120: 2, 300: 2, 600: 2, 900: 2, 1200: 2, 10: 2, 15: 2, 20: 2}
+# iterations = {21: 1, 41: 1, 104: 1, 208: 1, 312: 1, 10: 5, 15: 5, 20: 5}
 iterations = {21: 477, 41: 244, 104: 97, 208: 48, 312: 32, 10: 200, 15: 134, 20: 100}
+iterations = {21: 477 // 2, 41: 244 // 2, 104: 97 // 2, 208: 48 // 2, 312: 32 // 2, 10: 20, 15: 14, 20: 10}
+# iterations = {21: 5, 41: 5, 104: 5, 208: 5, 312: 5, 10: 5, 15: 5, 20: 5}
 
 Torus = True
 
@@ -82,16 +84,16 @@ radius = 200  # for triangular grid
 xmin, xmax = 0, 600
 ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 2
 
-# xmin, xmax = 0, 400
-# ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 1
+xmin, xmax = 0, 400
+ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 1
 
 xDelta = xmax - xmin
 yDelta = ymax - ymin
 
 area = xDelta * yDelta / (1000 * 1000)
 
-users = [21, 41, 104, 208, 312]
-# users = [10, 15, 20]
+# users = [21, 41, 104, 208, 312]
+users = [10, 15, 20]
 # users = [208]
 x_bs, y_bs = initialise_graph_triangular(radius, xDelta, yDelta)
 number_of_bs = len(x_bs)
@@ -100,23 +102,29 @@ number_of_bs = len(x_bs)
 def find_scenario(scenario):
     if scenario in [1, 11, 21, 31]:
         beamwidth_deg = 5
-    elif scenario in [2, 12, 22, 32, 4]:
+    elif scenario in [2, 12, 22, 32, 4, 5]:
         beamwidth_deg = 10
     elif scenario in [3, 13, 23, 33]:
         beamwidth_deg = 15
 
-    if scenario in [1, 2, 3, 4]:
+    if scenario in [1, 2, 3, 4, 5]:
         k = 25
     elif scenario in [21, 22, 23]:
         k = 2
     elif scenario in [31, 32, 33]:
         k = 1
 
-    if scenario in [4]:
+    Clustered = False
+    NonBlocked = False
+
+    if scenario == 4:
         Clustered = True
-    else:
-        Clustered = False
-    M = 750
+    if scenario == 5:
+        NonBlocked = True
+
+    # M = 1000
+    M = 1000
+    # M = 1000
     # M = 10000
     # if scenario in [21, 22, 23]:
     #     Clustered = True
@@ -129,7 +137,7 @@ def find_scenario(scenario):
     #     M = 10000
     # M = 10
 
-    return beamwidth_deg, Clustered, M, k
+    return beamwidth_deg, Clustered, M, k, NonBlocked
 
 
 def fairness(x):
@@ -145,11 +153,11 @@ def load_file(name):
         return None
 
 
-def get_data(scenario, Heuristic=False, SNRHeuristic=False, Greedy=False, Harris=False):
+def get_data(scenario, Heuristic=False, SNRHeuristic=False, Harris=False):
     print('Getting data...')
-    beamwidth_deg, Clustered, M, max_connections = find_scenario(scenario)
-    if Harris:
-        M = 300
+    beamwidth_deg, Clustered, M, max_connections, NonBlocked = find_scenario(scenario)
+    # if Harris:
+    #     M = 300
     beamwidth_b = beamwidth_deg
     mis = dict()
     mis_user = dict()
@@ -182,11 +190,11 @@ def get_data(scenario, Heuristic=False, SNRHeuristic=False, Greedy=False, Harris
     sigmaU = dict()
 
     energy_use = dict()
-
+    print(users)
     for number_of_users in users:
         iteration_max = iterations[number_of_users]
         name = find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, beamwidth_b, max_connections,
-                         Clustered, M, Greedy, Harris)
+                         Clustered, M, Harris, NonBlocked)
         print(name)
         degrees = load_file('Data/total_links_per_user' + name + '.p')
         misalignment_bs = load_file('Data/grid_misalignment_bs' + name + '.p')
@@ -206,13 +214,10 @@ def get_data(scenario, Heuristic=False, SNRHeuristic=False, Greedy=False, Harris
 
         capacity_per_user150 = load_file('Data/capacity_150' + name + '.p')
         satisfaction150 = load_file('Data/satisfaction_150' + name + '.p')
-
         capacity_SINR = load_file('Data/channel_capacity_SINR' + name + '.p')
+        print('Data/channel_capacity_SINR' + name + '.p')
 
-
-
-
-        user_rate = 500
+        user_rate = 100
         if 10 in users:
             shares = load_file('Data/shares' + name + '.p')
             sigma_user = []
@@ -236,7 +241,7 @@ def get_data(scenario, Heuristic=False, SNRHeuristic=False, Greedy=False, Harris
         energy = load_file('Data/energy' + name + '.p')
         energy = [i for i in energy if i > 0]
 
-
+        energy_use[number_of_users] = sum(energy)/len(energy)
         fair[number_of_users] = fairness(capacity_per_user)
         fair_blocked[number_of_users] = fairness(capacity_blocked)
         fair2_5[number_of_users] = fairness(capacity_per_user2_5)
@@ -263,15 +268,14 @@ def get_data(scenario, Heuristic=False, SNRHeuristic=False, Greedy=False, Harris
 
     print(mis)
     print(mis_user)
-    print(satSINR)
 
-
-    name = find_name_data(Heuristic, SNRHeuristic, beamwidth_deg, max_connections, Clustered, M, Greedy, Harris)
+    print('satisfied:', sat)
+    print('disconnected:', dis)
+    name = find_name_data(Heuristic, SNRHeuristic, beamwidth_deg, max_connections, Clustered, M, Harris, NonBlocked)
     if users[0] == 10:
         name = str(name + str(10))
         pickle.dump(sigmaBS, open(str('Data/Processed/sigmaBS' + name + '.p'), 'wb'), protocol=4)
         pickle.dump(sigmaU, open(str('Data/Processed/sigmaU' + name + '.p'), 'wb'), protocol=4)
-
     pickle.dump(energy_use, open(str('Data/Processed/energy' + name + '.p'), 'wb'), protocol=4)
     pickle.dump(deg, open(str('Data/Processed/deg' + name + '.p'), 'wb'), protocol=4)
     pickle.dump(mis, open(str('Data/Processed/mis' + name + '.p'), 'wb'), protocol=4)

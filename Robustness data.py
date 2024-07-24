@@ -7,20 +7,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import get_data
+import matplotlib
 
-params = {'legend.fontsize': 'x-large',
-          'axes.labelsize': 'x-large',
-          'axes.titlesize': 'x-large',
-          'xtick.labelsize': 'x-large',
-          'ytick.labelsize': 'x-large',
-          'lines.markersize': 8,
-          'figure.autolayout': True}
-pylab.rcParams.update(params)
+matplotlib.rcParams['font.size'] = 20
+matplotlib.rcParams['legend.fontsize'] = 18 # using a size in points
+matplotlib.rcParams['text.usetex'] = True
+# matplotlib.rcParams['axes.grid'] = True
+matplotlib.rcParams['lines.markersize'] = 7
+matplotlib.rcParams['figure.autolayout'] = True
+plt.rcParams['text.latex.preamble'] = " \\usepackage{amsmath} \\usepackage{gensymb} "
 
 colors = ['#904C77', '#E49AB0', '#ECB8A5', '#96ACB7', '#957D95'] * 100
 markers = ['o', 'X', 'v', 's', '*', 'P', '1', '+']
 
-iterations = {21: 477, 41: 244, 104: 97, 208: 48, 312: 32, 10: 200, 15: 134, 20: 100}
+iterations = {21: 477 // 2, 41: 244 // 2, 104: 97 // 2, 208: 48 // 2, 312: 32 // 2, 10: 20, 15: 13, 20: 10}
 
 users = [21, 41, 104, 208, 312]
 user_density = [50, 100, 250, 500, 750]
@@ -35,41 +35,48 @@ ymin, ymax = 0, math.sqrt(3 / 4) * 2 * radius * 2
 xDelta = xmax - xmin
 yDelta = ymax - ymin
 
-M = 750
+M = 1000
 
 beamwidth_deg = 10
-user_rate = 500
+user_rate = 100
 
 index = 2
 
 max_connections = 25
 
-get_data.get_data(4, SNRHeuristic=True)
-get_data.get_data(4)
-get_data.get_data(4, Heuristic=True)
+# get_data.get_data(4, SNRHeuristic=True)
+# get_data.get_data(4)
+# get_data.get_data(4, Heuristic=True)
 
 x = pickle.load(
     open(str('Data/Processed/cap' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'), 'rb')).values()
 x = [i / j for i, j in zip(x, users)]
 x_normal = x
 
+# for scenario in [5]:
+#     print('scenario =', scenario)
+#     get_data.get_data(scenario, SNRHeuristic=True)
+#     get_data.get_data(scenario, Heuristic =True)
+#     # get_data.get_data(32, SNRHeuristic=True)
+#     get_data.get_data(scenario)
+
 # ------------------------- BLOCKED -----------------------------------------
 x = pickle.load(
-    open(str('Data/Processed/capSINR' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'), 'rb')).values()
+    open(str('Data/Processed/capSINR' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'), 'rb')).values()
 xh = pickle.load(
-    open(str('Data/Processed/capSINRbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'),
+    open(str('Data/Processed/capSINRbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'),
          'rb')).values()
 xs5 = pickle.load(
-    open(str('Data/Processed/capSINR' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic.p'),
+    open(str('Data/Processed/capSINR' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic_noblockage.p'),
          'rb')).values()
 
-xb = pickle.load(open(str('Data/Processed/cap_blocked' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'),
+xb = pickle.load(open(str('Data/Processed/cap_blocked' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'),
                       'rb')).values()
 xhb = pickle.load(open(
-    str('Data/Processed/cap_blockedbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'),
+    str('Data/Processed/cap_blockedbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'),
     'rb')).values()
 xs5b = pickle.load(
-    open(str('Data/Processed/cap_blocked' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic.p'),
+    open(str('Data/Processed/cap_blocked' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic_noblockage.p'),
          'rb')).values()
 
 xc = pickle.load(
@@ -97,21 +104,21 @@ snr_clustered = list(xs5c)[0]  # [i for i, j in zip(xs5c, users)][index]
 print(opt_clustered)
 
 x = pickle.load(
-    open(str('Data/Processed/satSINR' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'), 'rb')).values()
+    open(str('Data/Processed/satSINR' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'), 'rb')).values()
 xh = pickle.load(
-    open(str('Data/Processed/satSINRbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'),
+    open(str('Data/Processed/satSINRbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'),
          'rb')).values()
 xs5 = pickle.load(
-    open(str('Data/Processed/satSINR' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic.p'),
+    open(str('Data/Processed/satSINR' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic_noblockage.p'),
          'rb')).values()
 
-xb = pickle.load(open(str('Data/Processed/sat_blocked' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'),
+xb = pickle.load(open(str('Data/Processed/sat_blocked' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'),
                       'rb')).values()
 xhb = pickle.load(open(
-    str('Data/Processed/sat_blockedbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'),
+    str('Data/Processed/sat_blockedbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'),
     'rb')).values()
 xs5b = pickle.load(
-    open(str('Data/Processed/sat_blocked' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic.p'),
+    open(str('Data/Processed/sat_blocked' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic_noblockage.p'),
          'rb')).values()
 
 xc = pickle.load(
@@ -177,30 +184,30 @@ beam_rain_150 = [i for i, j in zip(xhc, users)][index]
 snr_rain_150 = [i for i, j in zip(xs5c, users)][index]
 
 x = pickle.load(
-    open(str('Data/Processed/sat2_5' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'), 'rb')).values()
+    open(str('Data/Processed/sat2_5' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'), 'rb')).values()
 xh = pickle.load(
-    open(str('Data/Processed/sat2_5beamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'),
+    open(str('Data/Processed/sat2_5beamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'),
          'rb')).values()
 xs5 = pickle.load(open(
-    str('Data/Processed/sat2_5' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic.p'),
+    str('Data/Processed/sat2_5' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic_noblockage.p'),
     'rb')).values()
 
 xb = pickle.load(
-    open(str('Data/Processed/sat25' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'), 'rb')).values()
+    open(str('Data/Processed/sat25' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'), 'rb')).values()
 xhb = pickle.load(open(
-    str('Data/Processed/sat25beamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'),
+    str('Data/Processed/sat25beamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'),
     'rb')).values()
 xs5b = pickle.load(
-    open(str('Data/Processed/sat25' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic.p'),
+    open(str('Data/Processed/sat25' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic_noblockage.p'),
          'rb')).values()
 
 xc = pickle.load(
-    open(str('Data/Processed/sat150' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'), 'rb')).values()
+    open(str('Data/Processed/sat150' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'), 'rb')).values()
 xhc = pickle.load(open(
-    str('Data/Processed/sat150beamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'),
+    str('Data/Processed/sat150beamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '_noblockage.p'),
     'rb')).values()
 xs5c = pickle.load(
-    open(str('Data/Processed/sat150' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic.p'),
+    open(str('Data/Processed/sat150' + str(beamwidth_deg) + str(M) + str(max_connections) + '_SNRheuristic_noblockage.p'),
          'rb')).values()
 
 sat_rain_2_5 = list(x)[index] * 100
@@ -240,7 +247,7 @@ for i in range(len(y)):
     plt.plot([150, 2000], [i, i], color='grey', zorder=1)
 
 plt.scatter(optimal, y, label='Optimal', color=colors[0], s=100, marker=markers[0], zorder=2)
-plt.scatter(beam_align, y, label='ʙᴇᴀᴍ-ᴀʟɪɢɴ', color=colors[1], s=100, marker=markers[1], zorder=2)
+plt.scatter(beam_align, y, label='$\\textsc{beam-align}$', color=colors[1], s=100, marker=markers[1], zorder=2)
 plt.scatter(snr, y, label='SNR-dynamic', color=colors[2], s=100, marker=markers[2], zorder=2)
 
 plt.yticks(y, ['Clustered', 'Rain: $R=150$', 'Rain: $R=25$', 'Rain: $R=2.5$', 'Blockage', 'Normal'])
@@ -256,9 +263,10 @@ ax.spines.right.set_visible(False)
 ax.spines.top.set_visible(False)
 ax.spines.left.set_visible(False)
 ax.spines.bottom.set_visible(False)
-plt.legend(loc='center left')
+# plt.legend(loc='center left')
+plt.legend()
 # ax.legend(bbox_to_anchor=(0.45, 0.55))
-plt.savefig('Figures/capacity_comparison.png')
+plt.savefig('Figures/capacity_comparison.pdf')
 plt.show()
 
 fig, ax = plt.subplots()
@@ -266,7 +274,7 @@ for i in range(len(y)):
     plt.plot([0.0, 1.1], [i, i], color='grey', zorder=1)
 
 plt.scatter(np.divide(sat_optimal, 100), y, label='Optimal', color=colors[0], s=100, marker=markers[0], zorder=2)
-plt.scatter(np.divide(sat_beam_align, 100), y, label='ʙᴇᴀᴍ-ᴀʟɪɢɴ', color=colors[1], s=100, marker=markers[1], zorder=2)
+plt.scatter(np.divide(sat_beam_align, 100), y, label='$\\textsc{beam-align}$', color=colors[1], s=100, marker=markers[1], zorder=2)
 plt.scatter(np.divide(sat_snr, 100), y, label='SNR-dynamic', color=colors[2], s=100, marker=markers[2], zorder=2)
 plt.yticks(y, ['Clustered', 'Rain: $R=150$', 'Rain: $R=25$', 'Rain: $R=2.5$', 'Blockage', 'Normal'])
 plt.xlabel('Satisfaction level')
@@ -280,8 +288,8 @@ ax.spines.right.set_visible(False)
 ax.spines.top.set_visible(False)
 ax.spines.left.set_visible(False)
 ax.spines.bottom.set_visible(False)
-
-plt.legend(loc = 'center left')
+plt.legend()
+# plt.legend(loc = 'center left')
 # ax.legend(bbox_to_anchor=(0.91, 0.77))
-plt.savefig('Figures/satisfaction_comparison.png')
+plt.savefig('Figures/satisfaction_comparison.pdf')
 plt.show()

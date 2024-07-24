@@ -11,24 +11,29 @@ Greedy = False
 def find_scenario(scenario):
     if scenario in [1, 11, 21, 31]:
         beamwidth_deg = 5
-    elif scenario in [2, 12, 22, 32, 4]:
+    elif scenario in [2, 12, 22, 32, 4, 5]:
         beamwidth_deg = 10
     elif scenario in [3, 13, 23, 33]:
         beamwidth_deg = 15
 
-    if scenario in [1, 2, 3, 4]:
+    if scenario in [1, 2, 3, 4, 5]:
         k = 25
     elif scenario in [21, 22, 23]:
         k = 2
     elif scenario in [31, 32, 33]:
         k = 1
 
-
     Clustered = False
+    NonBlocked = False
 
     if scenario == 4:
         Clustered = True
-    M = 750
+    if scenario == 5:
+        NonBlocked = True
+
+    # M = 1000
+    M = 1000
+    # M = 1000
     # M = 10000
     # if scenario in [21, 22, 23]:
     #     Clustered = True
@@ -41,11 +46,11 @@ def find_scenario(scenario):
     #     M = 10000
     # M = 10
 
-    return beamwidth_deg, Clustered, M, k
+    return beamwidth_deg, Clustered, M, k, NonBlocked
 
 
 scenario = int(input('Scenario?'))
-beamwidth_deg, Clustered, M, max_connections = find_scenario(scenario)
+beamwidth_deg, Clustered, M, max_connections, NonBlocked = find_scenario(scenario)
 
 pi = math.pi
 bs_of_interest = 10
@@ -63,7 +68,6 @@ yDelta = ymax - ymin
 area = xDelta * yDelta / (1000 * 1000)
 users = [21, 41, 104, 208, 312]
 # users = [10, 15, 20]
-
 
 number_of_active_beams = 10
 
@@ -105,33 +109,30 @@ x_bs, y_bs = initialise_graph_triangular(radius, xDelta, yDelta)
 number_of_bs = len(x_bs)
 
 iterations = {21: 477, 41: 244, 104: 97, 208: 48, 312: 32, 10: 200, 15: 134, 20: 100}
-
-
+# iterations = {21: 5, 41: 5, 104: 5, 208: 5, 312: 5, 10: 5, 15: 5, 20: 5}
+# iterations = {21: 477 // 2, 41: 244 // 2, 104: 97 // 2, 208: 48 // 2, 312: 32 // 2, 10: 20, 15: 14, 20: 10}
 
 if beamwidth_b == 5:
-    misalignment_user = {21: 1.7549738753991504, 41: 1.3498868618450317, 104: 1.3018097881075703,
-                         208: 1.4241036107764387, 312: 1.489127280940781, 10: 2.563120432885875, 15: 2.2409077302256044,
-                         20: 1.7978877443413166}
-    misalignment = {21: 1.7549738753991504, 41: 1.349886861845032, 104: 1.30180978810757, 208: 1.4241036107764384,
-                    312: 1.4891272809407812, 10: 2.5631204328858757, 15: 2.2409077302256044, 20: 1.7978877443413162}
+    misalignment_user = {21: 1.9660850429113226, 41: 1.9467978447199958, 104: 1.883847829911705,
+                         208: 1.8545059850753136, 312: 1.8841182098083262}
+    misalignment = {21: 1.9660850429113228, 41: 1.9444199958988384, 104: 1.8838478299117047, 208: 1.854505985075313,
+                    312: 1.8841182098083267}
 
 
 elif beamwidth_b == 10:
-    misalignment_user = {21: 2.4150059448465226, 41: 1.9892760337765163, 104: 1.7714483714954201,
-                         208: 1.9016740063785356, 312: 1.9433035381758874, 10: 2.7420851615894266,
-                         15: 2.6676412021355658, 20: 2.4290951273824812}
-    misalignment = {21: 4.799873408512321, 41: 3.3608438783519925, 104: 2.847651562265974, 208: 3.1877053682954406,
-                    312: 3.3428211703931043, 10: 5.590860781587715, 15: 5.367639853500857, 20: 4.84368369718824}
+    misalignment_user = {21: 2.454426849423075, 41: 2.4344443520216004, 104: 2.413813543155066, 208: 2.417186834558454,
+                         312: 2.428452303409957, 10: 2.5390330368809906, 15: 2.4840751867422366, 20: 2.4751149819842917}
+    misalignment = {21: 4.791969911696629, 41: 4.835694684307278, 104: 4.765221316761182, 208: 4.7312715395019564,
+                    312: 4.782898685823669,10: 4.913626861419469, 15: 4.85318334644194, 20: 5.131420718216987}
 
 
 elif beamwidth_b == 15:
-    misalignment_user = {21: 2.2333014442275716, 41: 1.9485456403938493, 104: 1.8205315447718076,
-                         208: 1.8987488775015149, 312: 1.9072796966922938, 10: 2.5397884162819353, 15: 2.47813867191403,
-                         20: 2.2922707604390777}
-    misalignment = {21: 7.090385062983365, 41: 6.273657538946974, 104: 5.629493123214034, 208: 5.901799336475697,
-                    312: 6.005133582709884, 10: 7.579408354573356, 15: 7.409566174140733, 20: 7.244576791643011}
+    misalignment_user = {21: 2.3642201919049755, 41: 2.3336101525187614, 104: 2.3229063744510032,
+                         208: 2.306264630417769, 312: 2.326808146225465}
+    misalignment = {21: 7.1208180184629715, 41: 7.0288037747704495, 104: 6.978981843938175, 208: 7.060181578648941,
+                    312: 7.064460139528851}
 
-user_rate = 500  # Mbps
+user_rate = 100  # Mbps
 
 Torus = True
 
@@ -140,7 +141,7 @@ fading = np.random.normal(0, 4, (3007, number_of_bs))
 overhead_factor = 0.75
 
 
-def find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, Clustered, M, Greedy=False, Harris=False):
+def find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, Clustered, M, Harris=False, NonBlocked = False):
     name = str(str(iteration_max) + 'users=' + str(number_of_users) + 'beamwidth_b=' + str(beamwidth_b) + 'M=' + str(
         M) + 'k=' + str(max_connections) + 'active_beams=' + str(number_of_active_beams))
 
@@ -156,12 +157,12 @@ def find_name(iteration_max, number_of_users, Heuristic, SNRHeuristic, Clustered
     if Clustered:
         name = str(name + '_clustered')
 
-    if Greedy and Heuristic:
-        name = str(name + '_greedy')
+    if NonBlocked:
+        name = str(name + '_noblockage')
     return name
 
 
-def find_name_data(Heuristic, SNRHeuristic, k, Clustered, M, Greedy=False):
+def find_name_data(Heuristic, SNRHeuristic, k, Clustered, M, NonBlocked = False):
     name = str(str(beamwidth_deg) + str(M))
     if Heuristic:
         name = str('beamwidth_heuristic' + name)
@@ -172,7 +173,7 @@ def find_name_data(Heuristic, SNRHeuristic, k, Clustered, M, Greedy=False):
     if Clustered:
         name = str(name + '_clustered')
 
-    if Greedy and Heuristic:
-        name = str(name + '_greedy')
+    if NonBlocked:
+        name = str(name + '_noblockage')
 
     return name

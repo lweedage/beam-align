@@ -19,6 +19,7 @@ markers = ['o', 's', 'p', 'd', '*']
 colors = ['#904C77', '#E49AB0', '#ECB8A5', '#96ACB7', '#957D95'] * 100
 markers = ['o', 'X', 'v', 's', '*', 'P', '1', '+']
 
+iterations = {21: 477, 41: 244, 104: 97, 208: 48, 312: 32, 10: 200, 15: 134, 20: 100}
 
 users = [21, 41, 104, 208, 312]
 user_density = [50, 100, 250, 500, 750]
@@ -40,22 +41,22 @@ max_connections = 25
 
 # for scenario in [2]:
 #     print('scenario =', scenario)
-#     # get_data.get_data(scenario, SNRHeuristic=True)
-#     # get_data.get_data(scenario, Heuristic =True)
-#     # get_data.get_data(32, SNRHeuristic=True)
+#     get_data.get_data(scenario, SNRHeuristic=True)
+#     get_data.get_data(scenario, Heuristic =True)
+#     get_data.get_data(32, SNRHeuristic=True)
 #     get_data.get_data(scenario)
 
 
 x = pickle.load(
-    open(str('Data/Processed/capSINR' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'), 'rb')).values()
+    open(str('Data/Processed/cap' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'), 'rb')).values()
 xh = pickle.load(
-    open(str('Data/Processed/capSINRbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'),
+    open(str('Data/Processed/capbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'),
          'rb')).values()
 xs1 = pickle.load(
-    open(str('Data/Processed/capSINR' + str(beamwidth_deg) + str(M) + str(1) + '_SNRheuristic.p'),
+    open(str('Data/Processed/cap' + str(beamwidth_deg) + str(M) + str(1) + '_SNRheuristic.p'),
          'rb')).values()
 xs5 = pickle.load(
-    open(str('Data/Processed/capSINR' + str(beamwidth_deg) + str(M) + str(25) + '_SNRheuristic.p'),
+    open(str('Data/Processed/cap' + str(beamwidth_deg) + str(M) + str(25) + '_SNRheuristic.p'),
          'rb')).values()
 
 fig, ax = plt.subplots()
@@ -84,15 +85,15 @@ print('Difference with SNR dynamic:', [(i - j) / i * 100 for i, j in zip(x, xs5)
 x_normal = x
 
 x = pickle.load(
-    open(str('Data/Processed/satSINR' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'), 'rb')).values()
+    open(str('Data/Processed/sat' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'), 'rb')).values()
 xh = pickle.load(
-    open(str('Data/Processed/satSINRbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'),
+    open(str('Data/Processed/satbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '.p'),
          'rb')).values()
 # xgr = pickle.load(
 #     open(str('Data/Processed/satbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '_greedy.p'), 'rb')).values()
-xs1 = pickle.load(open(str('Data/Processed/satSINR' + str(beamwidth_deg) + str(M) + str(1) + '_SNRheuristic.p'),
+xs1 = pickle.load(open(str('Data/Processed/sat' + str(beamwidth_deg) + str(M) + str(1) + '_SNRheuristic.p'),
                        'rb')).values()
-xs5 = pickle.load(open(str('Data/Processed/satSINR' + str(beamwidth_deg) + str(M) + str(25) + '_SNRheuristic.p'),
+xs5 = pickle.load(open(str('Data/Processed/sat' + str(beamwidth_deg) + str(M) + str(25) + '_SNRheuristic.p'),
                        'rb')).values()
 
 fig, ax = plt.subplots()
@@ -110,8 +111,6 @@ plt.xticks(([100, 250, 500, 750]))
 plt.savefig(f'Figures/satisfaction{beamwidth_deg}{max_connections}{user_rate}.pdf')
 
 plt.show()
-
-
 
 x_normal = x
 
@@ -164,10 +163,10 @@ user_density = [i / area for i in users]
 #     get_data.get_data(scenario, Heuristic=True)
 
 xhho_cap = pickle.load(
-    open(str('Data/Processed/capSINRHHO' + str(beamwidth_deg) + str(M) + str(max_connections) + '10.p'),
+    open(str('Data/Processed/capHHO' + str(beamwidth_deg) + str(1000) + str(max_connections) + '10.p'),
          'rb')).values()
 xh_cap = pickle.load(
-    open(str('Data/Processed/capSINRbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '10.p'),
+    open(str('Data/Processed/capbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '10.p'),
          'rb')).values()
 print(xh_cap)
 
@@ -183,12 +182,12 @@ plt.xticks([10, 15, 20])
 plt.savefig(f'Figures/HHOcapacity{beamwidth_deg}{max_connections}{user_rate}.pdf')
 plt.show()
 
-print('Data/Processed/satSINRHHO' + str(beamwidth_deg) + str(1000) + str(max_connections) + '10.p')
+print('Data/Processed/satHHO' + str(beamwidth_deg) + str(1000) + str(max_connections) + '10.p')
 xhho = pickle.load(
-    open(str('Data/Processed/satSINRHHO' + str(beamwidth_deg) + str(1000) + str(max_connections) + '10.p'),
+    open(str('Data/Processed/satHHO' + str(beamwidth_deg) + str(1000) + str(max_connections) + '10.p'),
          'rb')).values()
 xh = pickle.load(
-    open(str('Data/Processed/satSINRbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '10.p'),
+    open(str('Data/Processed/satbeamwidth_heuristic' + str(beamwidth_deg) + str(M) + str(max_connections) + '10.p'),
          'rb')).values()
 
 fig, ax = plt.subplots()
@@ -252,7 +251,7 @@ plt.bar([i - 0.5 for i in users], xhho, 1, label='MOHHO', color=colors[5])
 plt.bar([i + 1.5 for i in users], xhhoU, 1, color=colors[5], hatch='//', edgecolor=colors[1])
 
 plt.xlabel('Number of users')
-plt.ylabel('sd user rates/BS loads (Mbps)')
+plt.ylabel('STD user rates/BS loads (Mbps)')
 plt.legend()
 plt.xticks(([10, 15, 20]))
 

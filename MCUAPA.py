@@ -208,7 +208,7 @@ def find_new_candidates(candidates, number_of_users):
 
 
 N = 100
-T_iter = 300
+T_iter = 200
 #
 P_min = 0
 P_max = transmission_power * number_of_active_beams
@@ -224,7 +224,7 @@ def do_algorithm(x_user, y_user, iteration):
         coords_i = f.user_coords(i, x_user, y_user)
         for j in range(number_of_bs):
             coords_j = f.bs_coords(j)
-            path_loss[i, j] = f.find_path_loss(i, j, coords_i, coords_j)
+            path_loss[i, j] = f.find_path_loss(i, j, coords_i, coords_j, NonBlocked=False)
             gain_bs[i, j] = f.find_gain(coords_j, coords_i, coords_j, coords_i, beamwidth_b)
             gain_user[i, j] = f.find_gain(coords_i, coords_j, coords_i, coords_j, beamwidth_u)
 
@@ -232,8 +232,10 @@ def do_algorithm(x_user, y_user, iteration):
 
     feasibles = load_file(str('Data/feasibles' + str(scenario) + str(iteration) + str(N) + str(number_of_users) + '.p'))
     # feasibles = None
+
     while feasibles == None or len(feasibles) == 0:
-        feasibles = feasible_solutions.optimization(x_user, y_user, N + 1)
+        print('find feasible sol')
+        feasibles = find_feasible_solutions.optimization(x_user, y_user, N + 1)
         pickle.dump(feasibles,
                     open(str('Data/feasibles' + str(scenario) + str(iteration) + str(N) + str(number_of_users) + '.p'),
                          'wb'), protocol=4)
@@ -241,7 +243,7 @@ def do_algorithm(x_user, y_user, iteration):
     population = dict()
     population[0] = feasibles[:-1]
     (X_rabbit, P_rabbit, R_rabbit) = feasibles[-1]
-    # print('Feasible solutions have been found')
+    print('Feasible solutions have been found')
 
     # time steps
     [C_X], [C_P] = np.random.rand(2, 1)

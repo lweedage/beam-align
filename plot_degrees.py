@@ -2,18 +2,31 @@ import pickle
 
 import matplotlib.pylab as pylab
 import matplotlib.pyplot as plt
+import numpy as np
+# from parameters import *
+import seaborn
+import matplotlib
 
-from parameters import *
 
-params = {'legend.fontsize': 'xx-large',
-          'axes.labelsize': 'xx-large',
-          'axes.titlesize': 'xx-large',
-          'xtick.labelsize': 'xx-large',
-          'ytick.labelsize': 'xx-large',
-          'lines.markersize': 8,
-          'figure.autolayout': True}
-pylab.rcParams.update(params)
+matplotlib.rcParams['font.size'] = 20
+matplotlib.rcParams['legend.fontsize'] = 18 # using a size in points
+matplotlib.rcParams['text.usetex'] = True
+# matplotlib.rcParams['axes.grid'] = True
+matplotlib.rcParams['lines.markersize'] = 7
+matplotlib.rcParams['figure.autolayout'] = True
+plt.rcParams['text.latex.preamble'] = " \\usepackage{amsmath} \\usepackage{gensymb} "
+markers = ['o', 's', 'p', 'd', '*']
 
+colors = seaborn.color_palette('rocket')
+colors.reverse()
+colors = ['#904C77', '#E49AB0', '#ECB8A5', '#96ACB7', '#957D95'] * 100
+
+
+users = [21, 41, 104, 208, 312]
+iterations = {21: 477 // 2, 41: 244 // 2, 104: 97 // 2, 208: 48 // 2, 312: 32 // 2, 10: 20, 15: 14, 20: 10}
+M = 1000
+max_connections = 25
+number_of_active_beams = 10
 
 def flatten(data):
     return [item for row in data for item in row]
@@ -63,9 +76,10 @@ for i, bplot in zip(range(3), (bplot1, bplot2, bplot3)):
         patch.set_facecolor(color)
 ax.legend([bplot1["boxes"][0], bplot2["boxes"][0], bplot3["boxes"][0]], ['$5\degree$', '$10\degree$', '$15\degree$'],
           loc='upper right')
+plt.xticks(pos, labels)
 plt.xlabel('Users per km$^2$')
 plt.ylabel('Number of connections per user')
-plt.savefig('boxplot.png')
+plt.savefig('connections_beamwidth.pdf')
 plt.show()
 
 data5 = []
@@ -111,8 +125,10 @@ for i, bplot in zip(range(3), (bplot1, bplot2, bplot3)):
 ax.legend([bplot1["boxes"][0], bplot2["boxes"][0], bplot3["boxes"][0]], ['$k=1$', '$k=2$', '$k = \infty$'],
           loc='upper right')
 plt.xlabel('Users per km$^2$')
+plt.xticks(pos, labels)
+
 plt.ylabel('Number of connections per user')
-plt.savefig('boxplot_mc.png')
+plt.savefig('connections_mc.pdf')
 plt.show()
 
 data_optimal = []
@@ -147,15 +163,19 @@ bplot3 = plt.boxplot(data_snr, positions=pos + (width + 10), patch_artist=True, 
                      labels=['', '', '', '', ''],
                      widths=width, showfliers=False)
 
-print([sum([1 for i in data if i == 0]) for data in data_snr])
 
 for i, bplot in zip(range(3), (bplot1, bplot2, bplot3)):
     color = colors[i]
     for patch in bplot['boxes']:
         patch.set_facecolor(color)
-ax.legend([bplot1["boxes"][0], bplot2["boxes"][0], bplot3["boxes"][0]], ['Optimal', 'ʙᴇᴀᴍ-ᴀʟɪɢɴ', 'SNR-dynamic'],
+# ax.legend([bplot1["boxes"][0], bplot2["boxes"][0], bplot3["boxes"][0]], ['Optimal', 'ʙᴇᴀᴍ-ᴀʟɪɢɴ', 'SNR-dynamic'],
+#           loc='upper right')
+ax.legend([bplot1["boxes"][0], bplot2["boxes"][0], bplot3["boxes"][0]], ['Optimal', '$\\textsc{beam-align}$', 'SNR-dynamic'],
           loc='upper right')
 plt.xlabel('Users per km$^2$')
+plt.xticks(pos, labels)
+plt.yticks([0, 3, 6, 9, 12])
+
 plt.ylabel('Number of connections per user')
-plt.savefig('boxplot_degrees.png')
+plt.savefig('boxplot_degrees.pdf')
 plt.show()
