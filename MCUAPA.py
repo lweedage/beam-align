@@ -208,7 +208,7 @@ def find_new_candidates(candidates, number_of_users):
 
 
 N = 100
-T_iter = 200
+T_iter = 500
 #
 P_min = 0
 P_max = transmission_power * number_of_active_beams

@@ -8,9 +8,6 @@ import functions as f
 from parameters import *
 
 
-# options = {'WLSACCESSID': '099fa0e8-d90b-4457-ae7b-588a1474ad47',
-#            'WLSSECRET': 'c58aecf7-5bbe-47aa-a005-ca63afa8716d',
-#            'LICENSEID': 2531335}
 
 def number_of_connections(channel_capacity):
     connections = channel_capacity > 0
